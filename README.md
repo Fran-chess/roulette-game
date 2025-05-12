@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Juego de Ruleta - DarSalud
 
-## Getting Started
+Aplicación interactiva que simula una ruleta para seleccionar categorías de preguntas de manera aleatoria y atractiva para los usuarios.
 
-First, run the development server:
+## Características
 
+- Ruleta interactiva 3D con efectos visuales
+- Animación realista de giro con física de aceleración y desaceleración
+- Efectos de sonido durante el giro y al seleccionar ganador
+- Efectos visuales (confeti) al seleccionar un segmento
+- Sistema de preguntas categorizado
+- Formulario de registro de participantes
+- Pantalla de reposo (screensaver) cuando no hay actividad
+
+## Requisitos técnicos
+
+- Node.js 18.0 o superior
+- NPM o Yarn
+
+## Instalación
+
+1. Clonar el repositorio:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <url-del-repositorio>
+cd roulette-game
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Instalar dependencias:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Configurar los archivos de sonido:
+   - Coloca los archivos de audio en la carpeta `/public/sounds/`
+   - Se requieren los siguientes archivos:
+     - `wheel-spin.mp3`: sonido para la rotación de la ruleta
+     - `win-sound.mp3`: sonido para cuando la ruleta se detiene
+   - Revisa `/public/sounds/README.md` para más información
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Iniciar el servidor de desarrollo:
+```bash
+npm run dev
+```
 
-## Learn More
+## Estructura del proyecto
 
-To learn more about Next.js, take a look at the following resources:
+- `/src/components/game/RouletteWheel.tsx`: Componente principal de la ruleta
+- `/src/store/gameStore.ts`: Estado global del juego usando Zustand
+- `/public/sounds/`: Archivos de audio para efectos de sonido
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Personalización
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Colores de la ruleta
 
-## Deploy on Vercel
+Los colores de los segmentos de la ruleta se definen en el archivo `RouletteWheel.tsx`:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```javascript
+const baseColors = [
+  '#FF5252', // Rojo
+  '#FF9800', // Naranja
+  '#FFEB3B', // Amarillo
+  '#4CAF50', // Verde
+  '#2196F3', // Azul
+  '#9C27B0', // Púrpura
+  '#E91E63', // Rosa
+  '#00BCD4'  // Cian
+];
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Animación y efectos
+
+La animación de giro se personaliza mediante la función `customEasingFunction` y `easeOutBounce` que definen la física del movimiento.
+
+## Licencia
+
+Este proyecto está bajo la licencia MIT. Ver el archivo LICENSE para más detalles.

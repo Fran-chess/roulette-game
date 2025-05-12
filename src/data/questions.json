@@ -1,0 +1,106 @@
+[
+  {
+    "id": "q1",
+    "category": "Epidemiología",
+    "text": "¿Qué significa el término “R₀” (número reproductivo básico) en epidemiología?",
+    "options": [
+      { "text": "La duración promedio de la infección", "correct": false },
+      { "text": "El número de casos secundarios por cada caso primario en población susceptible", "correct": true },
+      { "text": "La tasa de mortalidad de la enfermedad", "correct": false },
+      { "text": "La concentración viral en sangre", "correct": false }
+    ],
+    "prize": "Bloc de Notas",
+    "explanation": "R₀ es el número promedio de casos secundarios que genera un caso primario en una población totalmente susceptible."
+  },
+  {
+    "id": "q2",
+    "category": "Técnicas de esterilización",
+    "text": "¿Qué técnica de esterilización utiliza vapor a alta presión y temperatura para destruir gérmenes?",
+    "options": [
+      { "text": "Filtración de aire", "correct": false },
+      { "text": "Radiación UV", "correct": false },
+      { "text": "Autoclave", "correct": true },
+      { "text": "Gas óxido de etileno", "correct": false }
+    ],
+    "prize": "Marcador Permanente",
+    "explanation": "La autoclave utiliza vapor saturado a 121 °C durante al menos 15 minutos para desnaturalizar proteínas y matar microorganismos."
+  },
+  {
+    "id": "q3",
+    "category": "Zoonosis",
+    "text": "Menciona una zoonosis viral emergente y su reservorio animal más frecuentemente implicado.",
+    "options": [
+      { "text": "Zika – mosquitos Aedes", "correct": false },
+      { "text": "Ébola – murciélagos frugívoros", "correct": true },
+      { "text": "Rabia – perros", "correct": false },
+      { "text": "Gripe aviar – aves acuáticas", "correct": false }
+    ],
+    "prize": "Adhesivos Temáticos",
+    "explanation": "El virus de Ébola tiene como reservorio probable a murciélagos frugívoros de la familia Pteropodidae."
+  },
+  {
+    "id": "q4",
+    "category": "Control de infecciones",
+    "text": "Nombra dos medidas básicas para prevenir infecciones nosocomiales en un hospital.",
+    "options": [
+      { "text": "Uso de antibióticos profilácticos y aislamiento prolongado", "correct": false },
+      { "text": "Higiene de manos y uso de barreras (guantes, mascarillas)", "correct": true },
+      { "text": "Administrar vacunas a todos los pacientes y visitantes", "correct": false },
+      { "text": "Ventilación natural y plantas en pasillos", "correct": false }
+    ],
+    "prize": "Botella de Agua",
+    "explanation": "La higiene de manos y el uso de barreras son medidas fundamentales para prevenir infecciones nosocomiales."
+  },
+  {
+    "id": "q5",
+    "category": "Vacunas",
+    "text": "¿Qué tipo de vacuna utiliza fragmentos de ARN mensajero para generar inmunidad?",
+    "options": [
+      { "text": "Vacuna inactivada", "correct": false },
+      { "text": "Vacuna de subunidades proteicas", "correct": false },
+      { "text": "Vacuna ARNm", "correct": true },
+      { "text": "Vacuna vector viral atenuado", "correct": false }
+    ],
+    "prize": "Llavero Temático",
+    "explanation": "Las vacunas ARNm instruyen a nuestras células para producir la proteína “Spike” y generar respuesta inmune."
+  },
+  {
+    "id": "q6",
+    "category": "Diagnóstico",
+    "text": "¿Cuál es la prueba estándar para detectar infección activa por SARS‑CoV‑2?",
+    "options": [
+      { "text": "Prueba serológica IgG/IgM", "correct": false },
+      { "text": "PCR en tiempo real (RT‑PCR)", "correct": true },
+      { "text": "ELISA para antígenos", "correct": false },
+      { "text": "Hemocultivo", "correct": false }
+    ],
+    "prize": "Mascarilla Reutilizable",
+    "explanation": "La RT‑PCR detecta directamente el ARN viral y es el método de referencia para diagnóstico de COVID‑19."
+  },
+  {
+    "id": "q7",
+    "category": "Bacterias",
+    "text": "¿Cuál es la principal vía de transmisión de Salmonella en humanos?",
+    "options": [
+      { "text": "Transmisión aérea", "correct": false },
+      { "text": "Contacto piel a piel", "correct": false },
+      { "text": "Ingestión de alimentos o agua contaminados", "correct": true },
+      { "text": "Picadura de insectos", "correct": false }
+    ],
+    "prize": "Bolígrafo Antibacterial",
+    "explanation": "Salmonella se transmite principalmente por el consumo de alimentos o agua contaminados con heces infectadas."
+  },
+  {
+    "id": "q8",
+    "category": "Micología",
+    "text": "¿Qué coloración se utiliza para identificar hongos en muestras clínicas?",
+    "options": [
+      { "text": "Gram", "correct": false },
+      { "text": "Ziehl‑Neelsen", "correct": false },
+      { "text": "Lactofenol‑coton azul", "correct": true },
+      { "text": "Wright", "correct": false }
+    ],
+    "prize": "Lupa de Mano",
+    "explanation": "La preparación con lactofenol‑coton azul tiñe la pared celular de los hongos, facilitando su observación."
+  }
+]
