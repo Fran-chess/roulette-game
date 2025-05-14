@@ -1,81 +1,140 @@
 // src/store/gameStore.ts
 import { create } from 'zustand';
-// import { persist, createJSONStorage } from 'zustand/middleware'; // Descomentar si necesitas persistencia
-import type { Participant, Question, GameState, GameStore as GameStoreType, Play } from '@/types';
+import type { 
+  Participant, 
+  Question, 
+  GameState, 
+  GameStore as GameStoreType, 
+  Play,
+  PlaySession,
+  AdminUser
+} from '@/types';
 
+// Define la estructura del estado del admin dentro del store
+interface AdminSpecificState {
+  activeSessions: PlaySession[];
+  currentSession: PlaySession | null;
+  isLoading: {
+    sessionsList: boolean;
+    sessionAction: boolean;
+  };
+  error: string | null;
+  success: string | null;
+}
 
-// Usamos GameStoreType de @/types para el estado y las acciones
+// Extiende tu GameStoreType para incluir estas nuevas acciones y estados si no lo has hecho
+// Asumo que GameStoreType en @/types/index.ts ya incluye las nuevas propiedades y acciones
+// como adminState, adminFetchGameSessions, etc.
+// Si no, deberías añadirlas allí. Por ejemplo:
+// export interface GameStore {
+//   // ... tus estados y acciones existentes ...
+//   adminUser: AdminUser | null;
+//   adminState: AdminSpecificState;
+//   questions: Question[];
+//
+//   setAdminUser: (adminData: AdminUser | null) => void;
+//   setQuestions: (questions: Question[]) => void;
+//   adminFetchGameSessions: (adminId: string) => Promise<PlaySession[]>;
+//   adminSetCurrentSession: (session: PlaySession | null) => void;
+//   adminSetLoading: (type: 'sessionsList' | 'sessionAction', isLoading: boolean) => void;
+//   adminSetNotification: (type: 'success' | 'error', message: string | null) => void;
+//   adminClearNotifications: () => void;
+//   adminCreateNewSession: (adminId: string) => Promise<string | null>; // Devuelve el session_id o null
+//   adminUpdateSessionStatus: (sessionId: string, status: string, adminId: string) => Promise<boolean>;
+//   clearCurrentGame: () => void;
+//   resetCurrentGameData: () => void;
+// }
+
+// --- ACCIONES DEL STORE PARA EL JUEGO ---
 export const useGameStore = create<GameStoreType>((set, get) => ({
+  // Estados principales del juego
   gameState: 'screensaver',
-  participants: [],
+  participants: [], // Lista de participantes (podría no ser necesaria si solo gestionas uno a la vez)
   currentParticipant: null,
   currentQuestion: null,
   lastSpinResultIndex: null,
   currentPlay: null,
+  questions: [], // [modificación] Lista de preguntas para la ruleta
+  gameSession: null, // [modificación] Guarda la PlaySession activa para el juego actual
 
-  setGameState: (state) => set({ gameState: state }),
-  addParticipant: (participantData) => {
-    const newParticipant: Participant = {
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      nombre: participantData.nombre, // Asegúrate que todos los campos obligatorios de Omit vengan
-      apellido: participantData.apellido,
-      email: participantData.email,
-      especialidad: participantData.especialidad,
-      // No inicializamos lastQuestionId, answeredCorrectly, prizeWon aquí
-    };
-    set((state) => ({
-      participants: [...state.participants, newParticipant],
-      currentParticipant: newParticipant,
-    }));
+  // Estado del administrador
+  adminUser: null,
+  adminState: {
+    activeSessions: [],
+    currentSession: null,
+    isLoading: {
+      sessionsList: true,
+      sessionAction: false,
+    },
+    error: null,
+    success: null,
   },
-  startPlaySession: async (userData, onSuccess, onError) => {
-    try {
-      const response = await fetch('/api/handle-play-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
+
+  // --- ACCIONES PRINCIPALES DEL JUEGO ---
+  setGameState: (newState) => set({ gameState: newState }),
+
+  // [modificación] Actualizar setGameSession para aceptar PlaySession o null
+  setGameSession: (sessionData: PlaySession | null) => {
+    if (!sessionData) {
+      console.log('GameStore: Limpiando sesión de juego activa.');
+      set({
+        gameSession: null,
+        currentParticipant: null,
+        gameState: 'screensaver',
+        currentQuestion: null,
+        lastSpinResultIndex: null,
       });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Error al iniciar sesión de juego');
-      }
-
-      set((state: GameStoreType) => {
-        const existingIndex = state.participants.findIndex((p: Participant) => p.id === result.participant.id);
-        
-        let updatedParticipants: Participant[];
-        if (existingIndex >= 0) {
-          updatedParticipants = [
-            ...state.participants.slice(0, existingIndex),
-            result.participant,
-            ...state.participants.slice(existingIndex + 1)
-          ];
-        } else {
-          updatedParticipants = [...state.participants, result.participant];
-        }
-        
-        return {
-          currentParticipant: result.participant,
-          currentPlay: result.play || null,
-          participants: updatedParticipants
-        };
-      });
-      
-      if (onSuccess) {
-        onSuccess(result);
-      }
-    } catch (error: any) {
-      console.error("Error en startPlaySession (store):", error);
-      if (onError) {
-        onError(error);
-      }
+      return;
     }
+
+    console.log('GameStore: Estableciendo sesión de juego:', sessionData);
+    let participantForSession: Participant | null = null;
+    let newGameState: GameState = get().gameState; // Mantener estado actual por defecto
+
+    // Si la sesión tiene datos de un jugador registrado
+    if (sessionData.nombre && sessionData.email) {
+      participantForSession = {
+        id: sessionData.participant_id || sessionData.email, 
+        timestamp: new Date(sessionData.updated_at || sessionData.created_at),
+        nombre: sessionData.nombre,
+        apellido: sessionData.apellido || '',
+        email: sessionData.email,
+        especialidad: sessionData.especialidad || '',
+      };
+    }
+
+    // Determinar el estado del juego basado en el estado de la PlaySession
+    if (sessionData.status === 'player_registered') {
+      if(get().gameState !== 'question' && get().gameState !== 'prize') {
+        newGameState = 'roulette';
+      }
+    } else if (sessionData.status === 'in_progress') {
+      if (!get().currentQuestion && get().gameState !== 'question' && get().gameState !== 'prize') {
+        newGameState = 'roulette';
+      }
+    } else if (sessionData.status === 'pending_player_registration') {
+      console.warn("GameStore: setGameSession con sesión pendiente. El juego no debería iniciar aún.");
+      newGameState = 'screensaver';
+      participantForSession = null;
+    } else { // completed, archived, etc.
+      console.warn(`GameStore: setGameSession con sesión en estado no jugable: ${sessionData.status}`);
+      newGameState = 'screensaver';
+    }
+    
+    set({
+      gameSession: sessionData,
+      currentParticipant: participantForSession,
+      gameState: newGameState,
+    });
   },
+  
   setCurrentParticipant: (participant) => set({ currentParticipant: participant }),
+  
+  // [modificación] Añadir función para establecer preguntas
+  setQuestions: (questionsArray: Question[]) => set({ questions: questionsArray }),
+
   setCurrentQuestion: (question) => set({ currentQuestion: question }),
+  
   setLastSpinResultIndex: (index) => set({ lastSpinResultIndex: index }),
 
   updateCurrentParticipantScore: ({ questionId, answeredCorrectly, prizeWon }) => {
@@ -87,30 +146,185 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
         answeredCorrectly: answeredCorrectly,
         prizeWon: prizeWon,
       };
-      return {
-        currentParticipant: updatedParticipant,
-        participants: state.participants.map(p =>
-          p.id === updatedParticipant.id ? updatedParticipant : p
-        ),
-      };
+      return { currentParticipant: updatedParticipant };
     });
   },
 
+  // [modificación] Añadir resetCurrentGameData para resetear solo datos de la ronda actual
+  resetCurrentGameData: () => set({
+    currentQuestion: null,
+    lastSpinResultIndex: null,
+    gameState: 'roulette',
+  }),
+
+  // [modificación] Actualizar clearCurrentGame para resetear completamente el juego
   resetCurrentGame: () => set({
+    gameState: 'screensaver',
+    currentParticipant: null,
+    currentQuestion: null,
+    lastSpinResultIndex: null,
+    gameSession: null,
+    // No se limpian las 'questions' si son genéricas
+  }),
+
+  // Función de reseteo completo (incluido para compatibilidad)
+  resetAllData: () => set({
+    gameState: 'screensaver',
+    participants: [],
+    currentParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
     currentPlay: null,
+    gameSession: null,
+    questions: [],
   }),
-  resetAllData: () => {
-    if (confirm('¿Estás seguro de que quieres borrar TODOS los datos de participantes? Esta acción no se puede deshacer.')) {
-        set({
-            participants: [],
-            currentParticipant: null,
-            currentQuestion: null,
-            lastSpinResultIndex: null,
-            currentPlay: null,
-            gameState: 'screensaver',
-        });
+
+  // --- ACCIONES DEL PANEL DE ADMINISTRADOR ---
+  setAdminUser: (adminData) => set({ adminUser: adminData }),
+
+  fetchGameSessions: async () => {
+    const adminId = get().adminUser?.id;
+    if (!adminId) {
+      console.warn("Store: fetchGameSessions - No adminId available.");
+      set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, sessionsList: false }, activeSessions: [] }}));
+      return [];
+    }
+    set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, sessionsList: true }, error: null } }));
+    try {
+      const response = await fetch(`/api/admin/sessions/list?adminId=${adminId}`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error ${response.status} al cargar sesiones`);
+      }
+      const sessionsData: PlaySession[] = await response.json();
+      set(state => ({ adminState: { ...state.adminState, activeSessions: sessionsData || [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
+      return sessionsData;
+    } catch (error: any) {
+      console.error("Store: fetchGameSessions error:", error);
+      set(state => ({ adminState: { ...state.adminState, error: error.message, activeSessions: [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
+      return [];
+    }
+  },
+
+  setAdminCurrentSession: (session: PlaySession | null) => set(state => ({
+    adminState: { ...state.adminState, currentSession: session }
+  })),
+
+  setAdminLoading: (type, isLoadingValue) => set(state => ({
+    adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, [type]: isLoadingValue } }
+  })),
+
+  setAdminNotification: (type: 'success' | 'error', message: string | null) => set(state => ({
+    adminState: { ...state.adminState, success: type === 'success' ? message : null, error: type === 'error' ? message : null }
+  })),
+
+  clearAdminNotifications: () => set(state => ({
+    adminState: { ...state.adminState, error: null, success: null }
+  })),
+
+  createNewSession: async () => {
+    const adminId = get().adminUser?.id;
+    if (!adminId) {
+      get().setAdminNotification('error', 'No se puede crear sesión: ID de Admin no disponible.');
+      return null;
+    }
+    get().setAdminLoading('sessionAction', true);
+    get().clearAdminNotifications();
+    try {
+      const response = await fetch('/api/admin/sessions/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminId }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.details ? `${errorData.message} Det: ${errorData.details}` : errorData.message;
+        throw new Error(errorMessage || 'Error al crear el juego.');
+      }
+      const data = await response.json();
+      let gameSessionUUID = '';
+      if (data && data.sessionId) gameSessionUUID = data.sessionId;
+      else if (data && data.session && data.session.session_id) gameSessionUUID = data.session.session_id;
+      else throw new Error('Respuesta de creación de juego inválida.');
+
+      const fullUrl = `${window.location.origin}/register/${gameSessionUUID}`;
+      try {
+        await navigator.clipboard.writeText(fullUrl);
+        get().setAdminNotification('success', 'Juego creado. URL copiada!');
+      } catch (e) {
+        get().setAdminNotification('success', 'Juego creado. (URL no copiada)');
+      }
+      await get().fetchGameSessions();
+      return gameSessionUUID;
+    } catch (error: any) {
+      console.error("Store: createNewSession error:", error);
+      get().setAdminNotification('error', error.message);
+      return null;
+    } finally {
+      get().setAdminLoading('sessionAction', false);
+    }
+  },
+
+  updateSessionStatus: async (sessionId: string, status: string) => {
+    const adminId = get().adminUser?.id;
+    get().setAdminLoading('sessionAction', true);
+    get().clearAdminNotifications();
+    try {
+      const response = await fetch('/api/admin/sessions/update-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, status, adminId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Error al actualizar estado.');
+      get().setAdminNotification('success', `Juego ${sessionId.substring(0,8)} actualizado a ${status}.`);
+      return true;
+    } catch (error: any) {
+      console.error("Store: updateSessionStatus error:", error);
+      get().setAdminNotification('error', error.message);
+      return false;
+    } finally {
+      get().setAdminLoading('sessionAction', false);
+    }
+  },
+
+  // Funcionalidad para compatibilidad con flujos existentes
+  addParticipant: (participantData) => {
+    const newParticipant: Participant = {
+      id: Date.now().toString(),
+      timestamp: new Date(),
+      ...participantData,
+    };
+    set((state) => ({
+      participants: [...state.participants, newParticipant],
+    }));
+  },
+
+  startPlaySession: async (userData, onSuccess, onError) => {
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Error al registrar jugador');
+      }
+      
+      const { participant } = data;
+      
+      if (participant) {
+        get().setCurrentParticipant(participant);
+        if (onSuccess) onSuccess(data);
+      } else {
+        throw new Error('Respuesta de registro inválida');
+      }
+    } catch (error: any) {
+      console.error('Error en startPlaySession:', error);
+      if (onError) onError(error);
     }
   },
 }));

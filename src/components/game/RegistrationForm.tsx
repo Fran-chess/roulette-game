@@ -6,7 +6,14 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 
-export default function RegistrationForm() {
+// [modificación] Añadir props para sessionId y onPlayerRegistered
+interface RegistrationFormProps {
+  sessionId?: string; // Opcional para mantener compatibilidad con el uso existente
+  onPlayerRegistered?: () => void;
+}
+
+// [modificación] Actualizar la firma del componente para aceptar props
+export default function RegistrationForm({ sessionId, onPlayerRegistered }: RegistrationFormProps) {
   const startPlaySession = useGameStore(state => state.startPlaySession);
   const setGameState = useGameStore(state => state.setGameState);
 
@@ -14,6 +21,7 @@ export default function RegistrationForm() {
     nombre: "",
     apellido: "",
     email: "",
+    especialidad: "", // [modificación] Añadido campo de especialidad
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,6 +29,7 @@ export default function RegistrationForm() {
     nombre?: string;
     apellido?: string;
     email?: string;
+    especialidad?: string;
     general?: string;
   }>({});
 
@@ -72,33 +81,85 @@ export default function RegistrationForm() {
     setIsSubmitting(true);
 
     try {
-      // Llamar a la función del store para registrar al usuario
-      await startPlaySession(
-        {
-          nombre: formData.nombre.trim(),
-          apellido: formData.apellido.trim() || undefined,
-          email: formData.email.trim(),
-        },
-        // Callback de éxito
-        (data) => {
-          console.log("Registro exitoso:", data.message);
-          setGameState("roulette");
-        },
-        // Callback de error
-        (error) => {
-          console.error("Error de registro:", error);
+      // [modificación] Si hay sessionId, usar la API de registro de jugador en sesión
+      if (sessionId) {
+        console.log('Enviando registro para sesión:', sessionId);
+        
+        // Intentar primero verificar que la sesión existe
+        try {
+          const verifyResponse = await fetch(`/api/session/verify?sessionId=${sessionId}`);
+          if (!verifyResponse.ok) {
+            const verifyData = await verifyResponse.json();
+            console.error('Error al verificar sesión antes de registrar:', verifyData);
+            throw new Error(verifyData.message || 'Sesión no disponible');
+          }
+        } catch (verifyError: any) {
+          console.error('Error al verificar sesión:', verifyError);
           setErrors({
-            general: error.message || "Error al registrar. Inténtalo de nuevo.",
+            general: `Error al verificar la sesión: ${verifyError.message || 'Error desconocido'}`
           });
           setIsSubmitting(false);
+          return;
         }
-      );
+        
+        // Enviar solicitud de registro
+        const response = await fetch('/api/admin/sessions/register-player', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sessionId,
+            ...formData,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error('Error en respuesta de API:', data);
+          throw new Error(data.message || data.error || 'Error al registrar jugador');
+        }
+
+        console.log('Registro exitoso:', data);
+        
+        // Si hay un callback de éxito de registro, llamarlo
+        if (onPlayerRegistered) {
+          onPlayerRegistered();
+        } else {
+          // Si no hay callback específico, cambiar al estado de ruleta
+          setGameState("roulette");
+        }
+      } else {
+        // Comportamiento original sin sessionId (para compatibilidad)
+        await startPlaySession(
+          {
+            nombre: formData.nombre.trim(),
+            apellido: formData.apellido.trim() || undefined,
+            email: formData.email.trim(),
+          },
+          // Callback de éxito
+          (data) => {
+            console.log("Registro exitoso:", data.message);
+            setGameState("roulette");
+          },
+          // Callback de error
+          (error) => {
+            console.error("Error de registro:", error);
+            setErrors({
+              general: error.message || "Error al registrar. Inténtalo de nuevo.",
+            });
+            setIsSubmitting(false);
+          }
+        );
+      }
     } catch (error: any) {
       // Capturar cualquier error no manejado
       console.error("Error inesperado:", error);
       setErrors({
-        general: "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
+        general: error.message || "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -184,7 +245,7 @@ export default function RegistrationForm() {
           {/* Input Apellido (Opcional) */}
           <motion.div variants={fieldItemVariants}>
             <Input
-              label="Apellido (Opcional)"
+              label="Apellido"
               name="apellido"
               value={formData.apellido}
               onChange={handleChange}
@@ -194,8 +255,21 @@ export default function RegistrationForm() {
               autoComplete="family-name"
             />
           </motion.div>
+          
+          {/* [modificación] Input Especialidad (Opcional) */}
+          <motion.div variants={fieldItemVariants}>
+            <Input
+              label="Especialidad"
+              name="especialidad"
+              value={formData.especialidad}
+              onChange={handleChange}
+              containerClassName="w-full"
+              labelClassName={`${labelColorOnDark} text-sm`}
+              className={`${inputBgOnDark} ${inputTextColorOnDark} ${placeholderColorOnDark} ${inputBorderOnDark} ${inputHoverStyles} ${inputFocusStyles}`}
+            />
+          </motion.div>
 
-          {/* Input Email (Obligatorio) */}
+          {/* Input Email */}
           <motion.div variants={fieldItemVariants}>
             <Input
               label="Email"
@@ -219,16 +293,18 @@ export default function RegistrationForm() {
           {/* Mensaje de Error General */}
           {errors.general && (
             <motion.div variants={fieldItemVariants}>
-              <p className="text-red-500 text-sm text-center mt-2">
-                {errors.general}
-              </p>
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mt-3">
+                <p className="text-red-200 text-sm text-center">
+                  {errors.general}
+                </p>
+              </div>
             </motion.div>
           )}
         </motion.div>
 
         {/* Botón de Envío */}
         <motion.div
-          className="pt-5 md:pt-8 text-center w-full shrink-0"
+          className="pt-3 md:pt-5 text-center w-full shrink-0"
           variants={fieldItemVariants}
           initial="hidden"
           animate="visible"
@@ -236,13 +312,11 @@ export default function RegistrationForm() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full max-w-xs md:max-w-sm mx-auto bg-amber-500 hover:bg-amber-600 text-slate-900
-                     font-marineBold px-8 py-3.5 text-lg rounded-xl shadow-xl
-                     focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900/30
-                     transform active:scale-95 transition-opacity duration-150
+            className={`w-full bg-teal-500 hover:bg-teal-600 text-white font-marineBold py-3 px-8 rounded-xl 
+                     transition-colors duration-300 shadow-lg
                      ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
           >
-            {isSubmitting ? "Procesando..." : "¡A Girar la Ruleta!"}
+            {isSubmitting ? "Registrando..." : "Comenzar a Jugar"}
           </Button>
         </motion.div>
       </form>

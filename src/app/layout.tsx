@@ -17,11 +17,14 @@ export default function RootLayout({
   return (
     <html lang="es">
       <head>
-        <meta charSet="utf-8" />
+        <meta charSet="utf-utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="description" content="Ruleta de juego interactiva" />
       </head>
-      <body className={`${gradientBackground} ${textOnDarkBase} min-h-screen flex flex-col font-sans`}>{children}</body>
+      <body
+        className={`${gradientBackground} ${textOnDarkBase} min-h-screen flex flex-col font-sans`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

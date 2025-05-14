@@ -1,37 +1,29 @@
+// src/components/layout/ScreenSaver.tsx
 'use client';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import Image from 'next/image';
 
 interface ScreenSaverProps {
-  onInteraction: () => void;
-  isVisible: boolean; 
+  onInteraction: () => void; // Función a llamar cuando se interactúa
+  isVisible: boolean;       // Para controlar si se renderiza o no (útil para animaciones)
 }
 
 export default function ScreenSaver({ onInteraction, isVisible }: ScreenSaverProps) {
-  // [modificación] Añadido estado para el mensaje pulsante
-  const [isTextVisible, setIsTextVisible] = useState(true);
-  
-  // [modificación] Efecto para alternar la visibilidad del texto cada 1.5 segundos
-  useEffect(() => {
-    if (!isVisible) return;
-    
-    const interval = setInterval(() => {
-      setIsTextVisible(prev => !prev);
-    }, 1500);
-    
-    return () => clearInterval(interval);
-  }, [isVisible]);
-
-  // Si no es visible retornamos null
-  if (!isVisible) return null; 
+  if (!isVisible) {
+    return null; // No renderizar nada si no es visible
+  }
 
   return (
-    <div
-      className="w-full h-full cursor-pointer flex flex-col items-center justify-center"
+    <motion.div
+      className="fixed inset-0 z-20 h-full w-full cursor-pointer bg-transparent" // Ocupa todo, transparente, con cursor
       onClick={onInteraction}
-      onTouchStart={onInteraction}
+      onTouchStart={onInteraction} // Para compatibilidad con dispositivos táctiles
+      initial={{ opacity: 0 }} // Animación sutil de aparición
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}    // Animación sutil de desaparición
+      transition={{ duration: 0.3 }}
     >
-    </div>
+      {/* No se necesita contenido visual dentro de este div. */}
+      {/* Su propósito es ser una capa interactiva transparente sobre el VideoBackground. */}
+    </motion.div>
   );
 }

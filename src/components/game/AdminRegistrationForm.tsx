@@ -2,7 +2,8 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
-import { supabaseAdmin } from "@/lib/supabase"; // This should be used in an API route, not directly in client component for security.
+// [modificación] Eliminamos la importación de supabaseAdmin ya que no debería usarse directamente en el cliente
+// import { supabaseAdmin } from "@/lib/supabase"; // This should be used in an API route, not directly in client component for security.
 // For direct client-side admin actions (if policies allow, or for a trusted admin panel), supabaseClient can be used.
 // Let's assume for now this admin panel is secure or uses an API route for actual DB operations.
 import { supabaseClient } from "@/lib/supabase"; // Using supabaseClient for simplicity here, but API route is better.

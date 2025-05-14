@@ -47,8 +47,16 @@ CREATE INDEX idx_participants_email ON participants (email);
 ```sql
 CREATE TABLE plays (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  session_id UUID DEFAULT uuid_generate_v4(),
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  participant_id UUID REFERENCES participants(id) NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  participant_id UUID,
+  status TEXT DEFAULT 'pending_player_registration',
+  nombre TEXT,
+  apellido TEXT,
+  email TEXT,
+  especialidad TEXT,
+  admin_id UUID,
   score INTEGER,
   premio_ganado TEXT,
   detalles_juego JSONB
@@ -58,6 +66,8 @@ CREATE TABLE plays (
 CREATE INDEX idx_plays_participant_id ON plays (participant_id);
 -- Crear índice para filtros por fecha
 CREATE INDEX idx_plays_created_at ON plays (created_at);
+-- Crear índice para búsquedas por session_id
+CREATE INDEX idx_plays_session_id ON plays (session_id);
 ```
 
 ## Ejecución del Proyecto
