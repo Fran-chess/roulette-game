@@ -37,9 +37,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const labelColorOnLight = "text-slate-700";
   const inputTextColorOnLight = "text-slate-800";
   const placeholderColorOnLight = "placeholder-slate-500";
-  const inputBgOnLight = "bg-white/40";
-  const inputBorderOnLight = "border-white/60";
-  const inputHoverStyles = "hover:bg-white/50 hover:border-white/80";
+  const inputBgOnLight = "bg-black/5";
+  const inputBorderOnLight = "border-white/30";
+  const inputHoverStyles = "hover:bg-black/10 hover:border-white/50";
   const inputFocusStyles = "focus:border-teal-500 focus:ring-1 focus:ring-teal-500";
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -72,7 +72,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
   return (
     <div 
-      className={`flex flex-col items-center justify-between w-full max-w-lg mx-auto p-5 md:p-8 rounded-xl bg-white/15 ${textOnLightBase} shadow-xl backdrop-blur-md border-0`}
+      className={`flex flex-col items-center justify-between w-full max-w-lg mx-auto p-5 md:p-8 rounded-xl bg-black/5 ${textOnLightBase} shadow-xl backdrop-blur-md border border-white/10 touch-optimized`}
     >
       <motion.div
         className="w-full flex flex-col items-center shrink-0"
@@ -103,7 +103,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               aria-required="true"
               containerClassName="w-full"
               labelClassName={`${labelColorOnLight} text-sm`}
-              className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles}`}
+              className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles} h-12 md:h-14 text-lg`}
               autoComplete="email"
               required
             />
@@ -120,38 +120,32 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               aria-required="true"
               containerClassName="w-full"
               labelClassName={`${labelColorOnLight} text-sm`}
-              className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles}`}
+              className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles} h-12 md:h-14 text-lg`}
               autoComplete="current-password"
               required
             />
           </motion.div>
 
-          {/* Mensaje de Error */}
           {error && (
-            <motion.div variants={fieldItemVariants}>
-              <p className="text-red-600 text-sm text-center mt-2">{error}</p>
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="py-2 px-3 bg-red-500/10 text-red-600 rounded-md text-sm"
+            >
+              {error}
             </motion.div>
           )}
-        </motion.div>
-        
-        {/* Botón de Envío */}
-        <motion.div
-          className="pt-3 md:pt-5 text-center w-full shrink-0"
-          variants={fieldItemVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className={`w-full max-w-xs md:max-w-sm mx-auto bg-white/40 hover:bg-white/60 text-slate-800
-                     font-marineBold px-6 py-3 text-base md:text-lg rounded-xl shadow-md border border-white/50
-                     focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-blue-300/30
-                     transform active:scale-95 transition-all duration-150
-                     ${isLoading ? "opacity-70 cursor-not-allowed" : ""}`}
-          >
-            {isLoading ? "Iniciando Sesión..." : "Iniciar Sesión"}
-          </Button>
+
+          <motion.div variants={fieldItemVariants} className="pt-2">
+            <Button
+              type="submit"
+              disabled={isLoading}
+              touchOptimized={true}
+              className="w-full py-4 text-white text-lg btn-touch"
+            >
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </Button>
+          </motion.div>
         </motion.div>
       </form>
     </div>

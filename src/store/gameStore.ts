@@ -7,7 +7,8 @@ import type {
   GameStore as GameStoreType, 
   Play,
   PlaySession,
-  AdminUser
+  AdminUser,
+  PrizeFeedback
 } from '@/types';
 
 // Define la estructura del estado del admin dentro del store
@@ -57,6 +58,14 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
   questions: [], // [modificación] Lista de preguntas para la ruleta
   gameSession: null, // [modificación] Guarda la PlaySession activa para el juego actual
 
+  // [modificación] Estado para feedback del premio
+  prizeFeedback: {
+    answeredCorrectly: null,
+    explanation: "",
+    correctOption: "",
+    prizeName: "",
+  },
+
   // Estado del administrador
   adminUser: null,
   adminState: {
@@ -73,7 +82,7 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
   // --- ACCIONES PRINCIPALES DEL JUEGO ---
   setGameState: (newState) => set({ gameState: newState }),
 
-  // [modificación] Actualizar setGameSession para aceptar PlaySession o null
+  // [modificación] Actualizar setGameSession para evitar actualizaciones innecesarias
   setGameSession: (sessionData: PlaySession | null) => {
     if (!sessionData) {
       console.log('GameStore: Limpiando sesión de juego activa.');
@@ -87,11 +96,21 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
       return;
     }
 
+    // [modificación] Verificar si la sesión ya está establecida y es la misma
+    const currentSession = get().gameSession;
+    if (currentSession && 
+        currentSession.id === sessionData.id && 
+        currentSession.status === sessionData.status) {
+      console.log('GameStore: Sesión ya establecida con mismo estado, evitando actualización redundante');
+      return;
+    }
+
     console.log('GameStore: Estableciendo sesión de juego:', sessionData);
     let participantForSession: Participant | null = null;
-    let newGameState: GameState = get().gameState; // Mantener estado actual por defecto
-
-    // Si la sesión tiene datos de un jugador registrado
+    // [modificación] Mantener el estado actual del juego por defecto (no modificarlo aquí)
+    // Esta será responsabilidad del componente que llama a setGameSession
+    
+    // [modificación] Extraer datos del participante si existen
     if (sessionData.nombre && sessionData.email) {
       participantForSession = {
         id: sessionData.participant_id || sessionData.email, 
@@ -102,29 +121,13 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
         especialidad: sessionData.especialidad || '',
       };
     }
-
-    // Determinar el estado del juego basado en el estado de la PlaySession
-    if (sessionData.status === 'player_registered') {
-      if(get().gameState !== 'question' && get().gameState !== 'prize') {
-        newGameState = 'roulette';
-      }
-    } else if (sessionData.status === 'in_progress') {
-      if (!get().currentQuestion && get().gameState !== 'question' && get().gameState !== 'prize') {
-        newGameState = 'roulette';
-      }
-    } else if (sessionData.status === 'pending_player_registration') {
-      console.warn("GameStore: setGameSession con sesión pendiente. El juego no debería iniciar aún.");
-      newGameState = 'screensaver';
-      participantForSession = null;
-    } else { // completed, archived, etc.
-      console.warn(`GameStore: setGameSession con sesión en estado no jugable: ${sessionData.status}`);
-      newGameState = 'screensaver';
-    }
     
+    // [modificación] Sólo guardar los datos, no modificar el estado de la aplicación
+    console.log(`GameStore: Actualizando datos de sesión`);
     set({
       gameSession: sessionData,
       currentParticipant: participantForSession,
-      gameState: newGameState,
+      // No modificamos gameState aquí, esto lo hará el componente según necesite
     });
   },
   
@@ -157,6 +160,18 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
     gameState: 'roulette',
   }),
 
+  // [modificación] Funciones para gestionar el feedback del premio
+  setPrizeFeedback: (feedback) => set({ prizeFeedback: feedback }),
+  
+  resetPrizeFeedback: () => set({ 
+    prizeFeedback: { 
+      answeredCorrectly: null, 
+      explanation: "", 
+      correctOption: "", 
+      prizeName: "" 
+    } 
+  }),
+
   // [modificación] Actualizar clearCurrentGame para resetear completamente el juego
   resetCurrentGame: () => set({
     gameState: 'screensaver',
@@ -164,6 +179,12 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
     currentQuestion: null,
     lastSpinResultIndex: null,
     gameSession: null,
+    prizeFeedback: { 
+      answeredCorrectly: null, 
+      explanation: "", 
+      correctOption: "", 
+      prizeName: "" 
+    },
     // No se limpian las 'questions' si son genéricas
   }),
 
@@ -177,6 +198,12 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
     currentPlay: null,
     gameSession: null,
     questions: [],
+    prizeFeedback: { 
+      answeredCorrectly: null, 
+      explanation: "", 
+      correctOption: "", 
+      prizeName: "" 
+    },
   }),
 
   // --- ACCIONES DEL PANEL DE ADMINISTRADOR ---

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isPlayerRegistered, isSessionPendingRegistration } from '@/utils/session';
 
 // [modificación] API endpoint para verificar si una sesión existe en el servidor
 // Esto nos da acceso directo a la base de datos usando permisos de administrador
@@ -47,6 +48,16 @@ export async function GET(request: Request) {
     // [modificación] Si encontramos la sesión, devolvemos sus datos
     if (data) {
       console.log(`Sesión ${sessionId} encontrada:`, data);
+      
+      // [modificación] Verificar explícitamente si el jugador está registrado usando funciones utilitarias
+      if (isPlayerRegistered(data)) {
+        console.log(`Sesión ${sessionId} tiene jugador registrado: ${data.nombre} (${data.email})`);
+      } else if (isSessionPendingRegistration(data)) {
+        console.log(`Sesión ${sessionId} está pendiente de registro de jugador`);
+      } else {
+        console.log(`Sesión ${sessionId} está en estado: ${data.status}`);
+      }
+      
       return NextResponse.json({
         message: 'Sesión encontrada',
         valid: true,

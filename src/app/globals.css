@@ -1,47 +1,708 @@
 @import "tailwindcss";
 
-
 @layer base {
-    @font-face {
-      font-family: 'Marine-Regular';
-      src: local('Arial'),
-           url('/fonts/marine.ttf') format('truetype');
-      font-weight: normal;
-      font-style: normal;
-      font-display: swap;
+  @font-face {
+    font-family: "Marine-Regular";
+
+    src: local("Arial"), url("/fonts/marine.ttf") format("truetype");
+
+    font-weight: normal;
+
+    font-style: normal;
+
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Marine-Bold";
+
+    src: local("Arial Bold"), url("/fonts/marine.ttf") format("truetype");
+
+    font-weight: bold;
+
+    font-style: normal;
+
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: "Marine-Black";
+
+    src: local("Arial Black"), url("/fonts/marine.ttf") format("truetype");
+
+    font-weight: 900;
+
+    font-style: normal;
+
+    font-display: swap;
+  }
+
+  body {
+    @apply font-sans; /* Aplicar la fuente base al cuerpo */
+  }
+
+  .font-marineRegular {
+    font-family: "Marine-Regular", Arial, sans-serif;
+  }
+
+  .font-marineBold {
+    font-family: "Marine-Bold", "Arial Bold", sans-serif;
+
+    font-weight: bold;
+  }
+
+  .font-marineBlack {
+    font-family: "Marine-Black", "Arial Black", sans-serif;
+
+    font-weight: 900;
+  }
+}
+
+/* [modificación] Clases específicas para el logo */
+
+.logo-container {
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  width: auto;
+
+  height: auto;
+
+  position: relative;
+
+  z-index: 10;
+}
+
+.logo-header {
+  margin-bottom: 0.5rem;
+
+  transition: all 0.3s ease;
+}
+
+.logo-nav {
+  margin-bottom: 1.5rem;
+}
+
+.logo-centered {
+  margin: 0 auto;
+}
+
+.logo-shadow {
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.25));
+}
+
+.logo-landscape {
+  transform: scale(0.85);
+
+  margin-bottom: 0.25rem;
+}
+
+/* [modificación] Optimizaciones adicionales para la sección de juego */
+
+.game-header .logo-header {
+  margin-bottom: 0.25rem;
+}
+
+/* Ajustes específicos según el contexto y dispositivo */
+
+@media (max-width: 640px) {
+  .logo-header {
+    max-width: 140px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+  .logo-header {
+    max-width: 180px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .logo-header {
+    max-width: 220px;
+  }
+}
+
+/* Optimizaciones para pantallas con relación de aspecto específica */
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .logo-header {
+    max-width: 120px;
+
+    margin-bottom: 0.2rem;
+  }
+}
+
+/* [modificación] Forzar sin scroll en toda la aplicación */
+
+html,
+body {
+  height: 100%;
+
+  width: 100%;
+
+  margin: 0;
+
+  padding: 0;
+
+  overflow: hidden; /* Elimina el scroll en toda la aplicación */
+
+  position: fixed; /* Asegura que no haya desplazamiento */
+
+  inset: 0; /* Ocupa toda la pantalla */
+}
+
+/* [modificación] Fondo degradado principal - ÚNICA FUENTE DE VERDAD */
+
+.bg-main-gradient {
+  background-image: linear-gradient(
+    135deg,
+    #192a6e 0%,
+    #5accc1 60%,
+    #40c0ef 100%
+  );
+
+  background-size: cover;
+
+  background-attachment: fixed;
+
+  background-position: center;
+}
+
+/* [modificación] Estilos para el fondo con partículas */
+
+.particles-bg {
+  position: absolute;
+
+  top: 0;
+
+  left: 0;
+
+  width: 100%;
+
+  height: 100%;
+
+  overflow: hidden;
+
+  z-index: 1;
+
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+
+  background-color: rgba(255, 255, 255, 0.8);
+
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  animation: float 8s infinite ease-in-out;
+
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+
+    opacity: 0.1;
+  }
+
+  25% {
+    opacity: 0.9;
+  }
+
+  75% {
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: translateY(-20px) translateX(15px);
+
+    opacity: 0.7;
+  }
+}
+
+/* [modificación] Estilos para la ruleta - optimizados para maximizar espacio */
+
+.wheel-container {
+  position: relative;
+
+  display: flex;
+
+  justify-content: center;
+
+  align-items: center;
+
+  border-radius: 50%;
+
+  overflow: visible;
+
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.25));
+
+  transition: transform 0.3s ease;
+
+  width: 100%;
+
+  max-width: 100%;
+
+  height: auto;
+
+  margin: 0 auto;
+
+  flex-grow: 1;
+}
+
+.wheel-canvas {
+  display: block;
+
+  max-width: 100%;
+
+  height: auto;
+
+  filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.2));
+}
+
+/* [modificación] Optimizaciones para contenido dentro del main */
+
+.game-layout-content {
+  display: flex;
+
+  flex-direction: column;
+
+  justify-content: center;
+
+  align-items: center;
+
+  height: 100%;
+
+  width: 100%;
+}
+
+/* [modificación] Ruleta optimizada para diferentes dispositivos */
+
+@media screen and (max-height: 700px) {
+  .wheel-container {
+    margin-top: -0.5rem;
+
+    transform: scale(0.98);
+  }
+}
+
+@media screen and (orientation: landscape) {
+  .wheel-container {
+    margin-top: -0.75rem;
+
+    transform: scale(0.95);
+  }
+}
+
+/* [modificación] Efecto de giro */
+
+.spin-effect {
+  animation: spin-kick 0.3s ease-out;
+}
+
+@keyframes spin-kick {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-10deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* [modificación] Botón de girar con animación */
+
+.spin-button {
+  position: relative;
+
+  overflow: hidden;
+
+  transform-origin: center;
+}
+
+.spin-button::after {
+  content: "";
+
+  position: absolute;
+
+  top: -50%;
+
+  left: -50%;
+
+  width: 200%;
+
+  height: 200%;
+
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0) 70%
+  );
+
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% {
+    transform: scale(0.95);
+
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: scale(1);
+
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(0.95);
+
+    opacity: 0.5;
+  }
+}
+
+/* [modificación] Animación para el botón de la ruleta - más llamativo */
+@keyframes pulse-soft {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px 3px rgba(16, 185, 129, 0.3);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 0 15px 5px rgba(16, 185, 129, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px 3px rgba(16, 185, 129, 0.3);
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-soft 2.5s infinite ease-in-out;
+}
+
+.spin-button-glow {
+  position: relative;
+  z-index: 10;
+}
+
+.spin-button-glow::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border-radius: 16px;
+  background: linear-gradient(45deg, #10B981, #0EA5E9, #10B981);
+  z-index: -1;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.spin-button-glow:hover::before {
+  opacity: 1;
+}
+
+/* [modificación] Estilos específicos para integración con dashboard */
+
+.dashboard-container {
+  display: grid;
+
+  grid-template-columns: 1fr;
+
+  grid-template-rows: auto 1fr;
+
+  min-height: 100vh;
+}
+
+/* [modificación] Efecto de brillo para botones y elementos interactivos */
+
+.btn-glow {
+  position: relative;
+
+  z-index: 1;
+
+  transition: all 0.3s ease;
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+
+  transform: translateY(-2px);
+}
+
+.btn-glow:active {
+  transform: translateY(0);
+
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+/* [modificación] Contenedor con scroll interno cuando sea necesario */
+
+.scrollable-content {
+  overflow-y: auto;
+
+  max-height: 100%;
+
+  -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+
+  scrollbar-width: thin; /* Firefox */
+
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent; /* Firefox */
+}
+
+/* Estilos para scrollbar personalizada en WebKit */
+
+.scrollable-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+
+  border-radius: 6px;
+}
+
+/* [modificación] Optimizaciones para pantallas táctiles */
+
+.touch-optimized {
+  touch-action: manipulation; /* Mejora rendimiento táctil */
+
+  user-select: none; /* Evita selección de texto accidental */
+
+  -webkit-tap-highlight-color: transparent; /* Elimina resaltado táctil en iOS */
+}
+
+/* Tamaños de texto optimizados para dispositivos táctiles */
+
+@media (max-width: 768px) {
+  .text-touch-xl {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  .text-touch-lg {
+    font-size: 1.25rem; /* 20px */
+  }
+
+  /* Aumentar área táctil para botones */
+
+  .btn-touch {
+    min-height: 48px;
+
+    min-width: 48px;
+
+    padding: 12px 24px;
+  }
+}
+
+/* [modificación] Optimizaciones para tótems táctiles (pantallas más grandes) */
+
+@media (min-width: 769px) and (max-width: 1280px) {
+  .text-touch-xl {
+    font-size: 2rem; /* 32px */
+  }
+
+  .text-touch-lg {
+    font-size: 1.5rem; /* 24px */
+  }
+
+  /* Área táctil aún mayor para tótems */
+
+  .btn-touch {
+    min-height: 64px;
+
+    min-width: 64px;
+
+    padding: 16px 32px;
+  }
+}
+
+/* [modificación] Para orientación landscape en dispositivos táctiles */
+
+@media (orientation: landscape) and (max-height: 768px) {
+  .landscape-compact {
+    transform: scale(0.85);
+
+    margin-top: -1rem;
+
+    margin-bottom: -1rem;
+  }
+}
+
+/* [modificación] Reglas específicas para móviles pequeños (425px) */
+
+@media screen and (max-width: 430px) {
+  /* Ajustes generales para móvil */
+
+  .mobile-compact {
+    transform: scale(0.95);
+
+    margin-top: -0.5rem;
+  }
+
+  /* Reducir espacio usado por la ruleta */
+
+  .wheel-canvas {
+    max-height: 75vh;
+  }
+
+  /* Ajustar el tamaño y espaciado de botones */
+
+  .btn-touch {
+    min-height: 40px;
+
+    min-width: 100px;
+
+    padding: 10px 20px;
+
+    font-size: 1rem;
+  }
+
+  /* Optimizar espacio en el formulario */
+
+  form {
+    gap: 0.75rem;
+  }
+
+  /* Reducir márgenes y rellenos */
+
+  h1,
+  h2,
+  h3 {
+    margin-bottom: 0.5rem;
+  }
+
+  /* Ajustar espaciado para inputs */
+
+  input,
+  select,
+  textarea {
+    padding: 0.5rem;
+
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* [modificación] Reglas específicas para tablets (768px) */
+
+@media screen and (min-width: 431px) and (max-width: 768px) {
+  /* Ajustes generales para tablet */
+
+  .landscape-tablet {
+    transform: scale(0.9);
+
+    margin-top: -0.75rem;
+
+    margin-bottom: -0.75rem;
+  }
+
+  /* Optimizar tamaño de ruleta */
+
+  .wheel-canvas {
+    max-height: 80vh;
+  }
+
+  /* Redimensionar texto para mejor legibilidad */
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  p,
+  label,
+  input {
+    font-size: 1rem;
+  }
+
+  /* Aumentar tamaño de botones para mejor interacción táctil */
+
+  button {
+    padding: 0.75rem 1.25rem;
+  }
+}
+
+/* [modificación] Reglas específicas para height exacto 841px (móvil y tablet) */
+
+@media screen and (height: 841px) {
+  /* Optimizaciones verticales compartidas */
+
+  .wheel-canvas {
+    max-height: 50vh;
+  }
+
+  /* Para móvil ancho 425px */
+
+  @media screen and (width: 425px) {
+    .mobile-compact {
+      transform: scale(0.9);
     }
-    @font-face {
-      font-family: 'Marine-Bold';
-      src: local('Arial Bold'),
-           url('/fonts/marine.ttf') format('truetype');
-      font-weight: bold;
-      font-style: normal;
-      font-display: swap;
+
+    .wheel-container {
+      margin-bottom: -0.5rem;
     }
-    @font-face {
-      font-family: 'Marine-Black';
-      src: local('Arial Black'),
-           url('/fonts/marine.ttf') format('truetype');
-      font-weight: 900;
-      font-style: normal;
-      font-display: swap;
+
+    /* Reducir margen del título */
+
+    h2 {
+      margin-bottom: 0.5rem;
+
+      font-size: 1.25rem;
     }
-  
-    body {
-      @apply font-sans; /* Aplicar la fuente base al cuerpo */
+
+    /* Optimizar espaciado de formulario */
+
+    form {
+      gap: 0.5rem;
     }
-    
-    .font-marineRegular {
-      font-family: 'Marine-Regular', Arial, sans-serif;
-    }
-    
-    .font-marineBold {
-      font-family: 'Marine-Bold', 'Arial Bold', sans-serif;
-      font-weight: bold;
-    }
-    
-    .font-marineBlack {
-      font-family: 'Marine-Black', 'Arial Black', sans-serif;
-      font-weight: 900;
+
+    input,
+    label {
+      margin-bottom: 0.25rem;
     }
   }
+
+  /* Para tablet ancho 768px */
+
+  @media screen and (width: 768px) {
+    .wheel-container {
+      margin-bottom: -0.75rem;
+    }
+
+    /* Ajustes específicos para obtener mejor proporción */
+
+    .btn-touch {
+      padding: 0.75rem 1.5rem;
+    }
+
+    /* Ajustar tamaños de fuente */
+
+    h2 {
+      font-size: 1.5rem;
+    }
+  }
+}
+

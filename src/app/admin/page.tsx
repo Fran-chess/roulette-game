@@ -74,11 +74,7 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-2 md:p-4"
-      style={{
-        backgroundImage: 'linear-gradient(to bottom right, #40C0EF, #5ACCC1)',
-        backgroundSize: "cover"
-      }}>
+    <div className="flex flex-col items-center justify-center h-screen p-2 md:p-4 bg-main-gradient overflow-hidden">
       <motion.div
         className="w-full max-w-5xl"
         variants={containerVariants}

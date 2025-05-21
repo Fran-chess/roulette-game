@@ -28,7 +28,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       title: 'Total de Participantes', 
       value: participantsCount, 
       icon: FiUsers, 
-      color: 'bg-white/40', 
+      color: 'bg-black/5',
       iconColor: 'text-slate-800',
       description: 'Jugadores que han participado',
       onClick: null
@@ -37,7 +37,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       title: 'Sesiones Activas', 
       value: activeSessionsCount, 
       icon: FiActivity, 
-      color: 'bg-white/40', 
+      color: 'bg-black/5',
       iconColor: 'text-slate-800',
       description: 'En progreso actualmente',
       onClick: onNavigateToSessions
@@ -46,7 +46,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
       title: 'Total de Sesiones', 
       value: totalSessionsCount, 
       icon: FiCalendar, 
-      color: 'bg-white/40', 
+      color: 'bg-black/5',
       iconColor: 'text-slate-800',
       description: 'Creadas históricamente',
       onClick: onNavigateToSessions
@@ -76,14 +76,14 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
               whileHover={{ 
                 scale: 1.03, 
                 boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-                backgroundColor: "rgba(255, 255, 255, 0.5)"
+                backgroundColor: "rgba(0, 0, 0, 0.1)"
               }}
               className={`p-4 rounded-xl shadow-lg flex flex-col ${item.color} backdrop-blur-sm border border-white/40 hover:border-white/60 transition-all duration-300 ${item.onClick ? 'cursor-pointer' : ''}`}
               onClick={item.onClick || undefined}
             >
               <div className="flex items-center justify-between mb-2">
                 <p className="text-sm text-slate-700 font-marineRegular">{item.title}</p>
-                <div className={`${item.iconColor} bg-white/50 p-2 rounded-full`}>
+                <div className={`${item.iconColor} bg-black/10 p-2 rounded-full`}>
                   <item.icon size={20} />
                 </div>
               </div>
@@ -107,7 +107,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
           <Button
             onClick={onLogout}
             variant="custom"
-            className="bg-white/30 hover:bg-white/50 text-slate-800 font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-white/40 transition-colors duration-300"
+            className="bg-black/10 hover:bg-black/20 text-slate-800 font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-white/40 transition-colors duration-300"
           >
             <FiLogOut className="mr-3" size={20} />
             Cerrar Sesión

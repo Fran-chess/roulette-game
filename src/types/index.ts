@@ -14,6 +14,13 @@ export interface Participant {
   play_count?: number;
 }
 
+export interface PrizeFeedback {
+  answeredCorrectly: boolean | null;
+  explanation: string;
+  correctOption: string;
+  prizeName: string;
+}
+
 export interface Play {
   id: string;
   created_at: string;
@@ -98,10 +105,11 @@ export interface GameStore {
   questions: Question[];
   gameSession: PlaySession | null;
   adminState: AdminState;
+  prizeFeedback: PrizeFeedback;
   setGameState: (state: GameState) => void;
   addParticipant: (participantData: Omit<Participant, 'id' | 'timestamp'>) => void;
   startPlaySession: (
-    userData: { nombre: string; apellido?: string; email: string },
+    userData: { nombre: string; apellido?: string; email: string; especialidad?: string },
     onSuccess?: (data: { participant: Participant, play?: Play, message: string }) => void,
     onError?: (error: any) => void
   ) => Promise<void>;
@@ -112,6 +120,8 @@ export interface GameStore {
   resetCurrentGame: () => void;
   resetAllData: () => void;
   resetCurrentGameData: () => void;
+  setPrizeFeedback: (feedback: PrizeFeedback) => void;
+  resetPrizeFeedback: () => void;
   setAdminUser: (adminData: AdminUser | null) => void;
   fetchGameSessions: () => Promise<PlaySession[]>;
   setGameSession: (sessionData: PlaySession | null) => void;

@@ -5,6 +5,10 @@ import Button from '@/components/ui/Button';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 import { useRouter } from 'next/navigation';
+// [modificación] Importar useRef y useState para controlar navegaciones
+import { useRef, useState } from 'react';
+// [modificación] Importar el store global de navegación
+import { useNavigationStore } from '@/store/navigationStore';
 
 interface Session {
   id?: string;         // ID de la base de datos
@@ -31,11 +35,39 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   isLoadingList,
 }) => {
   const router = useRouter();
+  // [modificación] Ref para evitar múltiples navegaciones
+  const navigationInProgress = useRef(false);
+  // [modificación] Estado para seguimiento de cuál sesión está siendo activada
+  const [activatingSession, setActivatingSession] = useState<string | null>(null);
+  // [modificación] Acceder al store global de navegación
+  const startNavigation = useNavigationStore(state => state.startNavigation);
 
-  // [modificación] Función para activar la partida - Modificada para redirigir a la página de registro
+  // [modificación] Función para activar la partida usando el overlay global
   const handleActivateGame = (session: Session, e: React.MouseEvent) => {
     e.stopPropagation(); // Evitar que se propague al contenedor
-    router.push(`/register/${session.session_id}`);
+    
+    // [modificación] Guard para evitar navegaciones múltiples
+    if (navigationInProgress.current) {
+      console.log("Navegación en progreso, evitando redirección duplicada");
+      return;
+    }
+    
+    // [modificación] Marcar la sesión que está siendo activada para feedback visual
+    setActivatingSession(session.session_id);
+    navigationInProgress.current = true;
+    
+    // [modificación] Usar el overlay global para la navegación
+    const targetPath = `/register/${session.session_id}`;
+    console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
+    
+    // Iniciar la navegación con overlay global
+    startNavigation(targetPath, 'Activando sesión de juego...');
+    
+    // Restablecer el estado local después de un tiempo
+    setTimeout(() => {
+      navigationInProgress.current = false;
+      setActivatingSession(null);
+    }, 500);
   };
 
   // [modificación] Función para obtener clases de estado según el status de la sesión con estilos actualizados
@@ -52,7 +84,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
       case 'archived':
         return 'bg-slate-100 text-slate-600 border-slate-300';
       default:
-        return 'bg-white/40 text-slate-800 border-white/50';
+        return 'bg-black/5 text-slate-800 border-white/30';
     }
   };
 
@@ -114,8 +146,8 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         {!isLoadingList && activeSessions.length === 0 ? (
           <motion.div
             variants={fadeInUp}
-            className="bg-white/30 backdrop-blur-sm rounded-xl shadow-lg p-6 text-center my-4 border border-white/40"
-            whileHover={{ scale: 1.01, backgroundColor: "rgba(255, 255, 255, 0.4)" }}
+            className="bg-black/5 backdrop-blur-sm rounded-xl shadow-lg p-6 text-center my-4 border border-white/30"
+            whileHover={{ scale: 1.01, backgroundColor: "rgba(0, 0, 0, 0.1)" }}
           >
             <FiCalendar className="text-slate-600 mb-3 mx-auto" size={40} />
             <p className="text-slate-800 font-marineRegular mb-4 text-base md:text-lg">
@@ -138,10 +170,10 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                 variants={fadeInUp}
                 whileHover={{ 
                   scale: 1.01, 
-                  backgroundColor: "rgba(255, 255, 255, 0.4)",
+                  backgroundColor: "rgba(0, 0, 0, 0.1)",
                   boxShadow: "0 10px 25px rgba(0, 0, 0, 0.07)"
                 }}
-                className="bg-white/30 hover:bg-white/40 border border-white/40 rounded-lg p-3 transition-all shadow-md"
+                className="bg-black/5 hover:bg-black/10 border border-white/30 rounded-lg p-3 transition-all shadow-md"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                   <div className="flex-1">
@@ -167,15 +199,29 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                     </div>
                   </div>
                   
-                  {/* [modificación] Reemplazar el botón único por dos botones */}
+                  {/* [modificación] Actualizar los botones con estado de activación */}
                   <div className="flex gap-2 mt-2 sm:mt-0">
                     <Button
                       onClick={(e) => handleActivateGame(session, e)}
                       variant="custom"
-                      className="bg-green-500/80 hover:bg-green-600/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-green-400/50 transition-colors duration-300"
+                      disabled={activatingSession === session.session_id}
+                      className={`${
+                        activatingSession === session.session_id
+                          ? 'bg-blue-500/90 text-white/80 cursor-wait'
+                          : 'bg-green-500/80 hover:bg-green-600/90 text-white'
+                      } text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-green-400/50 transition-colors duration-300`}
                     >
-                      <FiPlay className="mr-1" size={12} />
-                      Activar
+                      {activatingSession === session.session_id ? (
+                        <>
+                          <span className="w-3 h-3 mr-2 rounded-full bg-black/80 animate-pulse"></span>
+                          Activando...
+                        </>
+                      ) : (
+                        <>
+                          <FiPlay className="mr-1" size={12} />
+                          Activar
+                        </>
+                      )}
                     </Button>
                     
                     <Button
@@ -184,7 +230,8 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                         onSelectSession(session);
                       }}
                       variant="custom"
-                      className="bg-white/40 hover:bg-white/60 text-slate-800 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-white/50 transition-colors duration-300"
+                      disabled={activatingSession === session.session_id}
+                      className="bg-black/5 hover:bg-black/10 text-slate-800 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-white/30 transition-colors duration-300"
                     >
                       <FiSettings className="mr-1" size={12} />
                       Opciones

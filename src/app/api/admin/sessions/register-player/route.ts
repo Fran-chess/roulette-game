@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { isPlayerRegistered } from '@/utils/session';
 
 // Endpoint para registrar un jugador en una sesión
 export async function POST(request: Request) {
@@ -39,6 +40,25 @@ export async function POST(request: Request) {
       .select('*')
       .eq('session_id', sessionId)
       .maybeSingle();
+      
+    // Si encontramos la sesión, verificar que no tenga ya un jugador registrado
+    if (sessionData) {
+      if (isPlayerRegistered(sessionData)) {
+        return NextResponse.json(
+          { 
+            message: 'Esta sesión ya tiene un jugador registrado', 
+            error: 'PLAYER_ALREADY_REGISTERED',
+            session: sessionData
+          },
+          { status: 409 } // Conflict
+        );
+      }
+      
+      // Verificar que el estado sea adecuado para registro
+      if (sessionData.status !== 'pending_player_registration') {
+        console.log(`Advertencia: Registro en sesión con estado ${sessionData.status}`);
+      }
+    }
       
     // Si hay un error o no encontramos la sesión, verificamos su existencia con RPC
     if (sessionFetchError || !sessionData) {
@@ -100,11 +120,15 @@ export async function POST(request: Request) {
       }
     }
     
-    // Verificar estado de la sesión (si lo conocemos)
-    if (sessionData && sessionData.status && sessionData.status !== 'pending_player_registration') {
+    // Segunda verificación por seguridad tras posible creación
+    if (sessionData && isPlayerRegistered(sessionData)) {
       return NextResponse.json(
-        { message: `La sesión ya tiene un jugador registrado o no está disponible (estado actual: ${sessionData.status})` },
-        { status: 400 }
+        { 
+          message: 'Esta sesión ya tiene un jugador registrado', 
+          error: 'PLAYER_ALREADY_REGISTERED',
+          session: sessionData 
+        },
+        { status: 409 } // Conflict
       );
     }
 

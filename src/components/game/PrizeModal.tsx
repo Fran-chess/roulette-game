@@ -1,35 +1,39 @@
-// src/components/game/PrizeModal.tsx
-'use client';
-import { useGameStore } from '@/store/gameStore';
-import { motion } from 'framer-motion';
-import Button from '@/components/ui/Button';
-import Image from 'next/image';
-import { CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/solid';
-import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
+"use client";
+import { useGameStore } from "@/store/gameStore";
+import { motion } from "framer-motion";
+import Button from "@/components/ui/Button";
+import Image from "next/image";
+import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
+import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 
 // Importación dinámica para evitar problemas de SSR con window
-const Confetti = dynamic(() => import('react-confetti'), { ssr: false });
+const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
 export default function PrizeModal() {
-  const setGameState = useGameStore(state => state.setGameState);
-  const resetCurrentGame = useGameStore(state => state.resetCurrentGame);
-  const currentParticipant = useGameStore(state => state.currentParticipant);
-  const setCurrentParticipant = useGameStore(state => state.setCurrentParticipant);
+  const setGameState = useGameStore((state) => state.setGameState);
+  const resetCurrentGame = useGameStore((state) => state.resetCurrentGame);
+  const currentParticipant = useGameStore((state) => state.currentParticipant);
+  const setCurrentParticipant = useGameStore(
+    (state) => state.setCurrentParticipant
+  );
+  const prizeFeedback = useGameStore((state) => state.prizeFeedback);
+  const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
 
   // Estado para confeti
   const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({
-    width: typeof window !== 'undefined' ? window.innerWidth : 0,
-    height: typeof window !== 'undefined' ? window.innerHeight : 0,
+    width: typeof window !== "undefined" ? window.innerWidth : 0,
+    height: typeof window !== "undefined" ? window.innerHeight : 0,
   });
 
-  // Simplificamos la lógica de estado basada directamente en `answeredCorrectly`
-  const answeredCorrectly = currentParticipant?.answeredCorrectly;
-  const prizeName = currentParticipant?.prizeWon; // Puede ser null/undefined si no ganó premio
+  const { answeredCorrectly, explanation, correctOption, prizeName } =
+    prizeFeedback;
 
   // Normalización del nombre de la imagen (igual que antes)
-  const prizeImage = prizeName ? `/images/premios/${prizeName.replace(/\s+/g, '-')}.png` : null;
+  const prizeImage = prizeName
+    ? `/images/premios/${prizeName.replace(/\s+/g, "-")}.png`
+    : null;
 
   // Efecto para gestionar el confeti
   useEffect(() => {
@@ -40,38 +44,38 @@ export default function PrizeModal() {
         height: window.innerHeight,
       });
     };
+    window.addEventListener("resize", handleResize);
 
     // Mostrar confeti cuando responde correctamente
     if (answeredCorrectly) {
       setShowConfetti(true);
-      
       // Detener confeti después de 5 segundos
       const timer = setTimeout(() => {
         setShowConfetti(false);
       }, 5000);
-      
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("resize", handleResize);
+      };
     }
-    
-    // Listener para tamaño de ventana
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [answeredCorrectly]);
 
   const handlePlayAgain = () => {
     resetCurrentGame();
     setCurrentParticipant(null);
-    setGameState('register'); // Va directo al registro para el próximo participante
+    resetPrizeFeedback();
+    setGameState("register"); // Va directo al registro para el próximo participante
   };
 
   const handleGoHome = () => {
     resetCurrentGame();
     setCurrentParticipant(null);
-    setGameState('screensaver'); // Vuelve a la pantalla de inicio/reposo
+    resetPrizeFeedback();
+    setGameState("screensaver"); // Vuelve a la pantalla de inicio/reposo
   };
 
-  // Si no hay participante, no mostrar nada (igual que antes)
-  if (!currentParticipant) {
+  if (answeredCorrectly === null) {
     return null;
   }
 
@@ -89,7 +93,7 @@ export default function PrizeModal() {
       scale: 1,
       y: 0,
       transition: {
-        type: 'spring',
+        type: "spring",
         stiffness: 300,
         damping: 25,
         delay: 0.1,
@@ -99,7 +103,7 @@ export default function PrizeModal() {
       opacity: 0,
       scale: 0.9,
       y: 30,
-      transition: { duration: 0.2, ease: 'easeIn' },
+      transition: { duration: 0.2, ease: "easeIn" },
     },
   };
 
@@ -113,8 +117,8 @@ export default function PrizeModal() {
   };
 
   // --- Estilos Comunes ---
-  // [modificación] Estilo actualizado para coincidir con el degradado de fondo azul-turquesa
-  const modalBaseClasses = "w-full max-w-md mx-auto p-6 md:p-10 rounded-2xl shadow-2xl text-center";
+  const modalBaseClasses =
+    "w-full max-w-md mx-auto p-6 md:p-10 rounded-2xl shadow-2xl text-center";
 
   return (
     <motion.div
@@ -123,12 +127,11 @@ export default function PrizeModal() {
       initial="hidden"
       animate="visible"
       exit="exit"
-      // [modificación] Cambiado el fondo negro por el degradado azul-turquesa que usa el resto de la aplicación
-      className="fixed inset-0 bg-gradient-to-b from-teal-500 to-blue-500 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 flex items-center justify-center p-4 z-50 bg-black/50 backdrop-blur-[2px]"
       aria-modal="true"
       role="dialog"
     >
-      {/* Componente Confetti que se muestra cuando hay respuesta correcta */}
+      {/* Confetti cuando hay respuesta correcta */}
       {showConfetti && answeredCorrectly && (
         <Confetti
           width={windowSize.width}
@@ -136,15 +139,21 @@ export default function PrizeModal() {
           recycle={false}
           numberOfPieces={500}
           gravity={0.2}
-          colors={['#FFC107', '#FF9800', '#FF5722', '#4CAF50', '#2196F3', '#9C27B0']} // Colores festivos
+          colors={[
+            "#FFC107",
+            "#FF9800",
+            "#FF5722",
+            "#4CAF50",
+            "#2196F3",
+            "#9C27B0",
+          ]}
         />
       )}
 
       <motion.div
         key="prizeModalContent"
         variants={modalVariants}
-        // [modificación] Fondo semi-transparente para el contenido del modal, similar al registro
-        className={`${modalBaseClasses} bg-blue-500/30 backdrop-blur-sm border border-white/20 text-white flex flex-col items-center`}
+        className={`${modalBaseClasses} bg-black/10 backdrop-blur-sm border border-white/30 text-white flex flex-col items-center shadow-lg`}
       >
         {answeredCorrectly === false ? (
           // --- Vista: Respuesta Incorrecta ---
@@ -155,19 +164,37 @@ export default function PrizeModal() {
             className="w-full"
           >
             <XCircleIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl md:text-3xl font-marineBold text-white mb-8">
+            <h2 className="text-2xl md:text-3xl font-marineBold text-white mb-6">
               ¡Respuesta Incorrecta!
             </h2>
+
+            <div className="my-4 bg-black/10 p-4 rounded-lg border border-red-400/30 text-white">
+              <p className="font-marineBold mb-1">Respuesta correcta:</p>
+              <p className="text-lg font-marineBold text-verde-salud mb-2">
+                {correctOption}
+              </p>
+              {explanation && (
+                <p className="text-white/90 text-base">{explanation}</p>
+              )}
+            </div>
+
             <Button
               onClick={handlePlayAgain}
               variant="primary"
-              // [modificación] Botón naranja similar al botón de registro
-              className="w-full max-w-xs mx-auto bg-orange-500 hover:bg-orange-600 text-white font-marineBold text-lg py-3 rounded-xl shadow-lg transform active:scale-95"
+              className="
+    w-full max-w-xs mx-auto
+    text-white font-marineBold text-lg py-3 rounded-xl
+    shadow-2xl border-2 border-celeste-medio
+    bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud
+    transition-all duration-200
+    hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)]
+    active:scale-95
+    focus:outline-none focus:ring-4 focus:ring-celeste-medio/40
+  "
             >
               Jugar de nuevo
             </Button>
           </motion.div>
-
         ) : (
           // --- Vista: Respuesta Correcta (con o sin premio) ---
           <motion.div
@@ -176,9 +203,9 @@ export default function PrizeModal() {
             animate="visible"
             className="w-full"
           >
-            <CheckCircleIcon className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <CheckCircleIcon className="w-16 h-16 text-verde-salud mx-auto mb-4" />
             <h2 className="text-2xl md:text-3xl font-marineBlack text-white mb-2">
-              ¡Felicitaciones {prizeName ? 'ganador' : currentParticipant.nombre}!
+              ¡Felicitaciones {currentParticipant?.nombre}!
             </h2>
             <p className="text-lg text-white mb-4 font-marineRegular">
               ¡Respuesta correcta!
@@ -188,47 +215,56 @@ export default function PrizeModal() {
               <>
                 {prizeImage && (
                   <motion.div
-                   initial={{ scale: 0.5, opacity: 0 }}
-                   animate={{ scale: 1, opacity: 1, transition: { delay: 0.4, duration: 0.5 } }}
-                   className="my-5 flex justify-center"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{
+                      scale: 1,
+                      opacity: 1,
+                      transition: { delay: 0.4, duration: 0.5 },
+                    }}
+                    className="my-5 flex justify-center"
                   >
                     <Image
                       src={prizeImage}
                       alt={prizeName}
                       width={120}
                       height={120}
-                      // [modificación] Fondo más claro para la imagen
-                      className="object-contain rounded-lg shadow-md bg-white/30 p-2"
-                      onError={(e) => (e.currentTarget.style.display = 'none')}
+                      className="object-contain rounded-lg shadow-md bg-black/15 p-2 border border-white/30"
+                      onError={(e) => (e.currentTarget.style.display = "none")}
                     />
                   </motion.div>
                 )}
-                <p className="text-lg text-white mb-1 font-marineRegular">Has ganado:</p>
-                <p className="text-xl md:text-2xl font-marineBold text-white mb-5">{prizeName}</p>
-
-                {/* Párrafo especial para retirar premio */}
+                <p className="text-lg text-white mb-1 font-marineRegular">
+                  Has ganado:
+                </p>
+                <p className="text-xl md:text-2xl font-marineBold text-white mb-5">
+                  {prizeName}
+                </p>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0, transition: { delay: 0.5, duration: 0.4 } }}
-                  // [modificación] Estilo más similar al resto de componentes
-                  className="bg-white/10 border border-white/30 text-white p-4 rounded-lg mt-4 mb-8 text-sm md:text-base font-marineRegular"
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    transition: { delay: 0.5, duration: 0.4 },
+                  }}
+                  className="bg-black/5 border border-white/30 text-white p-4 rounded-xl mt-4 mb-8 text-sm md:text-base font-marineRegular shadow-md"
                 >
-                  Por favor, acércate al mostrador principal para retirar tu premio: <span className="font-marineBold">{prizeName}</span>. ¡Gracias por participar!
+                  Por favor, acércate al mostrador principal para retirar tu
+                  premio: <span className="font-marineBold">{prizeName}</span>.
+                  ¡Gracias por participar!
                 </motion.div>
               </>
             )}
 
             {!prizeName && (
-                <p className="text-md text-white mb-8 mt-4 font-marineRegular">
-                    ¡Bien hecho! Sigue participando.
-                </p>
+              <p className="text-md text-white mb-8 mt-4 font-marineRegular">
+                ¡Bien hecho! Sigue participando.
+              </p>
             )}
 
             <Button
               onClick={handleGoHome}
               variant="secondary"
-              // [modificación] Estilo más claro para el botón de volver
-              className="w-full max-w-xs mx-auto bg-transparent border border-white hover:bg-white/20 text-white font-marineBold text-lg py-3 rounded-xl shadow-lg transform active:scale-95"
+              className="w-full max-w-xs mx-auto bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 text-white font-marineBold text-lg py-3 rounded-xl shadow-lg transform active:scale-95 transition-all duration-300"
             >
               Volver al Inicio
             </Button>

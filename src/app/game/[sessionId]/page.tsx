@@ -1,247 +1,266 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useGameStore } from '@/store/gameStore';
-import { motion } from 'framer-motion';
-import RouletteWheel from '@/components/game/RouletteWheel';
-import QuestionDisplay from '@/components/game/QuestionDisplay';
-import PrizeModal from '@/components/game/PrizeModal';
-import VideoBackground from '@/components/layout/VideoBackground';
-import Image from 'next/image';
-import type { Question, PlaySession } from '@/types';
+import { useEffect, useState, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useGameStore } from "@/store/gameStore";
+import { motion } from "framer-motion";
+import RouletteWheel from "@/components/game/RouletteWheel";
+import QuestionDisplay from "@/components/game/QuestionDisplay";
+import PrizeModal from "@/components/game/PrizeModal";
+import GameLayout from "./GameLayout";
+import Button from "@/components/ui/Button";
+import RouletteWheelIcon from "@/components/ui/RouletteWheelIcon";
 
 export default function GamePage() {
-  // Acceso a los parámetros de la URL y navegación
+  // Params y router
   const params = useParams();
   const sessionId = params?.sessionId as string;
   const router = useRouter();
-  
-  // Estado del componente
+
+  // Estado local
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  // Acceso al estado global del juego
+
+  // Refs para evitar requests múltiples
+  const loadingSessionRef = useRef(false);
+  const loadingQuestionsRef = useRef(false);
+
+  // Zustand (GameStore)
   const gameState = useGameStore((state) => state.gameState);
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
-  const currentQuestion = useGameStore((state) => state.currentQuestion);
-  const lastSpinResultIndex = useGameStore((state) => state.lastSpinResultIndex);
+  const lastSpinResultIndex = useGameStore(
+    (state) => state.lastSpinResultIndex
+  );
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
   const setGameSession = useGameStore((state) => state.setGameSession);
   const questions = useGameStore((state) => state.questions);
   const setQuestions = useGameStore((state) => state.setQuestions);
   const gameSession = useGameStore((state) => state.gameSession);
+  const currentQuestion = useGameStore((state) => state.currentQuestion);
 
-  // Efecto para cargar los datos de la sesión al iniciar
+  // Redirección global
+  const handleRedirect = (path: string, message?: string) => {
+    router.push(path);
+  };
+
+  // Efecto de carga de sesión y preguntas
   useEffect(() => {
-    // No continuar si no hay sessionId válido
     if (!sessionId) {
-      setError('ID de sesión no proporcionado');
+      setError("ID de sesión no proporcionado");
       setIsLoading(false);
       return;
     }
-    
-    // Función para cargar los datos de la sesión
+    if (loadingSessionRef.current) return;
+
     const loadSessionData = async () => {
       try {
-        // Verificar la sesión
-        const sessionResponse = await fetch(`/api/session/verify?sessionId=${sessionId}`);
+        loadingSessionRef.current = true;
+        const sessionResponse = await fetch(
+          `/api/session/verify?sessionId=${sessionId}`
+        );
         const sessionData = await sessionResponse.json();
-        
-        if (!sessionResponse.ok) {
-          throw new Error(sessionData.message || 'Error al verificar sesión');
-        }
-        
-        if (!sessionData.data) {
-          throw new Error('Datos de sesión no disponibles');
-        }
-        
-        const session = sessionData.data as PlaySession;
-        
-        // Verificar el estado de la sesión
-        if (session.status === 'pending_player_registration') {
-          // Redirigir a la página de registro si el jugador aún no está registrado
-          router.push(`/register/${sessionId}`);
-          return;
-        } else if (session.status !== 'player_registered' && session.status !== 'in_progress') {
-          throw new Error(`Esta sesión no está disponible para jugar (estado: ${session.status})`);
-        }
-        
-        // Guardar la sesión en el store
+
+        if (!sessionResponse.ok)
+          throw new Error(sessionData.message || "Error al verificar sesión");
+        if (!sessionData.data)
+          throw new Error("Datos de sesión no disponibles");
+
+        const session = sessionData.data;
         setGameSession(session);
-        
-        // Si no hay participante, redirigir a la página de registro
+
         if (!session.nombre || !session.email) {
-          router.push(`/register/${sessionId}`);
+          handleRedirect(`/register/${sessionId}`);
           return;
         }
-        
-        // Cargar preguntas
-        const questionsResponse = await fetch('/api/questions');
-        if (!questionsResponse.ok) {
-          throw new Error('Error al cargar preguntas');
+        if (
+          !loadingQuestionsRef.current &&
+          (!questions || questions.length === 0)
+        ) {
+          await loadQuestions();
         }
-        
-        const questionsData = await questionsResponse.json();
-        setQuestions(questionsData.questions || []);
-        
-        // Establecer el estado del juego a ruleta si aún no hay una pregunta seleccionada
-        if (gameState === 'screensaver' || gameState === 'register') {
-          setGameState('roulette');
+        if (gameState === "screensaver" || gameState === "register") {
+          setGameState("roulette");
         }
       } catch (error: any) {
-        console.error('Error al cargar datos:', error);
-        setError(error.message || 'Error al cargar el juego');
+        setError(error.message || "Error al cargar el juego");
       } finally {
         setIsLoading(false);
+        setTimeout(() => {
+          loadingSessionRef.current = false;
+        }, 500);
       }
     };
-    
+
+    const loadQuestions = async () => {
+      try {
+        loadingQuestionsRef.current = true;
+        const questionsResponse = await fetch("/api/questions");
+        if (!questionsResponse.ok) throw new Error("Error al cargar preguntas");
+        const questionsData = await questionsResponse.json();
+        setQuestions(questionsData.questions || []);
+      } finally {
+        setTimeout(() => {
+          loadingQuestionsRef.current = false;
+        }, 500);
+      }
+    };
+
     loadSessionData();
-  }, [sessionId, router, setGameSession, setQuestions, setGameState, gameState]);
-  
-  // Efecto para manejar el resultado del giro de la ruleta
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    sessionId,
+    setGameSession,
+    setQuestions,
+    setGameState,
+    gameState,
+    questions,
+  ]);
+
+  // Al girar la ruleta, mostrar la pregunta correspondiente
   useEffect(() => {
     if (lastSpinResultIndex !== null && questions.length > 0) {
       const indexToUse = lastSpinResultIndex;
-      
       if (indexToUse >= 0 && indexToUse < questions.length) {
         setCurrentQuestion(questions[indexToUse]);
-        setGameState('question');
-      } else {
-        console.error(`Índice inválido: ${indexToUse}`);
+        setGameState("question");
       }
     }
-  }, [lastSpinResultIndex, questions, setCurrentQuestion, setGameState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastSpinResultIndex, questions]);
 
-  // Pantalla de carga
+  // Referencia al componente de la ruleta
+  const rouletteRef = useRef<{ spin: () => void }>(null);
+
+  const handleSpin = () => {
+    if (rouletteRef.current) rouletteRef.current.spin();
+  };
+
+  // Loading
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-azul-intenso">
-        <VideoBackground videoSrc="/videos/intro-loop.mp4" isActive={true} />
-        <div className="text-white text-xl z-10">Cargando juego...</div>
-      </div>
+      <GameLayout>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="text-white text-xl"
+        >
+          Preparando el juego...
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="mt-6 w-24 h-1 rounded-full overflow-hidden"
+        >
+          <motion.div
+            className="h-full"
+            initial={{ width: 0 }}
+            animate={{
+              width: "100%",
+              transition: { repeat: Infinity, duration: 1.5, ease: "linear" },
+            }}
+          />
+        </motion.div>
+      </GameLayout>
     );
   }
 
-  // Pantalla de error
+  // Error
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-azul-intenso">
-        <VideoBackground videoSrc="/videos/intro-loop.mp4" isActive={true} />
-        <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-lg border border-white/20 max-w-md z-10">
+      <GameLayout>
+        <div className="backdrop-blur-md p-8 rounded-xl shadow-lg max-w-lg z-10 border border-white/20">
           <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
           <p className="text-white/90 mb-4">{error}</p>
-          <button 
-            onClick={() => router.push('/')}
-            className="mt-4 bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded transition-colors"
+          <button
+            onClick={() => router.push("/")}
+            className="mt-4 text-white py-2 px-4 rounded transition-colors"
           >
             Volver al inicio
           </button>
         </div>
-      </div>
+      </GameLayout>
     );
   }
 
-  // Si no hay participante o sesión después de cargar, mostrar error
   if (!currentParticipant || !gameSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-azul-intenso">
-        <VideoBackground videoSrc="/videos/intro-loop.mp4" isActive={true} />
-        <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-lg border border-white/20 max-w-md z-10">
-          <h2 className="text-2xl font-bold text-white mb-4">Datos de juego no disponibles</h2>
+      <GameLayout>
+        <div className="backdrop-blur-md p-8 rounded-xl shadow-lg border border-white/20 max-w-md z-10">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Datos de juego no disponibles
+          </h2>
           <p className="text-white/90 mb-4">
             No se pudo cargar la información del jugador o la sesión.
           </p>
-          <button 
-            onClick={() => router.push('/')}
-            className="mt-4 bg-white/20 hover:bg-white/30 text-white py-2 px-4 rounded transition-colors"
+          <button
+            onClick={() => router.push(`/register/${sessionId}`)}
+            className="mt-4 text-white py-2 px-4 rounded transition-colors"
           >
-            Volver al inicio
+            Ir al registro
           </button>
         </div>
-      </div>
+      </GameLayout>
     );
   }
 
+  // Vista principal: banner + ruleta/pregunta según el estado
   return (
-    <div className="min-h-screen bg-azul-intenso overflow-hidden">
-      <VideoBackground videoSrc="/videos/intro-loop.mp4" isActive={false} />
-      
-      {/* Logo */}
-      <motion.div
-        className="absolute top-6 left-0 right-0 mx-auto w-fit z-30"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Image
-          src="/images/8.svg"
-          alt="Logo Empresa"
-          width={220}
-          height={67}
-          priority
-        />
-      </motion.div>
-      
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="container mx-auto pt-24 px-4 z-10 relative"
-      >
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-xl shadow-lg border border-white/20 mb-6"
-        >
-          <h2 className="text-xl md:text-2xl font-marineBold text-white mb-2">
+    <GameLayout>
+      <div className="w-full flex flex-col items-center max-w-[520px] mx-auto">
+        {/* Banner de bienvenida */}
+        <div className="mb-2 text-center">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">
             ¡Bienvenido a la Ruleta!
           </h2>
-          <p className="text-white/90">
-            Hola <span className="font-marineBold">{currentParticipant.nombre}</span>, 
+          <p className="text-white/80 text-base sm:text-lg">
+            Hola{" "}
+            <span className="font-semibold">{currentParticipant?.nombre}</span>,
             estás listo para comenzar a jugar.
           </p>
-        </motion.div>
+        </div>
+        {/* [modificación] Muestra la ruleta solo si el estado es "roulette" */}
+        {gameState === "roulette" && (
+          <>
+            <div className="w-full flex justify-center mb-2.5">
+              <RouletteWheel questions={questions} ref={rouletteRef} />
+            </div>
+            <div className="relative">
+              {/* Botón Girar */}
+              <div className="absolute -inset-2 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-2xl opacity-70 blur-xl animate-pulse"></div>
+              <Button
+                variant="gradient"
+                className="relative px-10 py-5 text-xl font-extrabold shadow-xl rounded-xl
+                 bg-gradient-to-r from-teal-400 via-green-400 to-emerald-500
+                 border-2 border-white/30 hover:border-white/60
+                 animate-pulse-subtle spin-button-glow
+                 hover:shadow-[0_0_15px_5px_rgba(16,185,129,0.6)]"
+                onClick={handleSpin}
+                touchOptimized
+              >
+                <span className="inline-block mr-3 -mt-1 align-middle">
+                  <RouletteWheelIcon className="w-7 h-7" />
+                </span>
+                ¡Girar la Ruleta!
+              </Button>
+            </div>
+          </>
+        )}
 
-        {/* Contenido condicional según el estado del juego */}
-        <motion.div
-          key={gameState}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="w-full flex justify-center"
-        >
-          {gameState === 'roulette' && questions.length > 0 && (
-            <div className="w-full max-w-3xl">
-              <RouletteWheel questions={questions} />
-            </div>
-          )}
+        {/* [modificación] Muestra la pregunta si el estado es "question" */}
+        {gameState === "question" && currentQuestion && (
+          <div className="w-full mt-6">
+            <QuestionDisplay question={currentQuestion} />
+          </div>
+        )}
 
-          {gameState === 'question' && currentQuestion && (
-            <div className="w-full max-w-3xl">
-              <QuestionDisplay question={currentQuestion} />
-            </div>
-          )}
-
-          {gameState === 'prize' && (
-            <div className="w-full max-w-3xl">
-              <PrizeModal />
-            </div>
-          )}
-          
-          {questions.length === 0 && gameState === 'roulette' && (
-            <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-6 text-center">
-              <p className="text-red-200">
-                Error: No hay preguntas disponibles para el juego.
-              </p>
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
-    </div>
+        {/* [modificación] Muestra el modal de premio cuando el estado es "prize" */}
+        {gameState === "prize" && (
+          <PrizeModal />
+        )}
+      </div>
+    </GameLayout>
   );
-} 
+}

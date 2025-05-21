@@ -13,7 +13,8 @@ const config: Config = {
         "verde-salud": "#5ACCC1",
         "celeste-medio": "#40C0EF",
         "amarillo-ds": "#F2BD35",
-        "Rosado-lila": "#D5A7CD"
+        "rosado-lila": "#D5A7CD",
+        "main-dark": "#121F4B",
       },
       fontFamily: {
         sans: ["Marine-Regular", "sans-serif"],

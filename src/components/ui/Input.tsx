@@ -11,6 +11,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   labelClassName?: string; // Para el <label>
   containerClassName?: string; // Para el <div> contenedor
   labelFocusColor?: string; // Color explícito para el label en foco (opcional)
+  errorMessage?: string; // [modificación] Añadir prop para mensaje de error
 }
 
 export default function Input({
@@ -21,6 +22,7 @@ export default function Input({
   labelClassName = '', // Esta clase será crucial para el theming del label
   containerClassName = '',
   labelFocusColor, // Si se provee, se usará para animar el color del label en foco
+  errorMessage, // [modificación]
   ...props
 }: InputProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -71,11 +73,23 @@ export default function Input({
         id={name}
         name={name}
         type={type}
-        className={`${baseInputStyle} ${className}`} // `className` aquí es CLAVE para el theming
+        className={`${baseInputStyle} ${className} ${errorMessage ? 'border-red-500' : ''}`} // [modificación] Añadir borde rojo si hay error
         onFocus={handleFocus}
         onBlur={handleBlur}
         {...props}
       />
+      {/* [modificación] Mostrar mensaje de error */}
+      {errorMessage && (
+        <motion.p
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="mt-1 text-xs text-red-400"
+          id={`${name}-error`} // Conectar con aria-describedby
+        >
+          {errorMessage}
+        </motion.p>
+      )}
     </div>
   );
 }

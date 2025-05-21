@@ -81,8 +81,8 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-marineBold 
                 bg-slate-900/30 text-white border border-white/20`}
             >
-                {session.status === 'pending_player_registration' && (<><span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>Pendiente</>)}
-                {session.status === 'player_registered' && (<><span className="w-2 h-2 bg-white rounded-full mr-2 animate-pulse"></span>Registrado</>)}
+                {session.status === 'pending_player_registration' && (<><span className="w-2 h-2 bg-black/60 rounded-full mr-2 animate-pulse"></span>Pendiente</>)}
+                {session.status === 'player_registered' && (<><span className="w-2 h-2 bg-black/60 rounded-full mr-2 animate-pulse"></span>Registrado</>)}
                 {session.status === 'completed' && (<><FiCheckCircle className="mr-1.5" size={14} />Completado</>)}
                 {!['pending_player_registration', 'player_registered', 'completed'].includes(session.status) && session.status}
             </span>

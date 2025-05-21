@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import ShellRootClient from "@/components/layout/ShellRootClient";
 
 export const metadata: Metadata = {
   title: "Dar Salud",
@@ -11,19 +12,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const gradientBackground =
-    "bg-gradient-to-br from-[#00A9B7] via-[#007FAFB0] to-[#00529B]";
-  const textOnDarkBase = "text-white"; // Color de texto base si quieres que todo herede blanco
   return (
-    <html lang="es">
+    <html lang="es" className="overflow-hidden">
       <head>
-        <meta charSet="utf-utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
       </head>
-      <body
-        className={`${gradientBackground} ${textOnDarkBase} min-h-screen flex flex-col font-sans`}
-      >
-        {children}
+      <body className="bg-main-gradient h-screen overflow-hidden flex flex-col font-sans text-white">
+        <ShellRootClient>{children}</ShellRootClient>
       </body>
     </html>
   );

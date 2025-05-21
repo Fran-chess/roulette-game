@@ -3,34 +3,111 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useGameStore } from "@/store/gameStore";
-import VideoBackground from "@/components/layout/VideoBackground";
-import ScreenSaver from "@/components/layout/ScreenSaver"; // El ScreenSaver ahora es una capa interactiva invisible
+import ScreenSaver from "@/components/layout/ScreenSaver";
 import AdminLogin from "@/components/admin/AdminLogin";
-// import { useInactivityTimer } from "@/lib/hooks/useInactivityTimer"; // Comentado si no se usa aquí directamente
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { useNavigationStore } from "@/store/navigationStore";
+import { useInactivityTimer } from "@/lib/hooks/useInactivityTimer";
+import dynamic from "next/dynamic";
+import type { GameState } from "@/types";
 
-// const SCREENSAVER_TIMEOUT = 120000; // Para un hook de inactividad global
+const VideoBackground = dynamic(() => import("@/components/layout/VideoBackground"), {
+  ssr: false,
+});
+
+interface GameStateConfig {
+  showVideo: boolean;
+  detectInactivity: boolean;
+  transitionTo?: GameState;
+  route?: string;
+}
 
 export default function HomePage() {
-  // Selectores del store (ajusta según lo que necesite esta página específica)
+  const gameState = useGameStore((state) => state.gameState);
   const setGameState = useGameStore((state) => state.setGameState);
-  const resetCurrentGame = useGameStore((state) => state.resetCurrentGame); // Asumiendo que limpia gameSession, currentParticipant, etc.
+  const resetCurrentGame = useGameStore((state) => state.resetCurrentGame);
   const adminUser = useGameStore((state) => state.adminUser);
   const setAdminUser = useGameStore((state) => state.setAdminUser);
 
-  // Estado local
-  const [isTransitioning, setIsTransitioning] = useState(false); // Para evitar interacciones dobles
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const router = useRouter();
 
-  // Efecto para configurar el estado inicial de la página y verificar sesión de admin
+  const isNavigating = useNavigationStore(state => state.isNavigating);
+  const startNavigation = useNavigationStore(state => state.startNavigation);
+
+  const stateConfig: Record<GameState, GameStateConfig> = {
+    'screensaver': {
+      showVideo: true,
+      detectInactivity: false
+    },
+    'register': {
+      showVideo: false,
+      detectInactivity: true,
+      route: '/register'
+    },
+    'roulette': {
+      showVideo: false,
+      detectInactivity: true,
+      route: '/game/roulette'
+    },
+    'question': {
+      showVideo: false,
+      detectInactivity: true,
+      route: '/game/question'
+    },
+    'prize': {
+      showVideo: false,
+      detectInactivity: true,
+      route: '/game/prize'
+    },
+    'ended': {
+      showVideo: false,
+      detectInactivity: true,
+      transitionTo: 'screensaver'
+    }
+  };
+
+  useInactivityTimer(
+    300000, 
+    () => {
+      if (gameState && stateConfig[gameState]?.detectInactivity) {
+        console.log(`Inactividad detectada en estado ${gameState}: mostrando screensaver`);
+        setGameState("screensaver");
+      }
+    },
+    gameState
+  );
+
   useEffect(() => {
-    console.log("HomePage: Montado. Estableciendo estado a screensaver y limpiando juego.");
-    setGameState('screensaver'); // Establece el estado global del juego
+    const currentConfig = gameState && stateConfig[gameState];
+    
+    if (currentConfig?.transitionTo) {
+      const timer = setTimeout(() => {
+        setGameState(currentConfig.transitionTo as GameState);
+      }, 10000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [gameState, setGameState]);
+
+  useEffect(() => {
+    const currentConfig = gameState && stateConfig[gameState];
+    
+    if (currentConfig?.route && !isTransitioning && !isNavigating) {
+      const currentPath = window.location.pathname;
+      if (currentPath !== currentConfig.route) {
+        startNavigation(currentConfig.route, `Cargando ${gameState}...`);
+      }
+    }
+  }, [gameState, isTransitioning, isNavigating, startNavigation]);
+
+  useEffect(() => {
+    setGameState('screensaver');
     if (typeof resetCurrentGame === 'function') {
-        resetCurrentGame(); // Limpia datos de cualquier juego anterior
+      resetCurrentGame();
     }
 
     const storedAdmin = localStorage.getItem('adminUser');
@@ -38,100 +115,80 @@ export default function HomePage() {
       try {
         const parsedAdmin = JSON.parse(storedAdmin);
         setAdminUser(parsedAdmin);
-        console.log("HomePage: Admin user cargado desde localStorage:", parsedAdmin);
       } catch (error) {
-        console.error('HomePage: Error al procesar datos de admin de localStorage:', error);
         localStorage.removeItem('adminUser');
         setAdminUser(null);
       }
     } else {
-      setAdminUser(null); // Asegurar que esté nulo si no hay nada en localStorage
+      setAdminUser(null);
     }
-  }, [setAdminUser, setGameState, resetCurrentGame]); // Dependencias correctas
+  }, [setAdminUser, setGameState, resetCurrentGame]);
 
-  // Lógica de Inactividad:
-  // Si quieres que la inactividad en OTRAS páginas redirija aquí,
-  // ese `useInactivityTimer` y la lógica de `router.push('/')`
-  // deberían estar en un componente de Layout que envuelva esas otras páginas.
-  // Esta página, al cargarse (como se ve en el useEffect de arriba), ya se pone en 'screensaver'.
-
-  // Manejar interacción con el ScreenSaver (que ahora es toda la pantalla)
   const handleScreenInteraction = useCallback(() => {
-    if (isTransitioning) return; // Prevenir clics múltiples durante la transición
+    if (isTransitioning) return;
 
-    console.log("HomePage: Interacción con la pantalla detectada.");
     setIsTransitioning(true);
 
     if (!adminUser) {
-      console.log("HomePage: No hay adminUser. Mostrando modal de login.");
       setShowLoginModal(true);
+      setTimeout(() => setIsTransitioning(false), 300);
     } else {
-      console.log("HomePage: adminUser encontrado. Redirigiendo a /admin.");
-      router.push('/admin');
+      startNavigation('/admin', 'Accediendo al panel de administración...');
     }
-    // Delay para permitir que la UI se actualice (ej. modal aparezca) o la navegación comience
-    setTimeout(() => setIsTransitioning(false), 300); 
-  }, [isTransitioning, adminUser, router]);
+  }, [isTransitioning, adminUser, startNavigation]);
 
-  // Manejar login exitoso desde el modal
   const handleLoginSuccess = (adminDataFromLogin: any) => {
-    console.log("HomePage: Login exitoso. Admin data:", adminDataFromLogin);
     setAdminUser(adminDataFromLogin);
     localStorage.setItem('adminUser', JSON.stringify(adminDataFromLogin));
     setShowLoginModal(false);
-    setIsTransitioning(true); // Prevenir más interacciones mientras se redirige
-    router.push('/admin');
-    setTimeout(() => setIsTransitioning(false), 300); // Resetear después de la navegación
+    setIsTransitioning(true);
+    startNavigation('/admin', 'Accediendo al panel de administración...');
   };
 
-  // Cerrar el modal de login si se hace clic fuera (opcional) o si hay un botón de cerrar
   const handleCloseLoginModal = () => {
-    console.log("HomePage: Cerrando modal de login.");
     setShowLoginModal(false);
-  }
+  };
+
+  const handleStartGame = useCallback(() => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    
+    setGameState("register");
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+      startNavigation('/register', 'Iniciando juego...');
+    }, 300);
+  }, [isTransitioning, setGameState, startNavigation]);
 
   return (
-    <main
-      className="flex flex-col items-center justify-center min-h-screen text-center relative overflow-hidden bg-black"
-      // Los manejadores de interacción están en el ScreenSaver ahora
-    >
-      <VideoBackground
-        videoSrc="/videos/intro-loop.mp4" // Asegúrate que esta ruta es correcta
-        isActive={true} // El video siempre está activo y visible en esta página
-      />
+    <main className="flex flex-col items-center justify-center min-h-screen text-center relative overflow-hidden">
+      {gameState && stateConfig[gameState]?.showVideo && <VideoBackground />}
 
-      {/* Modal de login de administrador */}
-      <AnimatePresence>
-        {showLoginModal && (
-          <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            // onClick={handleCloseLoginModal} // Descomenta si quieres que un clic fuera del modal lo cierre
-          >
-            <motion.div
-              className="w-full max-w-lg" // Contenedor del AdminLogin
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0, transition: { duration: 0.2 } }}
-              transition={{ type: "spring", stiffness: 300, damping: 25 }}
-              onClick={(e) => e.stopPropagation()} // Evita que el clic en el modal lo cierre si el padre tiene onClick
-            >
-              <AdminLogin onLoginSuccess={handleLoginSuccess} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ScreenSaver como capa interactiva transparente. 
-          Se muestra si el modal de login no está activo. 
-          Su z-index (z-20) lo coloca sobre el video (z-0) y debajo del modal (z-50). */}
-      {!showLoginModal && (
-        <ScreenSaver
-          onInteraction={handleScreenInteraction}
-          isVisible={true} 
+      {gameState === "screensaver" && (
+        <ScreenSaver 
+          onInteraction={adminUser ? handleScreenInteraction : handleStartGame} 
+          isVisible={!showLoginModal && !isTransitioning}
         />
+      )}
+
+      {showLoginModal && (
+        <motion.div 
+          className="fixed inset-0 z-40 flex items-center justify-center p-4 backdrop-blur-md bg-black/40"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.div
+            className="w-full max-w-lg"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <AdminLogin onLoginSuccess={handleLoginSuccess} />
+          </motion.div>
+        </motion.div>
       )}
     </main>
   );

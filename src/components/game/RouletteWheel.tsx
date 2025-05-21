@@ -1,10 +1,17 @@
 // src/components/game/RouletteWheel.tsx
 "use client";
-import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { useGameStore } from "@/store/gameStore";
 import type { RouletteWheelProps, Question } from "@/types";
 import { motion } from "framer-motion";
-import Button from "@/components/ui/Button";
 import React from "react";
 
 // --- Funciones Helper (sin cambios) ---
@@ -14,31 +21,24 @@ const baseColors = [
   "#40C0EF", // celeste-medio
   "#F2BD35", // amarillo-ds
   "#D5A7CD", // Rosado-lila
-  // Repetición de colores pero en diferente orden para evitar colores consecutivos iguales
-  "#5ACCC1", // verde-salud
-  "#192A6E", // azul-intenso
-  "#F2BD35", // amarillo-ds
-  "#40C0EF", // celeste-medio
-  "#D5A7CD", // Rosado-lila
-]; // [modificación] Se utilizan los colores definidos en tailwind.config.ts
-
+  "#5ACCC1",
+  "#192A6E",
+  "#F2BD35",
+  "#40C0EF",
+  "#D5A7CD",
+];
 let colorIndexGlobal = 0;
 function getRandomColor() {
-  // [modificación] Función modificada para asegurar que no se repitan colores consecutivos
-  const previousColorIndex = (colorIndexGlobal - 1 + baseColors.length) % baseColors.length;
+  const previousColorIndex =
+    (colorIndexGlobal - 1 + baseColors.length) % baseColors.length;
   let nextColorIndex = colorIndexGlobal % baseColors.length;
-  
-  // Si solo hay un color en el array, no hay más opciones
   if (baseColors.length <= 1) {
     colorIndexGlobal++;
     return baseColors[0];
   }
-  
-  // Si el siguiente color sería igual al anterior, saltamos una posición
   if (baseColors.length > 1 && nextColorIndex === previousColorIndex) {
     nextColorIndex = (nextColorIndex + 1) % baseColors.length;
   }
-  
   const color = baseColors[nextColorIndex];
   colorIndexGlobal++;
   return color;
@@ -79,352 +79,379 @@ const mapQuestionsToSegments = (questions: Question[]) => {
     questionId: q.id,
   }));
 };
-// --- Fin Funciones Helper ---
 
-export default function RouletteWheel({ questions }: RouletteWheelProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const setLastSpinResultIndex = useGameStore(
-    (state) => state.setLastSpinResultIndex
-  );
-  const setGameState = useGameStore((state) => state.setGameState); // Para la transición
+// --- Componente principal ---
+const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
+  ({ questions }, ref) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const setLastSpinResultIndex = useGameStore(
+      (state) => state.setLastSpinResultIndex
+    );
 
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [currentAngle, setCurrentAngle] = useState(0);
-  const [highlightedSegment, setHighlightedSegment] = useState<number | null>(
-    null
-  );
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [spinEffect, setSpinEffect] = useState("");
+    // Estados responsive
+    const [isLandscape, setIsLandscape] = useState(false);
+    const [isTablet, setIsTablet] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
 
-  const animationConfigRef = useRef({
-    startTime: 0,
-    duration: 0,
-    targetAngle: 0,
-    animationFrameId: 0,
-  });
+    const [isSpinning, setIsSpinning] = useState(false);
+    const [currentAngle, setCurrentAngle] = useState(0);
+    const [highlightedSegment, setHighlightedSegment] = useState<number | null>(
+      null
+    );
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [spinEffect, setSpinEffect] = useState("");
 
-  const wheelSegments = useMemo(() => {
-    if (!questions || questions.length === 0) return [];
-    return mapQuestionsToSegments(questions);
-  }, [questions]);
+    const animationConfigRef = useRef({
+      startTime: 0,
+      duration: 0,
+      targetAngle: 0,
+      animationFrameId: 0,
+    });
 
-  const numSegments = wheelSegments.length;
-  const anglePerSegment = numSegments > 0 ? (2 * Math.PI) / numSegments : 0;
+    const wheelSegments = useMemo(() => {
+      if (!questions || questions.length === 0) return [];
+      return mapQuestionsToSegments(questions);
+    }, [questions]);
+    const numSegments = wheelSegments.length;
+    const anglePerSegment = numSegments > 0 ? (2 * Math.PI) / numSegments : 0;
 
-  useEffect(() => {
-    try {
-      const audio = new Audio("/sounds/wheel-spin.mp3");
-      audio.preload = "auto";
-      audio.addEventListener("error", (e) => {
-        const mediaError = audio.error; // Es HTMLMediaElement
-        console.warn(
-          "AUDIO: No se pudo cargar el audio de giro:",
-          mediaError
-            ? `${mediaError.code} - ${mediaError.message}`
-            : "Unknown error"
-        );
-      });
-      audioRef.current = audio;
-    } catch (error) {
-      console.warn("AUDIO: Error al inicializar el objeto Audio:", error);
-    }
-    return () => {};
-  }, []);
+    // Detectar dispositivo
+    useEffect(() => {
+      const handleDeviceDetection = () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        setIsLandscape(width > height);
+        setIsTablet(width >= 768 && width <= 1280);
+        setIsMobile(width < 768);
+      };
+      handleDeviceDetection();
+      window.addEventListener("resize", handleDeviceDetection);
+      return () => window.removeEventListener("resize", handleDeviceDetection);
+    }, []);
 
-  const drawRoulette = useCallback(
-    (rotationAngle = 0) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    useEffect(() => {
+      try {
+        const audio = new Audio("/sounds/wheel-spin.mp3");
+        audio.preload = "auto";
+        audio.addEventListener("error", (e) => {
+          const mediaError = audio.error;
+          console.warn(
+            "AUDIO: No se pudo cargar el audio de giro:",
+            mediaError
+              ? `${mediaError.code} - ${mediaError.message}`
+              : "Unknown error"
+          );
+        });
+        audioRef.current = audio;
+      } catch (error) {
+        console.warn("AUDIO: Error al inicializar el objeto Audio:", error);
+      }
+      return () => {};
+    }, []);
 
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const radius = Math.min(centerX, centerY) * 0.92;
+    // --- [modificación] Ajuste de tamaño del canvas totalmente automático ---
+    useEffect(() => {
+      const handleResize = () => {
+        const container = containerRef.current;
+        const canvas = canvasRef.current;
+        if (!container || !canvas) return;
 
-      if (radius <= 0) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.font = `bold ${Math.max(
-        12,
-        radius * 0.09
-      )}px "Nunito Sans", Arial, Helvetica, sans-serif`;
-      ctx.textBaseline = "middle";
-      ctx.textAlign = "center";
+        const containerWidth = container.clientWidth;
+        const containerHeight = container.clientHeight;
 
-      ctx.save();
-      ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
-      ctx.shadowBlur = 15;
-      ctx.shadowOffsetY = 5;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      ctx.closePath();
-      ctx.fillStyle = "#f0f0f0";
-      ctx.fill();
-      ctx.restore();
+        // Siempre el tamaño máximo cuadrado posible dentro del contenedor
+        let size = Math.min(containerWidth, containerHeight);
 
-      ctx.save();
-      ctx.translate(centerX, centerY);
-      ctx.rotate(rotationAngle);
-
-      wheelSegments.forEach((segment, i) => {
-        const startAngle = i * anglePerSegment;
-        const endAngle = (i + 1) * anglePerSegment;
-
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.arc(0, 0, radius, startAngle, endAngle);
-        ctx.closePath();
-
-        if (highlightedSegment === i) {
-          ctx.fillStyle = "#FFFFFF";
-          ctx.fill();
-          ctx.fillStyle = segment.fillStyle;
-          ctx.globalAlpha = 0.7;
-          ctx.fill();
-          ctx.globalAlpha = 1.0;
+        // Ajuste mínimos según dispositivo
+        if (isMobile) {
+          size = Math.max(220, Math.min(size, 400));
+        } else if (isTablet) {
+          size = Math.max(320, Math.min(size, 520));
         } else {
-          ctx.fillStyle = segment.fillStyle;
-          ctx.fill();
+          size = Math.max(380, Math.min(size, 640));
         }
 
-        ctx.strokeStyle = "rgba(0, 0, 0, 0.15)";
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        // Asigna el size cuadrado
+        if (canvas.width !== size || canvas.height !== size) {
+          canvas.width = size;
+          canvas.height = size;
+        }
+        // Dibuja sólo si no está girando
+        if (!isSpinning && numSegments > 0) {
+          drawRoulette(currentAngle, size);
+        }
+      };
+
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+      // eslint-disable-next-line
+    }, [
+      currentAngle,
+      numSegments,
+      isSpinning,
+      isLandscape,
+      isTablet,
+      isMobile,
+    ]);
+
+    // --- [modificación] Dibujo recibe size explícito, nunca usa viewport directamente ---
+    const drawRoulette = useCallback(
+      (rotationAngle = 0, canvasSize?: number) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        const size = canvasSize || canvas.width;
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const radius = size * 0.48; // Siempre ajustado al cuadrado
+
+        ctx.clearRect(0, 0, size, size);
+
+        // [modificación] Fuente base más pequeña, para evitar overflow en títulos largos
+        const baseFontSize = Math.max(14, radius * (isMobile ? 0.09 : 0.12));
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "center";
+
+        // Fondo translúcido
+        ctx.save();
+        ctx.shadowColor = "rgba(0, 0, 0, 0.18)";
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 4;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(25, 42, 110, 0.09)";
+        ctx.fill();
+        ctx.restore();
 
         ctx.save();
-        ctx.fillStyle = getContrastYIQ(segment.fillStyle);
-        const textAngle = startAngle + anglePerSegment / 2;
-        ctx.rotate(textAngle);
-        const textX = radius * 0.6;
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rotationAngle);
 
-        if (ctx.fillStyle === "#FFFFFF") {
-          ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
-          ctx.shadowBlur = 3;
+        wheelSegments.forEach((segment, i) => {
+          const startAngle = i * anglePerSegment;
+          const endAngle = (i + 1) * anglePerSegment;
+
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.arc(0, 0, radius, startAngle, endAngle);
+          ctx.closePath();
+
+          if (highlightedSegment === i) {
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fill();
+            ctx.fillStyle = segment.fillStyle;
+            ctx.globalAlpha = 0.7;
+            ctx.fill();
+            ctx.globalAlpha = 1.0;
+          } else {
+            ctx.fillStyle = segment.fillStyle;
+            ctx.fill();
+          }
+
+          // Bordes mejorados
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.34)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          // [modificación] Renderizado de texto profesional y adaptativo
+          ctx.save();
+          ctx.fillStyle = getContrastYIQ(segment.fillStyle);
+          const textAngle = startAngle + anglePerSegment / 2;
+          ctx.rotate(textAngle);
+
+          const textX = radius * (isMobile ? 0.52 : 0.62);
+
+          // [modificación] Sombra elegante
+          ctx.shadowColor = "rgba(0,0,0,0.33)";
+          ctx.shadowBlur = 6;
           ctx.shadowOffsetX = 1;
           ctx.shadowOffsetY = 1;
-        } else {
-          ctx.shadowColor = "rgba(255, 255, 255, 0.3)";
-          ctx.shadowBlur = 2;
-          ctx.shadowOffsetX = 1;
-          ctx.shadowOffsetY = 1;
-        }
-        ctx.fillText(segment.text.substring(0, 15), textX, 0);
+
+          // [modificación] Capitaliza cada palabra
+          const displayText = segment.text
+            .split(" ")
+            .map(
+              (word) =>
+                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            )
+            .join(" ");
+
+          // [modificación] Disminuye tamaño de fuente hasta que quepa el texto (mínimo 10px)
+          let fontSizeLocal = baseFontSize;
+          ctx.font = `900 ${fontSizeLocal}px "Marine-Bold", Arial, sans-serif`;
+          while (
+            ctx.measureText(displayText).width > radius * 0.75 &&
+            fontSizeLocal > 10
+          ) {
+            fontSizeLocal -= 1;
+            ctx.font = `900 ${fontSizeLocal}px "Marine-Bold", Arial, sans-serif`;
+          }
+
+          // [modificación] Borde blanco para máxima legibilidad
+          ctx.strokeStyle = "rgba(255,255,255,0.85)";
+          ctx.lineWidth = 2;
+          ctx.strokeText(displayText, textX, 0);
+
+          ctx.fillText(displayText, textX, 0);
+          ctx.restore();
+        });
         ctx.restore();
-      });
-      ctx.restore();
 
-      // Puntero (asegúrate que estas son las coordenadas que te gustan)
-      // Esta es la versión que tenías en el último código que me pasaste:
-      ctx.save();
-      const pointerBaseHalfHeight = radius * 0.08;
-      const pointerTipX = centerX + radius - radius * 0.02;
-      const pointerBaseX = centerX + radius + radius * 0.15;
+        // Puntero
+        ctx.save();
+        const pointerBaseHalfHeight = radius * (isMobile ? 0.08 : 0.09);
+        const pointerTipX = centerX + radius - radius * 0.02;
+        const pointerBaseX = centerX + radius + radius * 0.14;
+        ctx.beginPath();
+        ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
+        ctx.lineTo(pointerTipX, centerY);
+        ctx.lineTo(pointerBaseX, centerY + pointerBaseHalfHeight);
+        ctx.closePath();
+        ctx.fillStyle = "#192A6E";
+        ctx.shadowColor = "rgba(0,0,0,0.37)";
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.8)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
 
-      ctx.beginPath();
-      ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
-      ctx.lineTo(pointerTipX, centerY);
-      ctx.lineTo(pointerBaseX, centerY + pointerBaseHalfHeight);
-      ctx.closePath();
-
-      ctx.fillStyle = "#333333";
-      ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetX = 2;
-      ctx.shadowOffsetY = 2;
-      ctx.fill();
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.restore();
-
-      // Círculo central
-      ctx.save();
-      ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
-      ctx.shadowBlur = 5;
-      ctx.shadowOffsetY = 1;
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius * 0.14, 0, 2 * Math.PI);
-      ctx.fillStyle = "#4a4a4a";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,0.3)";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius * 0.09, 0, 2 * Math.PI);
-      ctx.fillStyle = "#606060";
-      ctx.fill();
-      const innerShineGradient = ctx.createRadialGradient(
-        centerX - radius * 0.02,
-        centerY - radius * 0.02,
-        0,
-        centerX,
-        centerY,
-        radius * 0.09
-      );
-      innerShineGradient.addColorStop(0, "rgba(255, 255, 255, 0.2)");
-      innerShineGradient.addColorStop(0.5, "rgba(255, 255, 255, 0.05)");
-      innerShineGradient.addColorStop(1, "rgba(0, 0, 0, 0.05)");
-      ctx.fillStyle = innerShineGradient;
-      ctx.fill();
-      ctx.restore();
-    },
-    [wheelSegments, anglePerSegment, highlightedSegment]
-  );
-
-  useEffect(() => {
-    // ... (código de redimensionamiento sin cambios)
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const parentElement = canvas.parentElement;
-      const containerWidth = parentElement ? parentElement.clientWidth : 500;
-      const size = Math.max(
-        400,
-        Math.min(containerWidth * 1.0, window.innerHeight * 0.85)
-      );
-      if (canvas.width !== size || canvas.height !== size) {
-        canvas.width = size;
-        canvas.height = size;
-      }
-    }
-    if (canvas && !isSpinning && numSegments > 0) {
-      drawRoulette(currentAngle);
-    }
-  }, [currentAngle, numSegments, isSpinning, drawRoulette, questions]);
-
-  const spin = () => {
-    // ... (inicio de la función spin sin cambios)
-    if (isSpinning || numSegments === 0) return;
-
-    setIsSpinning(true);
-    setHighlightedSegment(null);
-    setSpinEffect("spin-effect"); // Este efecto puede ser el que da el "empujón" visual
-
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-      audioRef.current
-        .play()
-        .catch((e) =>
-          console.warn("AUDIO: Error reproduciendo audio de giro:", e)
+        // Círculo central con gradiente
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.11)";
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        ctx.arc(
+          centerX,
+          centerY,
+          radius * (isMobile ? 0.09 : 0.11), // Más pequeño
+          0,
+          2 * Math.PI
         );
-    }
+        const gradientBg = ctx.createRadialGradient(
+          centerX,
+          centerY,
+          0,
+          centerX,
+          centerY,
+          radius * (isMobile ? 0.09 : 0.11)
+        );
+        gradientBg.addColorStop(0, "#50e9ff"); // celeste intenso
+        gradientBg.addColorStop(0.6, "#2196f3"); // azul claro
+        gradientBg.addColorStop(1, "#153e75"); // azul profundo
+        ctx.fillStyle = gradientBg;
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.54)"; // Borde más notorio
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      },
+      // eslint-disable-next-line
+      [wheelSegments, anglePerSegment, highlightedSegment, isTablet, isMobile]
+    );
 
-    // ... (resto de la configuración de animación sin cambios)
-    const randomSpins = Math.floor(Math.random() * 5) + 8;
-    const randomStopSegment = Math.floor(Math.random() * numSegments);
-    const stopAngleOnWheel = randomStopSegment * anglePerSegment;
+    // Exponer método spin al padre
+    useImperativeHandle(ref, () => ({
+      spin: () => {
+        if (!isSpinning && numSegments > 0) {
+          spin();
+        }
+      },
+    }));
 
-    animationConfigRef.current = {
-      startTime: performance.now(),
-      duration: Math.random() * 2000 + 6000,
-      targetAngle: randomSpins * 2 * Math.PI + stopAngleOnWheel,
-      animationFrameId: 0,
-    };
-
-    const spinAnimation = (timestamp: number) => {
-      const config = animationConfigRef.current;
-      const elapsedTime = timestamp - config.startTime;
-
-      if (elapsedTime >= config.duration) {
-        const finalEffectiveAngle = config.targetAngle % (2 * Math.PI);
-        setCurrentAngle(finalEffectiveAngle);
-        setSpinEffect("");
-
-        let winningAngle = 2 * Math.PI - (config.targetAngle % (2 * Math.PI));
-        if (winningAngle >= 2 * Math.PI - 0.0001) winningAngle = 0;
-        const winningIndex =
-          Math.floor(winningAngle / anglePerSegment) % numSegments;
-
-        setHighlightedSegment(winningIndex);
-
-        // MODIFICACIÓN: Sonido de victoria (si aún lo quieres, si no, elimínalo también)
-        // try {
-        //   const victorySound = new Audio("/sounds/win-sound.mp3");
-        //   victorySound.play().catch(e => console.warn("AUDIO: Error reproduciendo audio de victoria:", e));
-        // } catch (error) {
-        //   console.warn("AUDIO: Error al intentar audio de victoria:", error);
-        // }
-
-        // MODIFICACIÓN: Confeti eliminado
-        // setShowConfetti(true);
-
-        // MODIFICACIÓN: Ajuste de tiempos para la transición a la pregunta
-        // El timeout principal ahora solo se encarga de la lógica post-giro,
-        // la transición visual a la pregunta se maneja idealmente en el componente padre.
-        setTimeout(() => {
-          setLastSpinResultIndex(winningIndex); // Notificar al store de Zustand
-          // La transición a 'question' se hará a través del store, lo que desmontará este componente
-          // o lo ocultará, permitiendo que QuestionDisplay aparezca con su propia animación.
-          // No es necesario setIsSpinning(false) aquí si el componente se va a desmontar.
-          // Si no se desmonta, sí necesitarías setIsSpinning(false);
-
-          // Este timeout para limpiar el resaltado ya no sería necesario aquí si la vista cambia.
-          // setTimeout(() => {
-          //   // setShowConfetti(false); // Confeti eliminado
-          //   setHighlightedSegment(null);
-          // }, 1000); // Reducido el tiempo de resaltado si la transición es rápida
-        }, 800); // Tiempo reducido para mostrar el segmento ganador antes de que el store cambie el estado y la UI. Prueba este valor.
-
-        return;
+    // --- Spin ---
+    const spin = () => {
+      if (isSpinning || numSegments === 0) return;
+      setIsSpinning(true);
+      setHighlightedSegment(null);
+      setSpinEffect("spin-effect");
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
       }
-
-      const timeFraction = elapsedTime / config.duration;
-      const easingProgress = customEasingFunction(timeFraction);
-      const newAnimatedAngle = config.targetAngle * easingProgress;
-      drawRoulette(newAnimatedAngle);
+      const randomSpins = Math.floor(Math.random() * 5) + 8;
+      const randomStopSegment = Math.floor(Math.random() * numSegments);
+      const stopAngleOnWheel = randomStopSegment * anglePerSegment;
+      animationConfigRef.current = {
+        startTime: performance.now(),
+        duration: Math.random() * 2000 + 6000,
+        targetAngle: randomSpins * 2 * Math.PI + stopAngleOnWheel,
+        animationFrameId: 0,
+      };
+      const spinAnimation = (timestamp: number) => {
+        const config = animationConfigRef.current;
+        const elapsedTime = timestamp - config.startTime;
+        if (elapsedTime >= config.duration) {
+          const finalEffectiveAngle = config.targetAngle % (2 * Math.PI);
+          setCurrentAngle(finalEffectiveAngle);
+          setSpinEffect("");
+          let winningAngle = 2 * Math.PI - (config.targetAngle % (2 * Math.PI));
+          if (winningAngle >= 2 * Math.PI - 0.0001) winningAngle = 0;
+          const winningIndex =
+            Math.floor(winningAngle / anglePerSegment) % numSegments;
+          setHighlightedSegment(winningIndex);
+          if ("vibrate" in navigator) {
+            try {
+              navigator.vibrate(200);
+            } catch {}
+          }
+          setTimeout(() => {
+            setLastSpinResultIndex(winningIndex);
+          }, 800);
+          setIsSpinning(false);
+          return;
+        }
+        const timeFraction = elapsedTime / config.duration;
+        const easingProgress = customEasingFunction(timeFraction);
+        const newAnimatedAngle = config.targetAngle * easingProgress;
+        drawRoulette(newAnimatedAngle);
+        animationConfigRef.current.animationFrameId =
+          requestAnimationFrame(spinAnimation);
+      };
       animationConfigRef.current.animationFrameId =
         requestAnimationFrame(spinAnimation);
     };
-    animationConfigRef.current.animationFrameId =
-      requestAnimationFrame(spinAnimation);
-  };
 
-  // MODIFICACIÓN: Función renderConfetti eliminada o comentada
-  // const renderConfetti = () => { /* ... */ };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      // className="flex flex-col items-center justify-center p-1 md:p-2 w-full h-full"
-      // Ajuste para que la ruleta tenga más espacio si el botón de girar está pegado
-      className="flex flex-col items-center justify-around p-1 md:p-2 w-full h-full"
-    >
-      <div className="relative mb-4 md:mb-6">
-        {" "}
-        {/* Contenedor de la ruleta */}
-        <div className={`wheel-container ${spinEffect}`}>
+    // --- Render ---
+    return (
+      <motion.div
+        ref={containerRef}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        // [modificación] maxHeight evita desbordes, minHeight:0 soluciona problemas de flexbox
+        className="flex flex-col items-center justify-center w-full"
+        style={{
+          maxHeight: "calc(100vh - 110px)",
+          minHeight: 0,
+        }}
+      >
+        <div
+          className="relative w-full flex items-center justify-center"
+          style={{
+            height: "100%", // El canvas ajusta el tamaño cuadrado máximo posible
+          }}
+        >
           <canvas
             ref={canvasRef}
-            className="rounded-full shadow-xl wheel-canvas"
-          ></canvas>
+            className="rounded-full wheel-canvas touch-optimized"
+            style={{
+              width: "100%",
+              height: "auto",
+              maxWidth: "100%",
+              display: "block",
+            }}
+            aria-label="Ruleta de selección de categoría"
+            role="img"
+          />
         </div>
-      </div>
-      <motion.div
-      // No es necesario whileHover y whileTap aquí si tu componente Button ya los maneja.
-      // Si Button es un componente simple sin motion, entonces sí mantenlos.
-      // Asumiendo que tu Button SÍ usa motion (como en el código que me pasaste antes):
-      >
-        <Button
-          onClick={spin}
-          disabled={isSpinning || numSegments === 0}
-          // La clase de tu botón ya tiene los efectos hover y active
-          className={`bg-verde-salud hover:bg-opacity-80 text-white text-lg md:text-xl py-3 px-6 md:py-4 md:px-8 rounded-full shadow-lg transition-all duration-300 
-            ${
-              isSpinning || numSegments === 0
-                ? "opacity-70 cursor-not-allowed"
-                : "hover:shadow-xl active:shadow-md"
-            }`}
-        >
-          {isSpinning
-            ? "Girando..."
-            : numSegments > 0
-            ? "¡GIRAR!"
-            : "Cargando..."}
-        </Button>
       </motion.div>
-
-      
-    </motion.div>
-  );
-}
+    );
+  }
+);
+RouletteWheel.displayName = "RouletteWheel";
+export default RouletteWheel;

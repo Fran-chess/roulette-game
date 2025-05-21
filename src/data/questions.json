@@ -1,7 +1,7 @@
 [
   {
     "id": "q1",
-    "category": "Epidemiología",
+    "category": "Epidemio",
     "text": "¿Qué significa el término “R₀” (número reproductivo básico) en epidemiología?",
     "options": [
       { "text": "La duración promedio de la infección", "correct": false },
@@ -14,7 +14,7 @@
   },
   {
     "id": "q2",
-    "category": "Técnicas de esterilización",
+    "category": "Esterilización",
     "text": "¿Qué técnica de esterilización utiliza vapor a alta presión y temperatura para destruir gérmenes?",
     "options": [
       { "text": "Filtración de aire", "correct": false },
@@ -40,7 +40,7 @@
   },
   {
     "id": "q4",
-    "category": "Control de infecciones",
+    "category": "Control",
     "text": "Nombra dos medidas básicas para prevenir infecciones nosocomiales en un hospital.",
     "options": [
       { "text": "Uso de antibióticos profilácticos y aislamiento prolongado", "correct": false },
@@ -92,7 +92,7 @@
   },
   {
     "id": "q8",
-    "category": "Micología",
+    "category": "Hongos",
     "text": "¿Qué coloración se utiliza para identificar hongos en muestras clínicas?",
     "options": [
       { "text": "Gram", "correct": false },
