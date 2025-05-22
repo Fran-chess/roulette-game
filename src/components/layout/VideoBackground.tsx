@@ -50,7 +50,7 @@ export default function VideoBackground() {
       <video
         ref={videoRef}
         src={videoSrc}
-        className="w-full h-full min-h-[100vh] min-w-[100vw] object-cover fixed inset-0"
+        className="w-full h-full min-h-[100vh] min-w-[100vw] object-cover md:object-contain fixed inset-0"
         loop
         muted
         playsInline
