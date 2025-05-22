@@ -106,10 +106,10 @@ export async function POST(request: Request) {
       message: 'Datos del jugador reseteados exitosamente',
       session: updatedSession
     });
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error al resetear los datos del jugador:', err);
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: err.message },
+      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
       { status: 500 }
     );
   }

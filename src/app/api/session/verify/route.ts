@@ -40,7 +40,7 @@ export async function GET(request: Request) {
     if (error) {
       console.error(`Error al verificar sesión ${sessionId}:`, error);
       return NextResponse.json(
-        { message: 'Error al verificar la sesión', valid: false, error: error.message },
+        { message: 'Error al verificar la sesión', valid: false, error: error instanceof Error ? error.message : String(error) },
         { status: 500 }
       );
     }
@@ -101,11 +101,13 @@ export async function GET(request: Request) {
         { message: 'Sesión no encontrada', valid: false },
         { status: 404 }
       );
-    } catch (rpcError: any) {
+    } catch (rpcError: Error | unknown) {
       console.error(`Error en verificación RPC para ${sessionId}:`, rpcError);
       
       // [modificación] Si la función RPC no existe, indicamos que es necesario crear la migración
-      if (rpcError.message?.includes('function') && rpcError.message?.includes('does not exist')) {
+      if (typeof rpcError === 'object' && rpcError !== null && 'message' in rpcError && 
+          typeof rpcError.message === 'string' && 
+          rpcError.message.includes('function') && rpcError.message.includes('does not exist')) {
         return NextResponse.json(
           { 
             message: 'Es necesario ejecutar la migración para crear la función check_session_exists', 
@@ -118,14 +120,14 @@ export async function GET(request: Request) {
       }
       
       return NextResponse.json(
-        { message: 'Error en la verificación RPC', valid: false, error: rpcError.message },
+        { message: 'Error en la verificación RPC', valid: false, error: rpcError instanceof Error ? rpcError.message : 'Error desconocido' },
         { status: 500 }
       );
     }
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error en la verificación de sesión:', err);
     return NextResponse.json(
-      { message: 'Error interno del servidor', valid: false, error: err.message },
+      { message: 'Error interno del servidor', valid: false, error: err instanceof Error ? err.message : 'Error desconocido' },
       { status: 500 }
     );
   }

@@ -12,10 +12,10 @@ export async function GET() {
       message: "Preguntas obtenidas exitosamente",
       questions: questionsData
     });
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error('Error al obtener preguntas:', error);
     return NextResponse.json(
-      { message: 'Error al obtener preguntas', error: error.message },
+      { message: 'Error al obtener preguntas', error: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   }

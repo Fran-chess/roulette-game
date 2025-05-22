@@ -11,8 +11,6 @@ interface LogoProps {
   animated?: boolean;
   /** Clase CSS adicional para el contenedor */
   className?: string;
-  /** Si se define, el logo será un enlace que lleva a esta ruta */
-  linkTo?: string;
   /** Controla si se mostrará sombra debajo del logo */
   withShadow?: boolean;
 }
@@ -25,7 +23,6 @@ const Logo = ({
   size = "auto",
   animated = true,
   className = "",
-  linkTo,
   withShadow = true,
 }: LogoProps) => {
   // [modificación] Dimensiones predefinidas para diferentes tamaños - versiones más compactas

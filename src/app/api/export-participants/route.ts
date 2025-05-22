@@ -4,13 +4,21 @@ import * as XLSX from 'xlsx';
 
 export async function GET(request: Request) {
   try {
+    // Verificar que supabaseAdmin esté disponible
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { message: 'Error en la conexión con la base de datos' },
+        { status: 500 }
+      );
+    }
+    
     // [modificación] Obtener los parámetros de la URL
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');
     const period = searchParams.get('period');
 
     // [modificación] Obtener participantes
-    let participantsQuery = supabaseAdmin
+    const participantsQuery = supabaseAdmin
       .from('participants')
       .select('id, nombre, apellido, email, created_at');
     
@@ -19,7 +27,7 @@ export async function GET(request: Request) {
     if (participantsError) {
       console.error('Error al obtener participantes:', participantsError);
       return NextResponse.json(
-        { message: 'Error al obtener participantes.', details: participantsError.message },
+        { message: 'Error al obtener participantes.', details: participantsError instanceof Error ? participantsError.message : String(participantsError) },
         { status: 500 }
       );
     }
@@ -52,7 +60,7 @@ export async function GET(request: Request) {
     if (playsError) {
       console.error('Error al obtener jugadas:', playsError);
       return NextResponse.json(
-        { message: 'Error al obtener jugadas.', details: playsError.message },
+        { message: 'Error al obtener jugadas.', details: playsError instanceof Error ? playsError.message : String(playsError) },
         { status: 500 }
       );
     }
@@ -80,7 +88,7 @@ export async function GET(request: Request) {
     if (totalCountError) {
       console.error('Error al contar jugadas totales:', totalCountError);
       return NextResponse.json(
-        { message: 'Error al contar jugadas totales.', details: totalCountError.message },
+        { message: 'Error al contar jugadas totales.', details: totalCountError instanceof Error ? totalCountError.message : String(totalCountError) },
         { status: 500 }
       );
     }
@@ -104,7 +112,7 @@ export async function GET(request: Request) {
     }
 
     // [modificación] Preparar datos para la hoja de cálculo
-    let dataToSheet: any[] = [];
+    let dataToSheet: Record<string, string | number>[] = [];
     
     if (period === 'all') {
       // [modificación] Para el total, usamos CantidadJugadasTotal
@@ -165,10 +173,10 @@ export async function GET(request: Request) {
     
     return response;
 
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error del servidor en export-participants:', err);
     return NextResponse.json(
-      { message: 'Error interno del servidor al exportar', details: err.message },
+      { message: 'Error interno del servidor al exportar', details: err instanceof Error ? err.message : 'Error desconocido' },
       { status: 500 }
     );
   }

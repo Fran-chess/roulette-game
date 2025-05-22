@@ -3,9 +3,10 @@ import { useState } from 'react';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { motion } from 'framer-motion';
+import { AdminUser } from '@/types';
 
 interface AdminLoginProps {
-  onLoginSuccess: (adminData: any) => void;
+  onLoginSuccess: (adminData: AdminUser) => void;
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
@@ -62,9 +63,13 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
         throw new Error(data.message || 'Error al iniciar sesión');
       }
 
+      if (!data.admin || !data.admin.id || !data.admin.email || !data.admin.name) {
+        throw new Error('Datos de administrador incompletos');
+      }
+
       onLoginSuccess(data.admin);
-    } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {
       setIsLoading(false);
     }

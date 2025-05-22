@@ -1,10 +1,18 @@
 // src/components/ui/Button.tsx
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import React from "react";
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+// [modificación] Propiedades que pueden causar conflicto entre React y Framer Motion
+type ConflictingProps = 
+  | 'onDrag' 
+  | 'onDragStart' 
+  | 'onDragEnd' 
+  | 'onAnimationStart'
+  | 'onAnimationComplete';
+
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, ConflictingProps> {
   children: React.ReactNode;
   variant?: "primary" | "secondary" | "danger" | "ghost" | "custom" | "gradient"; // Añadida variante custom
   className?: string;
@@ -23,24 +31,29 @@ export default function Button({
   touchOptimized = false, // Por defecto false para no romper botones existentes
   loading = false, // [modificación]
   loadingText = "Cargando...", // [modificación]
-  ...props
+  ...otherProps // [modificación] Renombrado para claridad
 }: ButtonProps) {
   // Base style con optimizaciones táctiles opcionales
   const baseStyle = `px-6 py-3 rounded-lg font-marineBold focus:outline-none focus:ring-4 focus:ring-opacity-75 
     transition-all duration-200 ease-in-out text-lg shadow-md 
     ${touchOptimized ? "touch-optimized min-h-[48px] sm:min-h-[56px]" : ""}`;
 
+  // [modificación] Extraer propiedades específicas de motion para evitar conflictos
+  const motionProps: HTMLMotionProps<"button"> = {
+    whileHover: !disabled && !loading ? { scale: 1.05 } : undefined,
+    whileTap: !disabled && !loading ? { scale: 0.95 } : undefined,
+    type,
+    onClick,
+    disabled: disabled || loading,
+    className: `${touchOptimized ? "touch-optimized" : ""} ${className}`,
+    ...otherProps // [modificación] Pasar otras propiedades no conflictivas
+  };
+
   // Si se proporciona una clase personalizada y la variante es 'custom', no aplicar estilos predeterminados
   if (variant === "custom" && className) {
     return (
       <motion.button
-        whileHover={!disabled && !loading ? { scale: 1.05 } : undefined} // [modificación] Considerar loading
-        whileTap={!disabled && !loading ? { scale: 0.95 } : undefined} // [modificación] Considerar loading
-        className={`${touchOptimized ? "touch-optimized" : ""} ${className}`}
-        type={type}
-        onClick={onClick}
-        disabled={disabled || loading} // [modificación] Deshabilitar si está cargando
-        {...props}
+        {...motionProps}
       >
         {loading ? loadingText : children}{" "}
         {/* [modificación] Mostrar texto de carga */}
@@ -74,19 +87,23 @@ export default function Button({
         whileTap: !disabled && !loading ? { scale: 0.95 } : undefined, // [modificación] Considerar loading
       };
 
+  // [modificación] Actualizar propiedades para la versión normal del botón
+  const standardMotionProps: HTMLMotionProps<"button"> = {
+    ...touchMotionProps,
+    type,
+    onClick,
+    disabled: disabled || loading,
+    className: `${baseStyle} ${variantStyles[variant]} ${className} ${
+      loading ? "opacity-75 cursor-not-allowed" : ""
+    }`,
+    ...otherProps // [modificación] Pasar otras propiedades no conflictivas
+  };
+
   return (
     <motion.button
-      {...touchMotionProps}
-      className={`${baseStyle} ${variantStyles[variant]} ${className} ${
-        loading ? "opacity-75 cursor-not-allowed" : ""
-      }`} // [modificación] Estilos visuales para carga
-      type={type}
-      onClick={onClick}
-      disabled={disabled || loading} // [modificación] Deshabilitar si está cargando
-      {...props}
+      {...standardMotionProps}
     >
-      {loading ? loadingText : children}{" "}
-      {/* [modificación] Mostrar texto de carga */}
+      {loading ? loadingText : children}
     </motion.button>
   );
 }

@@ -27,7 +27,7 @@ export interface Play {
   participant_id: string;
   score?: number;
   premio_ganado?: string;
-  detalles_juego?: any;
+  detalles_juego?: Record<string, unknown>;
 }
 
 export interface PlaySession {
@@ -42,13 +42,13 @@ export interface PlaySession {
   created_at: string;
   updated_at: string;
   admin_updated_at?: string;
-  game_data?: any;
+  game_data?: Record<string, unknown>;
   lastquestionid?: string;
   answeredcorrectly?: boolean;
   score?: number;
   premio_ganado?: string;
   participant_id?: string;
-  detalles_juego?: any;
+  detalles_juego?: Record<string, unknown>;
 }
 
 export interface AdminState {
@@ -111,7 +111,7 @@ export interface GameStore {
   startPlaySession: (
     userData: { nombre: string; apellido?: string; email: string; especialidad?: string },
     onSuccess?: (data: { participant: Participant, play?: Play, message: string }) => void,
-    onError?: (error: any) => void
+    onError?: (error: Error | unknown) => void
   ) => Promise<void>;
   setCurrentParticipant: (participant: Participant | null) => void;
   setCurrentQuestion: (question: Question | null) => void;

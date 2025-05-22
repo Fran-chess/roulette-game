@@ -119,11 +119,11 @@ export default function RegistrationForm({
               return;
             }
           }
-        } catch (verifyError: any) {
+        } catch (verifyError: Error | unknown) {
           console.error("Error al verificar sesión:", verifyError);
           setErrors({
             general: `Error al verificar la sesión: ${
-              verifyError.message || "Error desconocido"
+              verifyError instanceof Error ? verifyError.message : "Error desconocido"
             }`,
           });
           setIsSubmitting(false);
@@ -182,18 +182,19 @@ export default function RegistrationForm({
             console.error("Error de registro:", error);
             setErrors({
               general:
-                error.message || "Error al registrar. Inténtalo de nuevo.",
+                error instanceof Error ? error.message :
+                "Error al registrar. Inténtalo de nuevo.",
             });
             setIsSubmitting(false);
           }
         );
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       // Capturar cualquier error no manejado
       console.error("Error inesperado:", error);
       setErrors({
         general:
-          error.message ||
+          error instanceof Error ? error.message :
           "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
       });
       setIsSubmitting(false);

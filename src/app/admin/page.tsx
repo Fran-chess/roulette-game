@@ -1,19 +1,16 @@
 // src/app/admin/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Button from '@/components/ui/Button';
 import AdminLogin from '@/components/admin/AdminLogin';
 import AdminPanel from '@/components/admin/AdminPanel';
 import { useGameStore } from '@/store/gameStore';
-import { supabaseClient } from '@/lib/supabase';
 import { motion } from 'framer-motion';
+import { AdminUser } from '@/types';
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [adminData, setAdminData] = useState<any>(null);
-  const router = useRouter();
-  const { setAdminUser, adminUser } = useGameStore();
+  const [adminData, setAdminData] = useState<AdminUser | null>(null);
+  const { setAdminUser } = useGameStore();
 
   // Variantes de animación
   const containerVariants = {
@@ -25,15 +22,6 @@ export default function AdminPage() {
         when: "beforeChildren",
         staggerChildren: 0.2,
       },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { duration: 0.3, ease: "easeOut" },
     },
   };
 
@@ -57,7 +45,7 @@ export default function AdminPage() {
     checkAdminStatus();
   }, [setAdminUser]);
 
-  const handleLoginSuccess = (adminData: any) => {
+  const handleLoginSuccess = (adminData: AdminUser) => {
     setAdminData(adminData);
     setAdminUser(adminData);
     setIsLoggedIn(true);
@@ -81,11 +69,11 @@ export default function AdminPage() {
         initial="hidden"
         animate="visible"
       >
-        {!isLoggedIn ? (
-          // Si no hay sesión iniciada, mostramos solo el login
+        {!isLoggedIn || !adminData ? (
+          // Si no hay sesión iniciada o no hay datos de admin, mostramos solo el login
           <AdminLogin onLoginSuccess={handleLoginSuccess} />
         ) : (
-          // Si hay sesión iniciada, mostramos el panel de administración
+          // Si hay sesión iniciada y tenemos datos de admin, mostramos el panel de administración
           <AdminPanel adminData={adminData} onLogout={handleLogout} />
         )}
       </motion.div>

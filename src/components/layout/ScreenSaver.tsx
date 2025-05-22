@@ -18,7 +18,7 @@ export default function ScreenSaver({
 
   // Handler universal
   const handleAnyInteraction = useCallback(
-    (e: any) => {
+    () => {
       onInteraction();
     },
     [onInteraction]
@@ -36,7 +36,7 @@ export default function ScreenSaver({
       "mousedown",
       "touchstart",
     ];
-    const handler = (e: any) => handleAnyInteraction(e);
+    const handler = () => handleAnyInteraction();
 
     events.forEach((event) =>
       window.addEventListener(event, handler, { passive: true })

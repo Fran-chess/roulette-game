@@ -5,22 +5,10 @@ import Button from '@/components/ui/Button';
 import AdminPlayerForm from './AdminPlayerForm'; // Asume que este es tu componente
 import { useRouter } from 'next/navigation';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
-
-interface Session {
-  id?: string;
-  session_id: string;
-  status: string;
-  nombre?: string;
-  apellido?: string;
-  email?: string;
-  especialidad?: string;
-  created_at: string;
-  admin_updated_at?: string;
-  // Otros campos necesarios
-}
+import { PlaySession } from '@/types';
 
 interface SessionDetailViewProps {
-  session: Session;
+  session: PlaySession;
   onBackToSessions: () => void;
   onUpdateStatus: (sessionId: string, status: string) => Promise<void>;
   isLoadingUpdate: boolean;
@@ -162,7 +150,7 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
                 onClick={() => onUpdateStatus(session.session_id, 'completed')}
                 variant="custom"
                 className="bg-slate-900/30 hover:bg-slate-900/50 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-white/20 transition-colors duration-300"
-                disabled={isLoadingUpdate || session.status === 'completed'}
+                disabled={isLoadingUpdate}
               >
                 <FiCheckCircle className="mr-2" size={18} />
                 {isLoadingUpdate ? 'Actualizando...' : 'Marcar Completado'}

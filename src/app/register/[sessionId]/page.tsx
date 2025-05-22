@@ -1,15 +1,20 @@
-// [modificación] Este archivo solo actúa como un puente hacia el cliente
-'use client';
-import ClientWrapper from './ClientWrapper';
-import { use } from 'react';
+// [modificación] Componente servidor que maneja los parámetros
+import ClientRegisterPage from './ClientPage';
 
-// [modificación] Actualizamos para usar React.use() como recomienda Next.js
-export default function RegisterPage({ 
+// [modificación] Componente servidor que recibe los params como una Promise en Next.js 15
+export default async function RegisterPage({ 
   params 
 }: { 
-  params: { sessionId: string } | Promise<{ sessionId: string }> 
+  params: Promise<{ sessionId: string }> 
 }) {
-  // [modificación] Usamos React.use para desenvolver los params si son una promesa
-  const resolvedParams = params instanceof Promise ? use(params) : params;
-  return <ClientWrapper sessionId={resolvedParams.sessionId} />;
-} 
+  // [modificación] Extraemos sessionId del objeto params
+  const { sessionId } = await params;
+  
+  // [modificación] Pasamos la sessionId al componente cliente
+  return <ClientRegisterPage sessionId={sessionId} />;
+}
+
+// [modificación] Agregamos las propiedades de generación estática para cumplir con Next.js 15
+export const generateStaticParams = async () => {
+  return [];
+}; 

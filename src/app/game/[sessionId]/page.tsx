@@ -40,7 +40,7 @@ export default function GamePage() {
   const currentQuestion = useGameStore((state) => state.currentQuestion);
 
   // Redirección global
-  const handleRedirect = (path: string, message?: string) => {
+  const handleRedirect = (path: string) => {
     router.push(path);
   };
 
@@ -82,8 +82,8 @@ export default function GamePage() {
         if (gameState === "screensaver" || gameState === "register") {
           setGameState("roulette");
         }
-      } catch (error: any) {
-        setError(error.message || "Error al cargar el juego");
+      } catch (error: Error | unknown) {
+        setError(error instanceof Error ? error.message : "Error al cargar el juego");
       } finally {
         setIsLoading(false);
         setTimeout(() => {

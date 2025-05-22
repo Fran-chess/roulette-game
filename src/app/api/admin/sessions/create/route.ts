@@ -166,7 +166,7 @@ export async function POST(request: Request) {
       sessionDbId: sessionData?.id || null,  // ID de la base de datos (importante)
       verified: sessionCreated
     });
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error en la creación del juego:', err);
     return NextResponse.json(
       { message: 'Error interno del servidor' },

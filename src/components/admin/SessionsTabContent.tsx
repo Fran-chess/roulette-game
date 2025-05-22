@@ -1,27 +1,19 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiSettings, FiClock, FiUser, FiInfo, FiPlay } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiSettings, FiClock, FiUser, FiPlay } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
-import { useRouter } from 'next/navigation';
 // [modificación] Importar useRef y useState para controlar navegaciones
 import { useRef, useState } from 'react';
 // [modificación] Importar el store global de navegación
 import { useNavigationStore } from '@/store/navigationStore';
-
-interface Session {
-  id?: string;         // ID de la base de datos
-  session_id: string;  // UUID generado para la sesión
-  status: string;
-  nombre?: string;
-  apellido?: string;
-  created_at: string;
-}
+// [modificación] Importar PlaySession para usar la interfaz directamente
+import { PlaySession } from '@/types';
 
 interface SessionsTabContentProps {
-  activeSessions: Session[];
-  onSelectSession: (session: Session) => void;
+  activeSessions: PlaySession[];
+  onSelectSession: (session: PlaySession) => void;
   onCreateNewSession: () => void;
   isLoadingCreation: boolean; 
   isLoadingList: boolean;
@@ -34,7 +26,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   isLoadingCreation,
   isLoadingList,
 }) => {
-  const router = useRouter();
   // [modificación] Ref para evitar múltiples navegaciones
   const navigationInProgress = useRef(false);
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
@@ -43,7 +34,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
   // [modificación] Función para activar la partida usando el overlay global
-  const handleActivateGame = (session: Session, e: React.MouseEvent) => {
+  const handleActivateGame = (session: PlaySession, e: React.MouseEvent) => {
     e.stopPropagation(); // Evitar que se propague al contenedor
     
     // [modificación] Guard para evitar navegaciones múltiples
@@ -104,12 +95,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
       default:
         return status;
     }
-  };
-
-  // [modificación] Función para truncar ID muy largos
-  const formatId = (id: string | undefined, length = 8) => {
-    if (!id) return 'ID no disponible';
-    return id.length > length ? `${id.substring(0, length)}...` : id;
   };
 
   return (

@@ -35,11 +35,13 @@ export async function POST(request: Request) {
 
     // Verificación más flexible de la sesión
     // Primero intentamos verificar directamente por ID
-    let { data: sessionData, error: sessionFetchError } = await supabaseAdmin
+    const { data, error: sessionFetchError } = await supabaseAdmin
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
       .maybeSingle();
+      
+    let sessionData = data;
       
     // Si encontramos la sesión, verificar que no tenga ya un jugador registrado
     if (sessionData) {
@@ -111,10 +113,10 @@ export async function POST(request: Request) {
         }
         
         sessionData = createdSession;
-      } catch (rpcError: any) {
+      } catch (rpcError: Error | unknown) {
         console.error('Error en verificación RPC:', rpcError);
         return NextResponse.json(
-          { message: 'Error en la verificación RPC', error: rpcError.message },
+          { message: 'Error en la verificación RPC', error: rpcError instanceof Error ? rpcError.message : 'Error desconocido' },
           { status: 500 }
         );
       }
@@ -194,10 +196,10 @@ export async function POST(request: Request) {
       message: 'Jugador registrado exitosamente',
       session: updatedSession || null
     });
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error en el registro de jugador:', err);
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: err.message },
+      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
       { status: 500 }
     );
   }

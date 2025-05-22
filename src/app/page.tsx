@@ -1,20 +1,16 @@
-// src/app/page.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useGameStore } from "@/store/gameStore";
 import ScreenSaver from "@/components/layout/ScreenSaver";
 import AdminLogin from "@/components/admin/AdminLogin";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { useNavigationStore } from "@/store/navigationStore";
 import { useInactivityTimer } from "@/lib/hooks/useInactivityTimer";
 import dynamic from "next/dynamic";
-import type { GameState } from "@/types";
+import type { GameState, AdminUser } from "@/types";
 
-const VideoBackground = dynamic(() => import("@/components/layout/VideoBackground"), {
-  ssr: false,
-});
+const VideoBackground = dynamic(() => import("@/components/layout/VideoBackground"), { ssr: false });
 
 interface GameStateConfig {
   showVideo: boolean;
@@ -33,12 +29,10 @@ export default function HomePage() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const router = useRouter();
-
   const isNavigating = useNavigationStore(state => state.isNavigating);
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
-  const stateConfig: Record<GameState, GameStateConfig> = {
+  const stateConfig = useMemo<Record<GameState, GameStateConfig>>(() => ({
     'screensaver': {
       showVideo: true,
       detectInactivity: false
@@ -68,8 +62,9 @@ export default function HomePage() {
       detectInactivity: true,
       transitionTo: 'screensaver'
     }
-  };
+  }), []);
 
+  // --- Control de inactividad ---
   useInactivityTimer(
     300000, 
     () => {
@@ -81,54 +76,57 @@ export default function HomePage() {
     gameState
   );
 
+  // --- Transiciones automáticas entre estados ---
   useEffect(() => {
     const currentConfig = gameState && stateConfig[gameState];
-    
     if (currentConfig?.transitionTo) {
       const timer = setTimeout(() => {
         setGameState(currentConfig.transitionTo as GameState);
       }, 10000);
-      
       return () => clearTimeout(timer);
     }
-  }, [gameState, setGameState]);
+  }, [gameState, setGameState, stateConfig]);
 
+  // --- Navegación automática según el estado ---
   useEffect(() => {
     const currentConfig = gameState && stateConfig[gameState];
-    
     if (currentConfig?.route && !isTransitioning && !isNavigating) {
       const currentPath = window.location.pathname;
       if (currentPath !== currentConfig.route) {
         startNavigation(currentConfig.route, `Cargando ${gameState}...`);
       }
     }
-  }, [gameState, isTransitioning, isNavigating, startNavigation]);
+  }, [gameState, isTransitioning, isNavigating, startNavigation, stateConfig]);
 
+  // --- [modificación] Seteo inicial del estado solo si está vacío o nulo ---
   useEffect(() => {
-    setGameState('screensaver');
-    if (typeof resetCurrentGame === 'function') {
-      resetCurrentGame();
+    if (!gameState || typeof gameState === "undefined") {
+      setGameState('screensaver');
+      if (typeof resetCurrentGame === 'function') {
+        resetCurrentGame();
+      }
     }
-
+    // Persistencia del adminUser
     const storedAdmin = localStorage.getItem('adminUser');
     if (storedAdmin) {
       try {
         const parsedAdmin = JSON.parse(storedAdmin);
         setAdminUser(parsedAdmin);
-      } catch (error) {
+      } catch {
         localStorage.removeItem('adminUser');
         setAdminUser(null);
       }
     } else {
       setAdminUser(null);
     }
-  }, [setAdminUser, setGameState, resetCurrentGame]);
+    // [modificación] No vuelvas a setear el estado si ya existe, evita parpadeos y reseteos
+  // [modificación] Aclarar dependencias
+  }, [gameState, setAdminUser, setGameState, resetCurrentGame]);
 
+  // --- Interacción en la pantalla principal ---
   const handleScreenInteraction = useCallback(() => {
     if (isTransitioning) return;
-
     setIsTransitioning(true);
-
     if (!adminUser) {
       setShowLoginModal(true);
       setTimeout(() => setIsTransitioning(false), 300);
@@ -137,7 +135,8 @@ export default function HomePage() {
     }
   }, [isTransitioning, adminUser, startNavigation]);
 
-  const handleLoginSuccess = (adminDataFromLogin: any) => {
+  // --- Login de administrador exitoso ---
+  const handleLoginSuccess = (adminDataFromLogin: AdminUser) => {
     setAdminUser(adminDataFromLogin);
     localStorage.setItem('adminUser', JSON.stringify(adminDataFromLogin));
     setShowLoginModal(false);
@@ -145,16 +144,11 @@ export default function HomePage() {
     startNavigation('/admin', 'Accediendo al panel de administración...');
   };
 
-  const handleCloseLoginModal = () => {
-    setShowLoginModal(false);
-  };
-
+  // --- Empezar juego desde el screensaver ---
   const handleStartGame = useCallback(() => {
     if (isTransitioning) return;
     setIsTransitioning(true);
-    
     setGameState("register");
-    
     setTimeout(() => {
       setIsTransitioning(false);
       startNavigation('/register', 'Iniciando juego...');

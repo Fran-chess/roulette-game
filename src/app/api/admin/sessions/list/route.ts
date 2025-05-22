@@ -11,19 +11,25 @@ export async function GET(request: Request) {
 
   // Paso 2: Validar que se proporcionó el adminId.
   if (!adminId) {
-    return NextResponse.json({ message: 'Admin ID es requerido en los parámetros de la URL' }, { status: 400 });
+    return NextResponse.json(
+      { message: 'Admin ID es requerido en los parámetros de la URL' },
+      { status: 400 }
+    );
   }
 
   // Paso 3: Verificar que supabaseAdmin esté disponible (buena práctica).
   if (!supabaseAdmin) {
-    console.error('API /admin/sessions/list: supabaseAdmin no está disponible. Verifica la configuración.');
-    return NextResponse.json({ message: 'Error de configuración del servidor' }, { status: 500 });
+    console.error(
+      'API /admin/sessions/list: supabaseAdmin no está disponible. Verifica la configuración.'
+    );
+    return NextResponse.json(
+      { message: 'Error de configuración del servidor' },
+      { status: 500 }
+    );
   }
 
   try {
     // Paso 4: Consultar la base de datos usando supabaseAdmin.
-    // supabaseAdmin omite las RLS, por lo que puede leer todas las filas.
-    // Filtramos por el admin_id proporcionado para obtener solo las sesiones de ese admin.
     const { data, error } = await supabaseAdmin
       .from('plays') // Tu tabla se llama 'plays'
       .select('*')   // Selecciona todas las columnas de las sesiones, o especifica las que necesites
@@ -32,16 +38,40 @@ export async function GET(request: Request) {
 
     // Paso 5: Manejar errores de la consulta a la base de datos.
     if (error) {
-      console.error('API /admin/sessions/list: Error al obtener las sesiones de juego:', error);
-      return NextResponse.json({ message: 'Error al obtener las sesiones de juego', details: error.message }, { status: 500 });
+      console.error(
+        'API /admin/sessions/list: Error al obtener las sesiones de juego:',
+        error
+      );
+      return NextResponse.json(
+        {
+          message: 'Error al obtener las sesiones de juego',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 }
+      );
     }
 
     // Paso 6: Devolver los datos encontrados (o un array vacío si no hay sesiones para ese admin).
-    // Asegúrate de que la estructura de 'data' coincida con tu interfaz PlaySession en el frontend.
-    return NextResponse.json(data || []); 
-  } catch (err: any) {
+    return NextResponse.json(data || []);
+  } catch (err: unknown) {
     // Paso 7: Manejar cualquier otra excepción inesperada.
-    console.error('API /admin/sessions/list: Excepción general en el endpoint:', err);
-    return NextResponse.json({ message: 'Error interno del servidor al obtener sesiones', details: err.message }, { status: 500 });
+    console.error(
+      'API /admin/sessions/list: Excepción general en el endpoint:',
+      err
+    );
+
+    // [modificación]: Normalizamos el mensaje de error
+    let errorMessage = 'Error desconocido';           // [modificación]
+    if (err instanceof Error) {                       // [modificación]
+      errorMessage = err.message;                     // [modificación]
+    }
+
+    return NextResponse.json(
+      {
+        message: 'Error interno del servidor al obtener sesiones',
+        details: errorMessage,                         // [modificación]
+      },
+      { status: 500 }
+    );
   }
 }

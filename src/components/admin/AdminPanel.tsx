@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabaseClient } from "@/lib/supabase"; // Sigue siendo necesario para la suscripción en tiempo real
 import { useGameStore } from "@/store/gameStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
-
 import AdminTabs from "./AdminTabs";
 import DashboardTabContent from "./DashboardTabContent";
 import SessionsTabContent from "./SessionsTabContent";
@@ -41,14 +39,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     adminState,
     fetchGameSessions,
     setAdminCurrentSession,
-    setAdminLoading,
     setAdminNotification,
     clearAdminNotifications,
     createNewSession,
     updateSessionStatus,
-  } = useGameStore();
-
-  const router = useRouter();
+    } = useGameStore();
 
   // [modificación] Usar clearAdminNotifications del store global
   const clearNotifications = () => {

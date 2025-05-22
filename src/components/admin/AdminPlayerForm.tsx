@@ -59,8 +59,8 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
       if (onPlayerRegistered) {
         onPlayerRegistered();
       }
-    } catch (err: any) {
-      setError(err.message || 'Error al registrar jugador');
+    } catch (err: Error | unknown) {
+      setError(err instanceof Error ? err.message : 'Error al registrar jugador');
     } finally {
       setIsLoading(false);
     }

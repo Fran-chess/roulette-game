@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import RegistrationForm from '@/components/game/RegistrationForm'; 
 import { motion } from 'framer-motion';
@@ -16,12 +16,10 @@ interface ClientWrapperProps {
 
 // Componente wrapper para la página de registro con sessionId
 export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
-  const [isClient, setIsClient] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sessionData, setSessionData] = useState<any>(null);
-  const [isRedirecting, setIsRedirecting] = useState(false);
-  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
+  const [isRedirecting] = useState(false);
+  const [redirectTarget, setRedirectTarget] = useState<string>('');
 
   const router = useRouter();
 
@@ -30,15 +28,14 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   const setGameSession = useGameStore((state) => state.setGameSession);
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
-  const handleRedirect = (path: string, message?: string) => {
+  const handleRedirect = useCallback((path: string, message?: string) => {
     console.log(`Iniciando navegación global a: ${path}`);
+    setRedirectTarget(path);
     startNavigation(path, message);
-  };
+  }, [startNavigation]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsClient(true);
-
       if (!sessionId || sessionId.length < 10) {
         setError('ID de sesión inválido o incompleto');
         setIsLoading(false);
@@ -76,12 +73,10 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
             return;
           } else if (!isSessionPendingRegistration(data.data)) {
             setError(`Esta sesión no está disponible para registro (estado: ${data.data.status})`);
-          } else {
-            setSessionData(data.data);
           }
-        } catch (error: any) {
+        } catch (error: Error | unknown) {
           console.error('Error al verificar sesión:', error);
-          setError(error.message || 'Error al conectar con el servidor');
+          setError(error instanceof Error ? error.message : 'Error al conectar con el servidor');
         } finally {
           setIsLoading(false);
           setTimeout(() => {
@@ -92,7 +87,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
 
       verifySession();
     }
-  }, [sessionId, router, setGameSession, startNavigation]);
+  }, [sessionId, router, setGameSession, startNavigation, handleRedirect]);
 
   const handlePlayerRegistered = () => {
     handleRedirect(`/game/${sessionId}`, 'Preparando la ruleta...');

@@ -60,9 +60,9 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
       if (onSessionUpdate && data.session) {
         onSessionUpdate(data.session);
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Error al resetear jugador:', error);
-      setError(error.message || 'Error al resetear los datos del jugador');
+      setError(error instanceof Error ? error.message : 'Error al resetear los datos del jugador');
     } finally {
       setIsLoading(false);
     }
@@ -106,9 +106,9 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
       if (onSessionUpdate && data.session) {
         onSessionUpdate(data.session);
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Error al actualizar estado:', error);
-      setError(error.message || 'Error al actualizar el estado de la sesión');
+      setError(error instanceof Error ? error.message : 'Error al actualizar el estado de la sesión');
     } finally {
       setIsLoading(false);
     }

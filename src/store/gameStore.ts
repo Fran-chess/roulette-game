@@ -3,51 +3,12 @@ import { create } from 'zustand';
 import type { 
   Participant, 
   Question, 
-  GameState, 
-  GameStore as GameStoreType, 
-  Play,
   PlaySession,
-  AdminUser,
-  PrizeFeedback
+  GameStore
 } from '@/types';
 
-// Define la estructura del estado del admin dentro del store
-interface AdminSpecificState {
-  activeSessions: PlaySession[];
-  currentSession: PlaySession | null;
-  isLoading: {
-    sessionsList: boolean;
-    sessionAction: boolean;
-  };
-  error: string | null;
-  success: string | null;
-}
-
-// Extiende tu GameStoreType para incluir estas nuevas acciones y estados si no lo has hecho
-// Asumo que GameStoreType en @/types/index.ts ya incluye las nuevas propiedades y acciones
-// como adminState, adminFetchGameSessions, etc.
-// Si no, deberías añadirlas allí. Por ejemplo:
-// export interface GameStore {
-//   // ... tus estados y acciones existentes ...
-//   adminUser: AdminUser | null;
-//   adminState: AdminSpecificState;
-//   questions: Question[];
-//
-//   setAdminUser: (adminData: AdminUser | null) => void;
-//   setQuestions: (questions: Question[]) => void;
-//   adminFetchGameSessions: (adminId: string) => Promise<PlaySession[]>;
-//   adminSetCurrentSession: (session: PlaySession | null) => void;
-//   adminSetLoading: (type: 'sessionsList' | 'sessionAction', isLoading: boolean) => void;
-//   adminSetNotification: (type: 'success' | 'error', message: string | null) => void;
-//   adminClearNotifications: () => void;
-//   adminCreateNewSession: (adminId: string) => Promise<string | null>; // Devuelve el session_id o null
-//   adminUpdateSessionStatus: (sessionId: string, status: string, adminId: string) => Promise<boolean>;
-//   clearCurrentGame: () => void;
-//   resetCurrentGameData: () => void;
-// }
-
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
-export const useGameStore = create<GameStoreType>((set, get) => ({
+export const useGameStore = create<GameStore>((set, get) => ({
   // Estados principales del juego
   gameState: 'screensaver',
   participants: [], // Lista de participantes (podría no ser necesaria si solo gestionas uno a la vez)
@@ -72,7 +33,7 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
     activeSessions: [],
     currentSession: null,
     isLoading: {
-      sessionsList: true,
+      sessionsList: false,
       sessionAction: false,
     },
     error: null,
@@ -142,14 +103,25 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
 
   updateCurrentParticipantScore: ({ questionId, answeredCorrectly, prizeWon }) => {
     set((state) => {
-      if (!state.currentParticipant) return {};
-      const updatedParticipant: Participant = {
+      if (!state.currentParticipant) return state;
+
+      // Actualizamos el participante actual
+      const updatedParticipant = {
         ...state.currentParticipant,
         lastQuestionId: questionId,
-        answeredCorrectly: answeredCorrectly,
-        prizeWon: prizeWon,
+        answeredCorrectly,
+        ...(prizeWon ? { prizeWon } : {})
       };
-      return { currentParticipant: updatedParticipant };
+
+      // Actualizamos la lista de participantes si existe el participante allí
+      const updatedParticipants = state.participants.map(p => 
+        p.id === updatedParticipant.id ? updatedParticipant : p
+      );
+
+      return {
+        currentParticipant: updatedParticipant,
+        participants: updatedParticipants
+      };
     });
   },
 
@@ -226,9 +198,9 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
       const sessionsData: PlaySession[] = await response.json();
       set(state => ({ adminState: { ...state.adminState, activeSessions: sessionsData || [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
       return sessionsData;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Store: fetchGameSessions error:", error);
-      set(state => ({ adminState: { ...state.adminState, error: error.message, activeSessions: [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
+      set(state => ({ adminState: { ...state.adminState, error: error instanceof Error ? error.message : 'Error desconocido', activeSessions: [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
       return [];
     }
   },
@@ -278,14 +250,14 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
       try {
         await navigator.clipboard.writeText(fullUrl);
         get().setAdminNotification('success', 'Juego creado. URL copiada!');
-      } catch (e) {
+      } catch {
         get().setAdminNotification('success', 'Juego creado. (URL no copiada)');
       }
       await get().fetchGameSessions();
       return gameSessionUUID;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Store: createNewSession error:", error);
-      get().setAdminNotification('error', error.message);
+      get().setAdminNotification('error', error instanceof Error ? error.message : 'Error desconocido');
       return null;
     } finally {
       get().setAdminLoading('sessionAction', false);
@@ -306,9 +278,9 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
       if (!response.ok) throw new Error(data.message || 'Error al actualizar estado.');
       get().setAdminNotification('success', `Juego ${sessionId.substring(0,8)} actualizado a ${status}.`);
       return true;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Store: updateSessionStatus error:", error);
-      get().setAdminNotification('error', error.message);
+      get().setAdminNotification('error', error instanceof Error ? error.message : 'Error desconocido');
       return false;
     } finally {
       get().setAdminLoading('sessionAction', false);
@@ -349,7 +321,7 @@ export const useGameStore = create<GameStoreType>((set, get) => ({
       } else {
         throw new Error('Respuesta de registro inválida');
       }
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error('Error en startPlaySession:', error);
       if (onError) onError(error);
     }

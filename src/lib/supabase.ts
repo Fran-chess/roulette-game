@@ -54,8 +54,17 @@ export const supabaseAdmin = supabaseServiceRoleKey
     )
   : null;
 
-// [modificación] Función de ayuda para depurar errores de Supabase en desarrollo
-export function handleSupabaseError(error: any, context: string) {
+// [modificación] Definiendo interfaz para errores de Supabase
+export interface SupabaseError {
+  message: string;
+  status?: number;
+  details?: string;
+  hint?: string;
+  code?: string;
+}
+
+// [modificación] Función de ayuda para depurar errores de Supabase en desarrollo con tipo específico
+export function handleSupabaseError(error: Error | SupabaseError | unknown, context: string) {
   if (process.env.NODE_ENV !== 'production') {
     console.error(`Error de Supabase en ${context}:`, error);
   }

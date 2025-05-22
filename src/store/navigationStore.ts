@@ -23,7 +23,7 @@ interface NavigationStore {
    * @param target Ruta a la que se está navegando
    * @param message Mensaje personalizado a mostrar
    */
-  startNavigation: (target: string, message?: string) => void;
+  startNavigation: (target: string, message?: string | null) => void;
   
   /**
    * Finaliza la transición de navegación

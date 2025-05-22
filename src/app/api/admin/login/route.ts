@@ -56,7 +56,7 @@ export async function POST(request: Request) {
         name: admin.name
       }
     });
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error en el inicio de sesión:', err);
     return NextResponse.json(
       { message: 'Error interno del servidor' },

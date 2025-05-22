@@ -100,7 +100,6 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       null
     );
     const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [spinEffect, setSpinEffect] = useState("");
 
     const animationConfigRef = useRef({
       startTime: 0,
@@ -134,7 +133,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       try {
         const audio = new Audio("/sounds/wheel-spin.mp3");
         audio.preload = "auto";
-        audio.addEventListener("error", (e) => {
+        audio.addEventListener("error", () => {
           const mediaError = audio.error;
           console.warn(
             "AUDIO: No se pudo cargar el audio de giro:",
@@ -368,7 +367,6 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       if (isSpinning || numSegments === 0) return;
       setIsSpinning(true);
       setHighlightedSegment(null);
-      setSpinEffect("spin-effect");
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});
@@ -388,7 +386,6 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         if (elapsedTime >= config.duration) {
           const finalEffectiveAngle = config.targetAngle % (2 * Math.PI);
           setCurrentAngle(finalEffectiveAngle);
-          setSpinEffect("");
           let winningAngle = 2 * Math.PI - (config.targetAngle % (2 * Math.PI));
           if (winningAngle >= 2 * Math.PI - 0.0001) winningAngle = 0;
           const winningIndex =

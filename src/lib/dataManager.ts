@@ -14,7 +14,7 @@ export const exportParticipantsToExcel = (participants: Participant[], fileName:
     Apellido: p.apellido || '',
     Email: p.email || '',
     Especialidad: p.especialidad || '',
-    FechaRegistro: p.timestamp.toLocaleString('es-AR'), // Formatear fecha
+    FechaRegistro: p.timestamp ? p.timestamp.toLocaleString('es-AR') : 'No disponible',
     // Puedes añadir más campos si los registras, como pregunta_respondida, respuesta_correcta, premio_ganado
   }));
 

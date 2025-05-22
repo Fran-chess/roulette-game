@@ -4,6 +4,14 @@ import { supabaseAdmin } from '@/lib/supabase';
 // Endpoint para actualizar el estado de una sesión de juego
 export async function POST(request: Request) {
   try {
+    // Verificar que supabaseAdmin esté disponible
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { message: 'Error en la conexión con la base de datos' },
+        { status: 500 }
+      );
+    }
+    
     const { sessionId, status } = await request.json();
 
     // Validar campos obligatorios
@@ -63,10 +71,10 @@ export async function POST(request: Request) {
       message: 'Estado de sesión actualizado exitosamente',
       session: sessionData || null
     });
-  } catch (err: any) {
+  } catch (err: Error | unknown) {
     console.error('Error al actualizar estado de sesión:', err);
     return NextResponse.json(
-      { message: 'Error interno del servidor' },
+      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
       { status: 500 }
     );
   }
