@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function PrizeModal() {
   const setGameState = useGameStore((state) => state.setGameState);
@@ -13,13 +13,7 @@ export default function PrizeModal() {
   const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
-  const showConfetti = useGameStore((state) => state.showConfetti);
   const setShowConfetti = useGameStore((state) => state.setShowConfetti);
-
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== "undefined" ? window.innerWidth : 0,
-    height: typeof window !== "undefined" ? window.innerHeight : 0,
-  });
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
@@ -29,22 +23,11 @@ export default function PrizeModal() {
     ? `/images/premios/${prizeName.replace(/\s+/g, "-")}.png`
     : null;
 
-  // Efecto para gestionar el confeti
+  // Efecto para mostrar confeti cuando la respuesta es correcta
   useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-    window.addEventListener("resize", handleResize);
-
     if (answeredCorrectly) {
       setShowConfetti(true);
     }
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
   }, [answeredCorrectly, setShowConfetti]);
 
   const gameSession = useGameStore((state) => state.gameSession);

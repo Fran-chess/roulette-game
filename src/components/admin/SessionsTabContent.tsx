@@ -1,6 +1,6 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiSettings, FiClock, FiUser, FiPlay, FiXCircle } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiXCircle } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
@@ -14,15 +14,13 @@ import { PlaySession } from '@/types';
 
 interface SessionsTabContentProps {
   activeSessions: PlaySession[];
-  onSelectSession: (session: PlaySession) => void;
   onCreateNewSession: () => void;
-  isLoadingCreation: boolean; 
+  isLoadingCreation: boolean;
   isLoadingList: boolean;
 }
 
 const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   activeSessions,
-  onSelectSession,
   onCreateNewSession,
   isLoadingCreation,
   isLoadingList,
