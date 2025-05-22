@@ -199,13 +199,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     }
   };
 
-  // [modificación] Usar setAdminCurrentSession del store global
-  const handleSelectSession = (session: PlaySession) => {
-    console.log("AdminPanel: Sesión seleccionada:", session);
-    setAdminCurrentSession(session);
-    setActiveTab("new-session");
-    clearNotifications();
-  };
 
   // [modificación] Usar updateSessionStatus del store global
   const handleUpdateSessionStatus = async (
@@ -296,7 +289,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
             <SessionsTabContent
               key="sessions"
               activeSessions={adminState.activeSessions}
-              onSelectSession={handleSelectSession}
               onCreateNewSession={handleCreateNewSession}
               isLoadingCreation={adminState.isLoading.sessionAction}
               isLoadingList={adminState.isLoading.sessionsList}
