@@ -50,8 +50,9 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     setActivatingSession(session.session_id);
     navigationInProgress.current = true;
     
-    // Actualizar estado a playing
-    updateSessionStatus(session.session_id, 'playing');
+    // Asegurarse de que la sesión quede en estado de registro pendiente
+    // para que al navegar al formulario se pueda completar el registro
+    updateSessionStatus(session.session_id, 'pending_player_registration');
 
     const targetPath = `/register/${session.session_id}`;
     console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
