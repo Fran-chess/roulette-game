@@ -24,7 +24,7 @@ export function isPlayerRegistered(session: PlaySession | null): boolean {
  * @returns true si la sesión está en progreso
  */
 export function isSessionInProgress(session: PlaySession | null): boolean {
-  return !!(session && session.status === 'in_progress');
+  return !!(session && session.status === 'playing');
 }
 
 /**
@@ -43,9 +43,9 @@ export function isSessionPendingRegistration(session: PlaySession | null): boole
  */
 export function isSessionPlayable(session: PlaySession | null): boolean {
   return !!(
-    session && 
-    (session.status === 'player_registered' || session.status === 'in_progress') &&
+    session &&
+    (session.status === 'player_registered' || session.status === 'playing') &&
     session.nombre &&
     session.email
   );
-} 
+}

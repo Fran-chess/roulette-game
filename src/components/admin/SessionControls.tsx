@@ -149,7 +149,7 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
           </button>
           
           <button
-            onClick={() => updateSessionStatus('in_progress')}
+            onClick={() => updateSessionStatus('playing')}
             disabled={isLoading || !isPlayerRegistered(session)}
             className="bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-3 rounded-md text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
