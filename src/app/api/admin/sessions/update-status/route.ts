@@ -31,13 +31,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Actualizar el estado de la sesión directamente en la tabla
+    // [modificación] Actualizar el estado de la sesión y timestamp en la tabla 'plays'
     const { data: updatedSession, error } = await supabaseAdmin
       .from('plays')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status, updated_at: new Date().toISOString() }) // actualizar estado y timestamp [modificación]
       .eq('session_id', sessionId)
-      .select()
-      .single();
+      .select() // devolver los campos actualizados [modificación]
+      .single(); // asegurar un único registro [modificación]
 
     if (error) {
       console.error('Error al actualizar estado:', error);
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!updatedSession) {
+    if (!updatedSession) { // [modificación] manejar caso de sesión no encontrada
       return NextResponse.json(
         { message: 'No se encontró la sesión o no se pudo actualizar' },
         { status: 404 }
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
 
     if (fetchError) {
       console.error('Error al obtener detalles de sesión:', fetchError);
-      // No devolvemos error, ya que la sesión se actualizó correctamente
+      // No interrumpimos: la actualización ya se realizó correctamente
     }
 
     return NextResponse.json({
@@ -77,4 +77,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
