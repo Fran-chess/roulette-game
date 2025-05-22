@@ -31,14 +31,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Actualizar estado de la sesión usando la función de PostgreSQL
-    const { data: updated, error } = await supabaseAdmin.rpc(
-      'update_game_session_status',
-      {
-        p_session_id: sessionId,
-        p_status: status
-      }
-    );
+    // Actualizar el estado de la sesión directamente en la tabla
+    const { data: updatedSession, error } = await supabaseAdmin
+      .from('plays')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('session_id', sessionId)
+      .select()
+      .single();
 
     if (error) {
       console.error('Error al actualizar estado:', error);
@@ -48,7 +47,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!updated) {
+    if (!updatedSession) {
       return NextResponse.json(
         { message: 'No se encontró la sesión o no se pudo actualizar' },
         { status: 404 }
