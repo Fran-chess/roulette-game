@@ -4,24 +4,18 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
-
-// Importación dinámica para evitar problemas de SSR con window
-const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
+import { useEffect } from "react";
 
 export default function PrizeModal() {
   const setGameState = useGameStore((state) => state.setGameState);
   const resetCurrentGame = useGameStore((state) => state.resetCurrentGame);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
-  const setCurrentParticipant = useGameStore(
-    (state) => state.setCurrentParticipant
-  );
+  const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
+  const showConfetti = useGameStore((state) => state.showConfetti);
+  const setShowConfetti = useGameStore((state) => state.setShowConfetti);
 
-  // Estado para confeti
-  const [showConfetti, setShowConfetti] = useState(false);
   const [windowSize, setWindowSize] = useState({
     width: typeof window !== "undefined" ? window.innerWidth : 0,
     height: typeof window !== "undefined" ? window.innerHeight : 0,
@@ -37,7 +31,6 @@ export default function PrizeModal() {
 
   // Efecto para gestionar el confeti
   useEffect(() => {
-    // Actualizar tamaño de ventana para el confeti
     const handleResize = () => {
       setWindowSize({
         width: window.innerWidth,
@@ -46,33 +39,46 @@ export default function PrizeModal() {
     };
     window.addEventListener("resize", handleResize);
 
-    // Mostrar confeti cuando responde correctamente
     if (answeredCorrectly) {
       setShowConfetti(true);
-      // Detener confeti después de 5 segundos
-      const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 5000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener("resize", handleResize);
-      };
     }
-    return () => window.removeEventListener("resize", handleResize);
-  }, [answeredCorrectly]);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [answeredCorrectly, setShowConfetti]);
 
-  const handlePlayAgain = () => {
-    resetCurrentGame();
-    setCurrentParticipant(null);
-    resetPrizeFeedback();
-    setGameState("register"); // Va directo al registro para el próximo participante
+  const gameSession = useGameStore((state) => state.gameSession);
+
+  const resetSessionForNextPlayer = async () => {
+    if (gameSession) {
+      try {
+        await fetch('/api/admin/sessions/reset-player', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: gameSession.session_id }),
+        });
+      } catch (err) {
+        console.error('Error resetting session:', err);
+      }
+    }
   };
 
-  const handleGoHome = () => {
+  const handlePlayAgain = async () => {
+    await resetSessionForNextPlayer();
     resetCurrentGame();
     setCurrentParticipant(null);
     resetPrizeFeedback();
-    setGameState("screensaver"); // Vuelve a la pantalla de inicio/reposo
+    setShowConfetti(false);
+    setGameState("register");
+  };
+
+  const handleGoHome = async () => {
+    await resetSessionForNextPlayer();
+    resetCurrentGame();
+    setCurrentParticipant(null);
+    resetPrizeFeedback();
+    setShowConfetti(false);
+    setGameState("screensaver");
   };
 
   if (answeredCorrectly === null) {
@@ -131,24 +137,7 @@ export default function PrizeModal() {
       aria-modal="true"
       role="dialog"
     >
-      {/* Confetti cuando hay respuesta correcta */}
-      {showConfetti && answeredCorrectly && (
-        <Confetti
-          width={windowSize.width}
-          height={windowSize.height}
-          recycle={false}
-          numberOfPieces={500}
-          gravity={0.2}
-          colors={[
-            "#FFC107",
-            "#FF9800",
-            "#FF5722",
-            "#4CAF50",
-            "#2196F3",
-            "#9C27B0",
-          ]}
-        />
-      )}
+
 
       <motion.div
         key="prizeModalContent"

@@ -27,6 +27,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     prizeName: "",
   },
 
+  // Estado global para mostrar confeti
+  showConfetti: false,
+
   // Estado del administrador
   adminUser: null,
   adminState: {
@@ -134,6 +137,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // [modificación] Funciones para gestionar el feedback del premio
   setPrizeFeedback: (feedback) => set({ prizeFeedback: feedback }),
+
+  setShowConfetti: (value: boolean) => set({ showConfetti: value }),
   
   resetPrizeFeedback: () => set({ 
     prizeFeedback: { 
@@ -151,11 +156,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
     currentQuestion: null,
     lastSpinResultIndex: null,
     gameSession: null,
-    prizeFeedback: { 
-      answeredCorrectly: null, 
-      explanation: "", 
-      correctOption: "", 
-      prizeName: "" 
+    showConfetti: false,
+    prizeFeedback: {
+      answeredCorrectly: null,
+      explanation: "",
+      correctOption: "",
+      prizeName: ""
     },
     // No se limpian las 'questions' si son genéricas
   }),
@@ -170,10 +176,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     currentPlay: null,
     gameSession: null,
     questions: [],
-    prizeFeedback: { 
-      answeredCorrectly: null, 
-      explanation: "", 
-      correctOption: "", 
+    showConfetti: false,
+    prizeFeedback: {
+      answeredCorrectly: null,
+      explanation: "",
+      correctOption: "",
       prizeName: "" 
     },
   }),
