@@ -2,7 +2,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import type { Question, AnswerOption } from '@/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Button from '@/components/ui/Button';
 
 interface TimerProps {
@@ -74,15 +74,14 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     (state) => state.updateCurrentParticipantScore
   );
   const setPrizeFeedback = useGameStore((state) => state.setPrizeFeedback);
+  const setShowConfetti = useGameStore((state) => state.setShowConfetti);
 
   const [selectedAnswer, setSelectedAnswer] = useState<AnswerOption | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     setSelectedAnswer(null);
     setIsAnswered(false);
-    setShowFeedback(false);
   }, [question]);
 
   const handleTimeUp = useCallback(() => {
@@ -103,7 +102,6 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         prizeName: "",
       });
       
-      setShowFeedback(true);
       setIsAnswered(true);
       setTimeout(() => {
         setGameState('prize');
@@ -116,10 +114,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       if (isAnswered) return;
       setSelectedAnswer(option);
       setIsAnswered(true);
-      setShowFeedback(true);
 
       const correctAnswer = option.correct;
       const prizeWon = correctAnswer ? question.prize : undefined;
+
+      if (correctAnswer) {
+        setShowConfetti(true);
+      }
       
       const correctOption = question.options.find(o => o.correct);
 
@@ -143,12 +144,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       }, 2500);
     },
     [
-      isAnswered, 
-      question, 
-      currentParticipant, 
-      updateCurrentParticipantScore, 
+      isAnswered,
+      question,
+      currentParticipant,
+      updateCurrentParticipantScore,
       setGameState,
-      setPrizeFeedback
+      setPrizeFeedback,
+      setShowConfetti
     ]
   );
 
@@ -236,25 +238,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         ))}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-white/20 w-full">
-        <AnimatePresence mode="wait">
-          {showFeedback && isAnswered && (
-            <motion.div
-              key="feedback"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0, transition: { delay: 0.1, duration: 0.3 } }}
-              exit={{ opacity: 0, y: -10, transition: { duration: 0.2 } }}
-              className="text-center"
-            >
-              {selectedAnswer?.correct ? (
-                <p className="text-verde-salud font-marineBold text-xl md:text-2xl">¡Correcto!</p>
-              ) : (
-                <p className="text-red-400 font-marineBold text-xl md:text-2xl">Incorrecto</p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <div className="mt-6 pt-4 border-t border-white/20 w-full"></div>
     </motion.div>
   );
 }

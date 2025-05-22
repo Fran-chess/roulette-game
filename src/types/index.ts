@@ -34,7 +34,7 @@ export interface PlaySession {
   id: string;
   session_id: string;
   admin_id: string;
-  status: 'pending_player_registration' | 'player_registered' | 'in_progress' | 'completed' | 'archived';
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
   nombre?: string;
   apellido?: string;
   email?: string;
@@ -106,6 +106,7 @@ export interface GameStore {
   gameSession: PlaySession | null;
   adminState: AdminState;
   prizeFeedback: PrizeFeedback;
+  showConfetti: boolean;
   setGameState: (state: GameState) => void;
   addParticipant: (participantData: Omit<Participant, 'id' | 'timestamp'>) => void;
   startPlaySession: (
@@ -122,6 +123,7 @@ export interface GameStore {
   resetCurrentGameData: () => void;
   setPrizeFeedback: (feedback: PrizeFeedback) => void;
   resetPrizeFeedback: () => void;
+  setShowConfetti: (value: boolean) => void;
   setAdminUser: (adminData: AdminUser | null) => void;
   fetchGameSessions: () => Promise<PlaySession[]>;
   setGameSession: (sessionData: PlaySession | null) => void;
