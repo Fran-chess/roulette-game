@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function PrizeModal() {
   const setGameState = useGameStore((state) => state.setGameState);
@@ -56,7 +56,6 @@ export default function PrizeModal() {
   }, [answeredCorrectly]);
 
   const handlePlayAgain = async () => {
-    await resetSessionForNextPlayer();
     resetCurrentGame();
     setCurrentParticipant(null);
     resetPrizeFeedback();
@@ -65,7 +64,6 @@ export default function PrizeModal() {
   };
 
   const handleGoHome = async () => {
-    await resetSessionForNextPlayer();
     resetCurrentGame();
     setCurrentParticipant(null);
     resetPrizeFeedback();

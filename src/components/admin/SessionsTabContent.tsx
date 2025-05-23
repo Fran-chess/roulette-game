@@ -30,9 +30,16 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const navigationInProgress = useRef(false);
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
+  // [modificación] Estado para la sesión de información en el modal
+  const [infoSession, setInfoSession] = useState<PlaySession | null>(null);
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
   const updateSessionStatus = useGameStore(state => state.updateSessionStatus);
+
+  // [modificación] Función para seleccionar una sesión y mostrar su información
+  const onSelectSession = (session: PlaySession) => {
+    setInfoSession(session);
+  };
 
   // [modificación] Función para activar la partida usando el overlay global
   const handleActivateGame = (session: PlaySession, e: React.MouseEvent) => {
