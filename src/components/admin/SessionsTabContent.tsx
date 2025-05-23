@@ -1,7 +1,8 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiXCircle } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiXCircle, FiInfo } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 // [modificación] Importar useRef y useState para controlar navegaciones
@@ -30,6 +31,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
   const [closingSession, setClosingSession] = useState<string | null>(null);
+  const [infoSession, setInfoSession] = useState<PlaySession | null>(null);
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
   const updateSessionStatus = useGameStore(state => state.updateSessionStatus);
@@ -70,6 +72,11 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     setClosingSession(session.session_id);
     await updateSessionStatus(session.session_id, 'completed');
     setClosingSession(null);
+  };
+
+  const handleShowInfo = (session: PlaySession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInfoSession(session);
   };
 
   // [modificación] Función para obtener clases de estado según el status de la sesión con estilos actualizados
@@ -238,6 +245,15 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                         </>
                       )}
                     </Button>
+
+                    <Button
+                      onClick={(e) => handleShowInfo(session, e)}
+                      variant="custom"
+                      className="bg-slate-500/80 hover:bg-slate-600/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-slate-400/50 transition-colors duration-300"
+                    >
+                      <FiInfo className="mr-1" size={12} />
+                      Opciones
+                    </Button>
                   </div>
                 </div>
               </motion.div>
@@ -245,6 +261,31 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
           </motion.div>
         )}
       </div>
+      <Modal
+        isOpen={!!infoSession}
+        onClose={() => setInfoSession(null)}
+        title="Información de la Partida"
+      >
+        {infoSession && (
+          <div className="space-y-2 text-sm">
+            <p>
+              <span className="font-marineBold">ID:</span> {infoSession.session_id}
+            </p>
+            <p>
+              <span className="font-marineBold">Estado:</span> {getStatusText(infoSession.status)}
+            </p>
+            <p>
+              <span className="font-marineBold">Creada:</span>{' '}
+              {new Date(infoSession.created_at).toLocaleString()}
+            </p>
+            {infoSession.nombre && (
+              <p>
+                <span className="font-marineBold">Jugador:</span> {infoSession.nombre} {infoSession.apellido || ''}
+              </p>
+            )}
+          </div>
+        )}
+      </Modal>
     </motion.div>
   );
 };
