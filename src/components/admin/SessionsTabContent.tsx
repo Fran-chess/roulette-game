@@ -1,6 +1,6 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiXCircle, FiInfo } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiSettings, FiClock, FiUser, FiPlay } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 // [modificación] Importar animaciones desde el archivo centralizado
@@ -30,8 +30,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const navigationInProgress = useRef(false);
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
-  const [closingSession, setClosingSession] = useState<string | null>(null);
-  const [infoSession, setInfoSession] = useState<PlaySession | null>(null);
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
   const updateSessionStatus = useGameStore(state => state.updateSessionStatus);
@@ -50,10 +48,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     setActivatingSession(session.session_id);
     navigationInProgress.current = true;
     
-    // Asegurarse de que la sesión quede en estado de registro pendiente
-    // para que al navegar al formulario se pueda completar el registro
-    updateSessionStatus(session.session_id, 'pending_player_registration');
-
+    // [modificación] Usar el overlay global para la navegación
     const targetPath = `/register/${session.session_id}`;
     console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
 
@@ -64,19 +59,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
       navigationInProgress.current = false;
       setActivatingSession(null);
     }, 500);
-  };
-
-  const handleCloseSession = async (session: PlaySession, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (closingSession) return;
-    setClosingSession(session.session_id);
-    await updateSessionStatus(session.session_id, 'completed');
-    setClosingSession(null);
-  };
-
-  const handleShowInfo = (session: PlaySession, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setInfoSession(session);
   };
 
   // [modificación] Función para obtener clases de estado según el status de la sesión con estilos actualizados
@@ -104,8 +86,8 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         return 'Pendiente Registro';
       case 'player_registered':
         return 'Jugador Registrado';
-      case 'playing':
-        return 'Activada';
+      case 'in_progress':
+        return 'En Progreso';
       case 'completed':
         return 'Completado';
       case 'archived':
@@ -222,36 +204,21 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                       ) : (
                         <>
                           <FiPlay className="mr-1" size={12} />
-                          {session.status === 'playing' ? 'Activada' : 'Activar'}
+                          Activar
                         </>
                       )}
                     </Button>
                     
                     <Button
-                      onClick={(e) => handleCloseSession(session, e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onSelectSession(session);
+                      }}
                       variant="custom"
-                      disabled={closingSession === session.session_id}
-                      className="bg-red-500/80 hover:bg-red-600/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-400/50 transition-colors duration-300"
+                      disabled={activatingSession === session.session_id}
+                      className="bg-black/5 hover:bg-black/10 text-slate-800 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-white/30 transition-colors duration-300"
                     >
-                      {closingSession === session.session_id ? (
-                        <>
-                          <span className="w-3 h-3 mr-2 rounded-full bg-black/80 animate-pulse"></span>
-                          Cerrando...
-                        </>
-                      ) : (
-                        <>
-                          <FiXCircle className="mr-1" size={12} />
-                          Cerrar
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      onClick={(e) => handleShowInfo(session, e)}
-                      variant="custom"
-                      className="bg-slate-500/80 hover:bg-slate-600/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-slate-400/50 transition-colors duration-300"
-                    >
-                      <FiInfo className="mr-1" size={12} />
+                      <FiSettings className="mr-1" size={12} />
                       Opciones
                     </Button>
                   </div>

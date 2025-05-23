@@ -13,7 +13,13 @@ export default function PrizeModal() {
   const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
-  const setShowConfetti = useGameStore((state) => state.setShowConfetti);
+
+  // Estado para confeti
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [windowSize, setWindowSize] = useState({
+    width: typeof window !== "undefined" ? window.innerWidth : 0,
+    height: typeof window !== "undefined" ? window.innerHeight : 0,
+  });
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
@@ -25,26 +31,29 @@ export default function PrizeModal() {
 
   // Efecto para mostrar confeti cuando la respuesta es correcta
   useEffect(() => {
+    // Actualizar tamaño de ventana para el confeti
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+    window.addEventListener("resize", handleResize);
+
+    // Mostrar confeti cuando responde correctamente
     if (answeredCorrectly) {
       setShowConfetti(true);
+      // Detener confeti después de 5 segundos
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000);
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener("resize", handleResize);
+      };
     }
-  }, [answeredCorrectly, setShowConfetti]);
-
-  const gameSession = useGameStore((state) => state.gameSession);
-
-  const resetSessionForNextPlayer = async () => {
-    if (gameSession) {
-      try {
-        await fetch('/api/admin/sessions/reset-player', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId: gameSession.session_id }),
-        });
-      } catch (err) {
-        console.error('Error resetting session:', err);
-      }
-    }
-  };
+    return () => window.removeEventListener("resize", handleResize);
+  }, [answeredCorrectly]);
 
   const handlePlayAgain = async () => {
     await resetSessionForNextPlayer();
