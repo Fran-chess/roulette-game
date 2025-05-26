@@ -1,8 +1,7 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiSettings, FiClock, FiUser, FiPlay } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiX } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 // [modificación] Importar useRef y useState para controlar navegaciones
@@ -32,73 +31,42 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const navigationInProgress = useRef(false);
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
-  // [modificación] Estado para la sesión de información en el modal
-  const [infoSession, setInfoSession] = useState<PlaySession | null>(null);
-  // [modificación] Estado para mostrar información expandida en el modal
-  const [showExpandedInfo, setShowExpandedInfo] = useState(false);
-  // [modificación] Estado para confirmar cierre de sesión
-  const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
-  // [modificación] Estado para seguimiento de cierre de sesión en progreso
-  const [closingSession, setClosingSession] = useState(false);
+  // Estado para seguimiento de la sesión que se está cerrando
+  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
   // [modificación] Función para seleccionar una sesión y mostrar su información
-  const onSelectSession = (session: PlaySession) => {
-    setInfoSession(session);
-    setShowExpandedInfo(false); // [modificación] Resetear vista expandida al abrir modal
-    setShowCloseConfirmation(false); // [modificación] Resetear confirmación al abrir modal
-  };
+  // Función para cerrar directamente una sesión de juego desde la lista
+  const handleCloseSession = async (session: PlaySession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('¿Deseas cerrar esta partida?')) {
+      return;
+    }
 
-  // [modificación] Función para manejar el botón de opciones del modal
-  const handleModalOptions = () => {
-    setShowExpandedInfo(!showExpandedInfo);
-  };
-
-  // [modificación] Función para iniciar el proceso de cierre de sesión
-  const handleCloseSession = () => {
-    setShowCloseConfirmation(true);
-  };
-
-  // [modificación] Función para confirmar y ejecutar el cierre de sesión
-  const confirmCloseSession = async () => {
-    if (!infoSession) return;
-    
-    setClosingSession(true);
+    setClosingSessionId(session.session_id);
     try {
-      const response = await fetch(`/api/admin/sessions/close`, {
+      const response = await fetch('/api/admin/sessions/close', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          sessionId: infoSession.session_id,
-        }),
+        body: JSON.stringify({ sessionId: session.session_id }),
       });
 
       if (response.ok) {
         console.log('Sesión cerrada exitosamente');
-        // [modificación] Cerrar modal y refrescar lista
-        setInfoSession(null);
-        setShowCloseConfirmation(false);
-        // [modificación] Refrescar la lista de sesiones si la función está disponible
         if (onRefreshSessions) {
           onRefreshSessions();
         }
       } else {
         console.error('Error al cerrar la sesión');
-        // Aquí podrías mostrar un mensaje de error al usuario
       }
     } catch (error) {
       console.error('Error de red al cerrar la sesión:', error);
     } finally {
-      setClosingSession(false);
+      setClosingSessionId(null);
     }
-  };
-
-  // [modificación] Función para cancelar el cierre de sesión
-  const cancelCloseSession = () => {
-    setShowCloseConfirmation(false);
   };
 
   // [modificación] Función para activar la partida usando el overlay global
@@ -164,13 +132,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     }
   };
 
-  // [modificación] Función para cerrar el modal y resetear todos los estados
-  const handleCloseModal = () => {
-    setInfoSession(null);
-    setShowExpandedInfo(false);
-    setShowCloseConfirmation(false);
-    setClosingSession(false);
-  };
+  // Ya no se utiliza modal para mostrar opciones
 
   return (
     <motion.div 
@@ -288,16 +250,13 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                     )}
                     
                     <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSession(session);
-                      }}
+                      onClick={(e) => handleCloseSession(session, e)}
                       variant="custom"
-                      disabled={activatingSession === session.session_id}
-                      className="bg-black/5 hover:bg-black/10 text-slate-800 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-white/30 transition-colors duration-300"
+                      disabled={closingSessionId === session.session_id}
+                      className="bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-400/50 transition-colors duration-300"
                     >
-                      <FiSettings className="mr-1" size={12} />
-                      Opciones
+                      <FiX className="mr-1" size={12} />
+                      Cerrar
                     </Button>
                   </div>
                 </div>
@@ -306,115 +265,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
           </motion.div>
         )}
       </div>
-      <Modal
-        isOpen={!!infoSession}
-        onClose={handleCloseModal}
-        title="Información de la Partida"
-        showOptionsButton={true}
-        onOptionsClick={handleModalOptions}
-      >
-        {infoSession && (
-          <div className="space-y-3 text-sm">
-            <div className="space-y-2">
-              <p>
-                <span className="font-marineBold">ID:</span> {infoSession.session_id}
-              </p>
-              <p>
-                <span className="font-marineBold">Estado:</span> {getStatusText(infoSession.status)}
-              </p>
-              <p>
-                <span className="font-marineBold">Creada:</span>{' '}
-                {new Date(infoSession.created_at).toLocaleString()}
-              </p>
-              {infoSession.nombre && (
-                <p>
-                  <span className="font-marineBold">Jugador:</span> {infoSession.nombre} {infoSession.apellido || ''}
-                </p>
-              )}
-            </div>
-            
-            {showExpandedInfo && (
-              <div className="border-t border-white/20 pt-3 mt-3 space-y-2">
-                <h4 className="font-marineBold text-white text-sm mb-2">Información Adicional:</h4>
-                {infoSession.email && (
-                  <p>
-                    <span className="font-marineBold">Email:</span> {infoSession.email}
-                  </p>
-                )}
-                {infoSession.especialidad && (
-                  <p>
-                    <span className="font-marineBold">Especialidad:</span> {infoSession.especialidad}
-                  </p>
-                )}
-                <p>
-                  <span className="font-marineBold">Última actualización:</span>{' '}
-                  {new Date(infoSession.updated_at || infoSession.created_at).toLocaleString()}
-                </p>
-                <div className="bg-black/20 p-2 rounded-md text-xs">
-                  <p className="font-marineBold mb-1">Información Técnica:</p>
-                  <p>Duración: {Math.round((new Date().getTime() - new Date(infoSession.created_at).getTime()) / (1000 * 60))} minutos</p>
-                  {infoSession.participant_id && (
-                    <p>ID Participante: {infoSession.participant_id}</p>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* [modificación] Indicador visual del botón de opciones */}
-            <div className="text-center text-xs text-white/60 mt-4">
-              {showExpandedInfo ? 
-                "Presiona el botón de opciones (⋯) para ocultar detalles" : 
-                "Presiona el botón de opciones (⋯) para ver más detalles"
-              }
-            </div>
-
-            {/* [modificación] Sección de acciones para la sesión */}
-            {!showCloseConfirmation ? (
-              <div className="border-t border-white/20 pt-4 mt-4">
-                <Button
-                  onClick={handleCloseSession}
-                  variant="custom"
-                  className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/50 hover:border-red-300/70 py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-                  disabled={closingSession}
-                >
-                  <FiSettings className="rotate-45" size={14} />
-                  Cerrar Sesión de Juego
-                </Button>
-              </div>
-            ) : (
-              /* [modificación] Interfaz de confirmación de cierre */
-              <div className="border-t border-white/20 pt-4 mt-4">
-                <div className="bg-red-500/10 border border-red-400/30 rounded-lg p-4 mb-3">
-                  <h4 className="font-marineBold text-red-200 text-sm mb-2">
-                    ⚠️ Confirmar Cierre de Sesión
-                  </h4>
-                  <p className="text-white/80 text-xs mb-3">
-                    ¿Estás seguro de que quieres cerrar esta sesión de juego? Esta acción no se puede deshacer.
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={confirmCloseSession}
-                      variant="custom"
-                      disabled={closingSession}
-                      className="flex-1 bg-red-500/80 hover:bg-red-600/90 text-white border border-red-400/50 py-2 px-3 rounded-md text-xs transition-colors duration-200"
-                    >
-                      {closingSession ? 'Cerrando...' : 'Sí, Cerrar'}
-                    </Button>
-                    <Button
-                      onClick={cancelCloseSession}
-                      variant="custom"
-                      disabled={closingSession}
-                      className="flex-1 bg-slate-500/20 hover:bg-slate-500/30 text-slate-200 border border-slate-400/50 py-2 px-3 rounded-md text-xs transition-colors duration-200"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </Modal>
     </motion.div>
   );
 };
