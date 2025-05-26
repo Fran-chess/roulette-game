@@ -32,58 +32,61 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar si ya existe un participante con el mismo email en esta sesión
-    const { data: existingParticipant, error: checkError } = await supabaseAdmin
+    // Buscar TODOS los registros existentes para esta sesión
+    const { data: existingRecords, error: checkError } = await supabaseAdmin
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
-      .eq('email', email)
-      .maybeSingle();
+      .order('created_at', { ascending: false });
 
     if (checkError) {
-      console.error('Error al verificar participante existente:', checkError);
+      console.error('Error al verificar registros existentes:', checkError);
       return NextResponse.json(
-        { message: 'Error al verificar participante existente', error: checkError.message },
+        { message: 'Error al verificar registros existentes', error: checkError.message },
         { status: 500 }
       );
     }
 
-    // Si ya existe un participante con el mismo email, devolver información
-    if (existingParticipant) {
-      return NextResponse.json({
-        message: 'Participante ya registrado en esta sesión',
-        session: existingParticipant,
-        isExisting: true
-      });
+    // Si existen registros, verificar si alguno tiene el mismo email
+    if (existingRecords && existingRecords.length > 0) {
+      const sameEmailRecord = existingRecords.find(record => record.email === email);
+      
+      if (sameEmailRecord && sameEmailRecord.status === 'player_registered') {
+        console.log('Participante ya registrado con el mismo email en esta sesión');
+        return NextResponse.json({
+          message: 'Participante ya registrado en esta sesión',
+          session: sameEmailRecord,
+          isExisting: true
+        });
+      }
+      
+      // Eliminar TODOS los registros existentes antes de crear el nuevo
+      console.log(`Eliminando ${existingRecords.length} registros existentes para la sesión ${sessionId}`);
+      const { error: deleteError } = await supabaseAdmin
+        .from('plays')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (deleteError) {
+        console.error('Error al eliminar registros existentes:', deleteError);
+        return NextResponse.json(
+          { message: 'Error al limpiar registros existentes', error: deleteError.message },
+          { status: 500 }
+        );
+      }
+      
+      console.log(`Registros existentes eliminados para la sesión ${sessionId}`);
     }
 
-    // Verificar que la sesión existe (buscar cualquier registro con este session_id)
-    const { data: sessionExists, error: sessionCheckError } = await supabaseAdmin
-      .from('plays')
-      .select('session_id, admin_id')
-      .eq('session_id', sessionId)
-      .limit(1)
-      .maybeSingle();
-
-    if (sessionCheckError) {
-      console.error('Error al verificar sesión:', sessionCheckError);
-      return NextResponse.json(
-        { message: 'Error al verificar la sesión', error: sessionCheckError.message },
-        { status: 500 }
-      );
-    }
-
-    // Si no existe ningún registro para esta sesión, crear uno básico
-    if (!sessionExists) {
-      console.log(`No se encontró sesión existente para ${sessionId}, se creará una nueva entrada`);
-      // En lugar de usar RPC, simplemente continuamos con la creación del participante
-      // La sesión se considera válida si llega a este punto
-    }
+    // Obtener adminId del primer registro existente si estaba disponible
+    const adminId = existingRecords && existingRecords.length > 0 
+      ? existingRecords[0].admin_id 
+      : 'auto_created';
 
     // Crear un ID único para el participante
     const participantId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Crear un nuevo registro para este participante (no actualizar existente)
+    // Crear un nuevo registro limpio para este participante
     const newParticipantData = {
       session_id: sessionId,
       nombre,
@@ -92,14 +95,14 @@ export async function POST(request: Request) {
       especialidad: especialidad || null,
       participant_id: participantId,
       status: 'player_registered',
-      admin_id: sessionExists?.admin_id || 'auto_created',
+      admin_id: adminId,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
     console.log('Creando nuevo registro de participante:', newParticipantData);
 
-    // Insertar nuevo registro en lugar de actualizar
+    // Insertar el nuevo registro único
     const { data: newSession, error: insertError } = await supabaseAdmin
       .from('plays')
       .insert(newParticipantData)
@@ -113,6 +116,8 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    console.log(`Participante ${nombre} registrado exitosamente en la sesión ${sessionId}`);
 
     return NextResponse.json({
       message: 'Participante registrado exitosamente',

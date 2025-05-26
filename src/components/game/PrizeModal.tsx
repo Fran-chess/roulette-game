@@ -27,20 +27,20 @@ export default function PrizeModal() {
     ? `/images/premios/${prizeName.replace(/\s+/g, "-")}.png`
     : null;
 
-  // [modificación] Función mejorada para volver a jugar - deriva en la ruleta
+  // [modificación] Función para volver a jugar - mantiene el mismo participante y va a la ruleta
   const handlePlayAgain = async () => {
-    console.log("PrizeModal: Preparando para volver a jugar...");
+    console.log("PrizeModal: Preparando para volver a jugar con el mismo participante...");
     
-    // Resetear datos específicos de la ronda anterior
+    // Resetear datos específicos de la ronda anterior pero mantener al participante
     resetPrizeFeedback();
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     setShowConfetti(false);
     
-    // Cambiar al estado de ruleta para permitir nueva participación
+    // Cambiar al estado de ruleta para permitir nueva participación del mismo participante
     setGameState("roulette");
     
-    console.log("PrizeModal: Volviendo a la ruleta para nueva participación");
+    console.log("PrizeModal: Volviendo a la ruleta con el mismo participante");
   };
 
   // [modificación] Función mejorada para volver al inicio - deriva al formulario de registro
@@ -58,6 +58,33 @@ export default function PrizeModal() {
     const sessionId = gameSession?.session_id || gameSession?.id;
     
     if (sessionId) {
+      console.log(`PrizeModal: Reseteando sesión en el backend para: ${sessionId}`);
+      
+      try {
+        // [modificación] Resetear los datos del jugador en el backend antes de navegar
+        const resetResponse = await fetch('/api/admin/sessions/reset-player', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            sessionId,
+            adminId: gameSession?.admin_id || 'session_reset'
+          }),
+        });
+
+        if (!resetResponse.ok) {
+          const errorData = await resetResponse.json();
+          console.warn('Advertencia al resetear sesión:', errorData.message);
+          // Continuamos con la navegación aunque el reset falle
+        } else {
+          console.log('PrizeModal: Sesión reseteada exitosamente en el backend');
+        }
+      } catch (error) {
+        console.warn('Error al resetear sesión:', error);
+        // Continuamos con la navegación aunque el reset falle
+      }
+      
       console.log(`PrizeModal: Redirigiendo al formulario de registro para sesión: ${sessionId}`);
       // Limpiar la sesión actual del store (permite nuevo registro)
       setGameSession(null);

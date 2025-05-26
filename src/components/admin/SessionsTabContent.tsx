@@ -1,7 +1,9 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiX } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiX, FiInfo } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
+// [modificación] Importar el modal de confirmación
+import ConfirmModal from '@/components/ui/ConfirmModal';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 // [modificación] Importar useRef y useState para controlar navegaciones
@@ -33,25 +35,42 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
   // Estado para seguimiento de la sesión que se está cerrando
   const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
+  // [modificación] Estados para los modales
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    session: PlaySession | null;
+    type: 'confirm' | 'info';
+  }>({
+    isOpen: false,
+    session: null,
+    type: 'confirm'
+  });
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
   // [modificación] Función para seleccionar una sesión y mostrar su información
-  // Función para cerrar directamente una sesión de juego desde la lista
-  const handleCloseSession = async (session: PlaySession, e: React.MouseEvent) => {
+  // [modificación] Función para mostrar el modal de confirmación antes de cerrar la sesión
+  const handleCloseSession = (session: PlaySession, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('¿Deseas cerrar esta partida?')) {
-      return;
-    }
+    setConfirmModal({
+      isOpen: true,
+      session,
+      type: 'confirm'
+    });
+  };
 
-    setClosingSessionId(session.session_id);
+  // [modificación] Función para ejecutar el cierre de sesión después de la confirmación
+  const executeCloseSession = async () => {
+    if (!confirmModal.session) return;
+
+    setClosingSessionId(confirmModal.session.session_id);
     try {
       const response = await fetch('/api/admin/sessions/close', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId: session.session_id }),
+        body: JSON.stringify({ sessionId: confirmModal.session.session_id }),
       });
 
       if (response.ok) {
@@ -67,6 +86,21 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     } finally {
       setClosingSessionId(null);
     }
+  };
+
+  // [modificación] Función para mostrar información de la partida
+  const handleShowGameInfo = (session: PlaySession, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmModal({
+      isOpen: true,
+      session,
+      type: 'info'
+    });
+  };
+
+  // [modificación] Función para contar participantes de una sesión
+  const getParticipantCount = (sessionId: string): number => {
+    return activeSessions.filter(s => s.session_id === sessionId && s.participant_id).length;
   };
 
   // [modificación] Función para activar la partida usando el overlay global
@@ -221,10 +255,10 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                     </div>
                   </div>
                   
-                  {/* [modificación] Actualizar los botones con estado de activación y ocultar "Activar" si está completado */}
+                  {/* [modificación] Actualizar los botones según el estado de la sesión */}
                   <div className="flex gap-2 mt-2 sm:mt-0">
                     {/* [modificación] Solo mostrar botón Activar si la sesión NO está completada */}
-                    {session.status !== 'completed' && (
+                    {session.status !== 'completed' && session.status !== 'archived' && (
                       <Button
                         onClick={(e) => handleActivateGame(session, e)}
                         variant="custom"
@@ -249,15 +283,27 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                       </Button>
                     )}
                     
-                    <Button
-                      onClick={(e) => handleCloseSession(session, e)}
-                      variant="custom"
-                      disabled={closingSessionId === session.session_id}
-                      className="bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-400/50 transition-colors duration-300"
-                    >
-                      <FiX className="mr-1" size={12} />
-                      Cerrar
-                    </Button>
+                    {/* [modificación] Mostrar botón de información para sesiones completadas, cerrar para activas */}
+                    {session.status === 'completed' || session.status === 'archived' ? (
+                      <Button
+                        onClick={(e) => handleShowGameInfo(session, e)}
+                        variant="custom"
+                        className="bg-blue-600/80 hover:bg-blue-700/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-blue-500/50 transition-colors duration-300"
+                      >
+                        <FiInfo className="mr-1" size={12} />
+                        Info
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={(e) => handleCloseSession(session, e)}
+                        variant="custom"
+                        disabled={closingSessionId === session.session_id}
+                        className="bg-red-700/80 hover:bg-red-800/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-600/50 transition-colors duration-300"
+                      >
+                        <FiX className="mr-1" size={12} />
+                        Cerrar
+                      </Button>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -265,6 +311,30 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
           </motion.div>
         )}
       </div>
+      
+      {/* [modificación] Modal de confirmación e información */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.type === 'confirm' ? executeCloseSession : undefined}
+        title={confirmModal.type === 'confirm' ? 'Cerrar Sesión' : 'Información de la Partida'}
+        message={
+          confirmModal.type === 'confirm' 
+            ? '¿Estás seguro de que deseas cerrar esta sesión de juego? Esta acción no se puede deshacer.'
+            : 'Detalles de la partida finalizada:'
+        }
+        type={confirmModal.type}
+        confirmText="Cerrar Sesión"
+        cancelText="Cancelar"
+        gameInfo={
+          confirmModal.type === 'info' && confirmModal.session 
+            ? {
+                createdAt: confirmModal.session.created_at,
+                participantCount: getParticipantCount(confirmModal.session.session_id)
+              }
+            : undefined
+        }
+      />
     </motion.div>
   );
 };

@@ -23,14 +23,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Verificar que la sesión existe antes de cerrarla
-    const { data: existingSession, error: checkError } = await supabaseAdmin
+    // [modificación] Verificar que la sesión existe antes de cerrarla (obteniendo todos los registros)
+    const { data: existingSessions, error: checkError } = await supabaseAdmin
       .from('plays')
       .select('id, session_id, status')
-      .eq('session_id', sessionId)
-      .single();
+      .eq('session_id', sessionId);
 
-    if (checkError || !existingSession) {
+    if (checkError || !existingSessions || existingSessions.length === 0) {
       console.error('Error al verificar sesión:', checkError);
       return NextResponse.json(
         { error: 'Sesión no encontrada' },
@@ -38,24 +37,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Verificar que la sesión no esté ya cerrada
-    if (existingSession.status === 'completed' || existingSession.status === 'archived') {
+    // [modificación] Verificar que la sesión no esté ya cerrada (revisar el primer registro como referencia)
+    const firstSession = existingSessions[0];
+    if (firstSession.status === 'completed' || firstSession.status === 'archived') {
       return NextResponse.json(
         { error: 'La sesión ya está cerrada' },
         { status: 400 }
       );
     }
 
-    // [modificación] Actualizar el estado de la sesión a 'completed'
-    const { data: updatedSession, error: updateError } = await supabaseAdmin
+    // [modificación] Actualizar el estado de TODOS los registros de la sesión a 'completed'
+    const { data: updatedSessions, error: updateError } = await supabaseAdmin
       .from('plays')
       .update({
         status: 'completed',
         updated_at: new Date().toISOString()
       })
       .eq('session_id', sessionId)
-      .select()
-      .single();
+      .select();
 
     if (updateError) {
       console.error('Error al cerrar sesión:', updateError);
@@ -69,7 +68,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: 'Sesión cerrada exitosamente',
-      session: updatedSession
+      session: updatedSessions?.[0] || null,
+      affectedRecords: updatedSessions?.length || 0
     });
 
   } catch (error) {

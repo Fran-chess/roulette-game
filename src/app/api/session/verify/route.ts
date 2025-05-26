@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { isPlayerRegistered, isSessionPendingRegistration } from '@/utils/session';
 
 // [modificación] API endpoint para verificar si una sesión existe en el servidor
 // Esto nos da acceso directo a la base de datos usando permisos de administrador
@@ -51,27 +50,71 @@ export async function GET(request: Request) {
 
     // [modificación] Si encontramos registros de la sesión, seleccionar el más apropiado
     if (allSessionData && allSessionData.length > 0) {
-      // Priorizar registros con datos completos de jugador
-      const playerRegisteredRecord = allSessionData.find(record => 
-        record.status === 'player_registered' && record.nombre && record.email
+      // [modificación] Priorizar registros con datos completos de jugador y estado correcto
+      let selectedRecord = null;
+      
+      // 1. Buscar primero registros con jugador completamente registrado
+      const playerRegisteredRecords = allSessionData.filter(record => 
+        record.status === 'player_registered' && 
+        record.nombre && 
+        record.email &&
+        record.nombre !== 'Pendiente' &&
+        record.email !== 'pendiente@registro.com'
       );
       
-      // Si hay un jugador registrado, usar ese registro
-      const data = playerRegisteredRecord || allSessionData[0];
+      if (playerRegisteredRecords.length > 0) {
+        // Si hay múltiples con jugador registrado, tomar el más reciente
+        selectedRecord = playerRegisteredRecords[0];
+        console.log(`Sesión ${sessionId} tiene jugador registrado: ${selectedRecord.nombre} (${selectedRecord.email})`);
+      } else {
+        // 2. Si no hay jugador registrado, buscar registros pendientes
+        const pendingRecords = allSessionData.filter(record => 
+          record.status === 'pending_player_registration'
+        );
+        
+        if (pendingRecords.length > 0) {
+          selectedRecord = pendingRecords[0];
+          console.log(`Sesión ${sessionId} está pendiente de registro de jugador`);
+        } else {
+          // 3. Como último recurso, usar el registro más reciente
+          selectedRecord = allSessionData[0];
+          console.log(`Sesión ${sessionId} está en estado: ${selectedRecord.status}`);
+        }
+      }
       
-      console.log(`Sesión ${sessionId} encontrada:`, data);
+      // [modificación] Limpiar registros duplicados si hay más de uno
       if (allSessionData.length > 1) {
         console.log(`Múltiples registros encontrados para sesión ${sessionId}, usando el más apropiado`);
+        
+        // Solo limpiar si hay registros obviamente duplicados o inválidos
+        const recordsToDelete = allSessionData.filter(record => 
+          record.id !== selectedRecord.id && (
+            record.status === 'pending_player_registration' ||
+            (record.nombre === 'Pendiente' && record.email === 'pendiente@registro.com')
+          )
+        );
+        
+        if (recordsToDelete.length > 0) {
+          console.log(`Eliminando ${recordsToDelete.length} registros duplicados de la sesión ${sessionId}`);
+          
+          const deleteIds = recordsToDelete.map(record => record.id);
+          const { error: cleanupError } = await supabaseAdmin
+            .from('plays')
+            .delete()
+            .in('id', deleteIds);
+          
+          if (cleanupError) {
+            console.warn('Advertencia: Error al limpiar registros duplicados:', cleanupError);
+            // Continuamos sin fallar, ya que la verificación principal funcionó
+          } else {
+            console.log(`Registros duplicados eliminados exitosamente`);
+          }
+        }
       }
       
-      // [modificación] Verificar explícitamente si el jugador está registrado usando funciones utilitarias
-      if (isPlayerRegistered(data)) {
-        console.log(`Sesión ${sessionId} tiene jugador registrado: ${data.nombre} (${data.email})`);
-      } else if (isSessionPendingRegistration(data)) {
-        console.log(`Sesión ${sessionId} está pendiente de registro de jugador`);
-      } else {
-        console.log(`Sesión ${sessionId} está en estado: ${data.status}`);
-      }
+      const data = selectedRecord;
+      
+      console.log(`Sesión ${sessionId} encontrada:`, data);
       
       return NextResponse.json({
         message: 'Sesión encontrada',
