@@ -1,6 +1,6 @@
 // src/components/admin/SessionsTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiSettings, FiClock, FiUser, FiPlay } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiXCircle } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 // [modificación] Importar animaciones desde el archivo centralizado
@@ -34,8 +34,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
   // [modificación] Estado para la sesión de información en el modal
   const [infoSession, setInfoSession] = useState<PlaySession | null>(null);
-  // [modificación] Estado para mostrar información expandida en el modal
-  const [showExpandedInfo, setShowExpandedInfo] = useState(false);
   // [modificación] Estado para confirmar cierre de sesión
   const [showCloseConfirmation, setShowCloseConfirmation] = useState(false);
   // [modificación] Estado para seguimiento de cierre de sesión en progreso
@@ -46,14 +44,15 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   // [modificación] Función para seleccionar una sesión y mostrar su información
   const onSelectSession = (session: PlaySession) => {
     setInfoSession(session);
-    setShowExpandedInfo(false); // [modificación] Resetear vista expandida al abrir modal
-    setShowCloseConfirmation(false); // [modificación] Resetear confirmación al abrir modal
+    setShowCloseConfirmation(false);
   };
 
-  // [modificación] Función para manejar el botón de opciones del modal
-  const handleModalOptions = () => {
-    setShowExpandedInfo(!showExpandedInfo);
+  // Nueva función: abrir modal directamente en modo de cierre
+  const onQuickCloseSession = (session: PlaySession) => {
+    setInfoSession(session);
+    setShowCloseConfirmation(true);
   };
+
 
   // [modificación] Función para iniciar el proceso de cierre de sesión
   const handleCloseSession = () => {
@@ -167,7 +166,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   // [modificación] Función para cerrar el modal y resetear todos los estados
   const handleCloseModal = () => {
     setInfoSession(null);
-    setShowExpandedInfo(false);
     setShowCloseConfirmation(false);
     setClosingSession(false);
   };
@@ -289,15 +287,15 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                     
                     <Button
                       onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSession(session);
+                      e.stopPropagation();
+                      onQuickCloseSession(session);
                       }}
                       variant="custom"
                       disabled={activatingSession === session.session_id}
                       className="bg-black/5 hover:bg-black/10 text-slate-800 text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-white/30 transition-colors duration-300"
                     >
-                      <FiSettings className="mr-1" size={12} />
-                      Opciones
+                      <FiXCircle className="mr-1" size={12} />
+                      Cerrar
                     </Button>
                   </div>
                 </div>
@@ -310,8 +308,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         isOpen={!!infoSession}
         onClose={handleCloseModal}
         title="Información de la Partida"
-        showOptionsButton={true}
-        onOptionsClick={handleModalOptions}
       >
         {infoSession && (
           <div className="space-y-3 text-sm">
@@ -333,40 +329,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
               )}
             </div>
             
-            {showExpandedInfo && (
-              <div className="border-t border-white/20 pt-3 mt-3 space-y-2">
-                <h4 className="font-marineBold text-white text-sm mb-2">Información Adicional:</h4>
-                {infoSession.email && (
-                  <p>
-                    <span className="font-marineBold">Email:</span> {infoSession.email}
-                  </p>
-                )}
-                {infoSession.especialidad && (
-                  <p>
-                    <span className="font-marineBold">Especialidad:</span> {infoSession.especialidad}
-                  </p>
-                )}
-                <p>
-                  <span className="font-marineBold">Última actualización:</span>{' '}
-                  {new Date(infoSession.updated_at || infoSession.created_at).toLocaleString()}
-                </p>
-                <div className="bg-black/20 p-2 rounded-md text-xs">
-                  <p className="font-marineBold mb-1">Información Técnica:</p>
-                  <p>Duración: {Math.round((new Date().getTime() - new Date(infoSession.created_at).getTime()) / (1000 * 60))} minutos</p>
-                  {infoSession.participant_id && (
-                    <p>ID Participante: {infoSession.participant_id}</p>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* [modificación] Indicador visual del botón de opciones */}
-            <div className="text-center text-xs text-white/60 mt-4">
-              {showExpandedInfo ? 
-                "Presiona el botón de opciones (⋯) para ocultar detalles" : 
-                "Presiona el botón de opciones (⋯) para ver más detalles"
-              }
-            </div>
 
             {/* [modificación] Sección de acciones para la sesión */}
             {!showCloseConfirmation ? (
@@ -377,7 +339,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                   className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-400/50 hover:border-red-300/70 py-2 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
                   disabled={closingSession}
                 >
-                  <FiSettings className="rotate-45" size={14} />
+                  <FiXCircle className="" size={14} />
                   Cerrar Sesión de Juego
                 </Button>
               </div>

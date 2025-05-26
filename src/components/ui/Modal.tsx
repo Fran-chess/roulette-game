@@ -3,18 +3,16 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import React from 'react';
-import { FiMoreHorizontal } from 'react-icons/fi';
+
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
   title?: string;
-  onOptionsClick?: () => void;
-  showOptionsButton?: boolean;
 }
 
-export default function Modal({ isOpen, onClose, children, title, onOptionsClick, showOptionsButton = false }: ModalProps) {
+export default function Modal({ isOpen, onClose, children, title }: ModalProps) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -37,16 +35,6 @@ export default function Modal({ isOpen, onClose, children, title, onOptionsClick
                 <h2 className="text-xl font-semibold text-azul-intenso">{title}</h2>
               )}
               <div className="flex items-center gap-2 ml-auto">
-                {showOptionsButton && onOptionsClick && (
-                  <button
-                    onClick={onOptionsClick}
-                    className="text-white/70 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors duration-200"
-                    aria-label="Opciones de la partida"
-                    title="Más opciones"
-                  >
-                    <FiMoreHorizontal size={20} />
-                  </button>
-                )}
                 <button
                   onClick={onClose}
                   className="text-white/70 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors duration-200"
