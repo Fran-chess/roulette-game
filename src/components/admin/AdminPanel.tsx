@@ -35,7 +35,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
 
   // Extraer estados y funciones del store global
   const {
-    participants,
     adminState,
     fetchGameSessions,
     setAdminCurrentSession,
@@ -43,7 +42,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     clearAdminNotifications,
     createNewSession,
     updateSessionStatus,
-    } = useGameStore();
+    fetchParticipantsStats,
+  } = useGameStore();
 
   // [modificación] Usar clearAdminNotifications del store global
   const clearNotifications = () => {
@@ -64,6 +64,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     );
     await fetchGameSessions();
   }, [adminData?.id, fetchGameSessions]);
+
+  // [modificación] Nueva función para cargar estadísticas de participantes
+  const loadParticipantsStats = useCallback(async () => {
+    console.log('AdminPanel: Cargando estadísticas de participantes...');
+    await fetchParticipantsStats();
+  }, [fetchParticipantsStats]);
 
   const [snackbar, setSnackbar] = useState<{
     type: "success" | "error";
@@ -90,9 +96,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     }
   }, [snackbar]);
 
+  // [modificación] Cargar datos iniciales incluyendo estadísticas de participantes
   useEffect(() => {
     if (adminData?.id) {
-      fetchActiveSessions(); // Carga inicial a través de la API
+      fetchActiveSessions(); // Carga inicial de sesiones
+      loadParticipantsStats(); // [modificación] Carga inicial de estadísticas de participantes
 
       const playsChannel = supabaseClient
         .channel(`admin_plays_changes_${adminData.id}`)
@@ -110,6 +118,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
               payload
             );
             fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
+            // [modificación] Recargar estadísticas de participantes cuando hay cambios
+            loadParticipantsStats();
 
             if (
               adminState.currentSession &&
@@ -182,6 +192,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
   }, [
     adminData?.id,
     fetchActiveSessions,
+    // [modificación] Agregar loadParticipantsStats a las dependencias
+    loadParticipantsStats,
     adminState.currentSession,
     setAdminCurrentSession,
     setAdminNotification,
@@ -214,6 +226,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
       "success",
       "Jugador registrado exitosamente. La lista de sesiones y detalles se actualizarán."
     );
+    // [modificación] Recargar estadísticas de participantes cuando se registra un nuevo jugador
+    loadParticipantsStats();
   };
 
   const handleLogoutCallback =
@@ -272,7 +286,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
           {activeTab === "dashboard" && (
             <DashboardTabContent
               key="dashboard"
-              participantsCount={participants.length}
+              // [modificación] Usar estadísticas de participantes del store en lugar del array local
+              participantsCount={adminState.participantsStats.count}
               activeSessionsCount={
                 adminState.activeSessions.filter(
                   (s) => s.status !== "completed" && s.status !== "archived"

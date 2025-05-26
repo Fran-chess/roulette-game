@@ -51,12 +51,19 @@ export interface PlaySession {
   detalles_juego?: Record<string, unknown>;
 }
 
+export interface ParticipantsStats {
+  count: number;
+  participants?: Participant[];
+}
+
 export interface AdminState {
   activeSessions: PlaySession[];
   currentSession: PlaySession | null;
+  participantsStats: ParticipantsStats;
   isLoading: {
     sessionsList: boolean;
     sessionAction: boolean;
+    participants: boolean;
   };
   error: string | null;
   success: string | null;
@@ -129,11 +136,14 @@ export interface GameStore {
   setGameSession: (sessionData: PlaySession | null) => void;
   setQuestions: (questions: Question[]) => void;
   setAdminCurrentSession: (session: PlaySession | null) => void;
-  setAdminLoading: (type: 'sessionsList' | 'sessionAction', isLoading: boolean) => void;
+  setAdminLoading: (type: 'sessionsList' | 'sessionAction' | 'participants', isLoading: boolean) => void;
   setAdminNotification: (type: 'error' | 'success', message: string | null) => void;
   clearAdminNotifications: () => void;
   createNewSession: () => Promise<string | null>;
   updateSessionStatus: (sessionId: string, status: string) => Promise<boolean>;
+  fetchParticipantsStats: () => Promise<ParticipantsStats>;
+  fetchParticipantsList: () => Promise<Participant[]>;
+  setParticipantsStats: (stats: ParticipantsStats) => void;
 }
 
 // --- NUEVA INTERFAZ AÑADIDA ---

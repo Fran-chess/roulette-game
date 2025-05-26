@@ -4,7 +4,8 @@ import type {
   Participant, 
   Question, 
   PlaySession,
-  GameStore
+  GameStore,
+  ParticipantsStats
 } from '@/types';
 
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
@@ -35,9 +36,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   adminState: {
     activeSessions: [],
     currentSession: null,
+    participantsStats: { count: 0, participants: [] },
     isLoading: {
       sessionsList: false,
       sessionAction: false,
+      participants: false,
     },
     error: null,
     success: null,
@@ -212,6 +215,74 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
+  fetchParticipantsStats: async () => {
+    set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
+    try {
+      const response = await fetch('/api/participants');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error ${response.status} al cargar estadísticas de participantes`);
+      }
+      const statsData: ParticipantsStats = await response.json();
+      const stats = { count: statsData.count, participants: statsData.participants || [] };
+      set(state => ({ 
+        adminState: { 
+          ...state.adminState, 
+          participantsStats: stats, 
+          isLoading: { ...state.adminState.isLoading, participants: false } 
+        } 
+      }));
+      return stats;
+    } catch (error: Error | unknown) {
+      console.error("Store: fetchParticipantsStats error:", error);
+      set(state => ({ 
+        adminState: { 
+          ...state.adminState, 
+          error: error instanceof Error ? error.message : 'Error desconocido', 
+          participantsStats: { count: 0, participants: [] }, 
+          isLoading: { ...state.adminState.isLoading, participants: false } 
+        } 
+      }));
+      return { count: 0, participants: [] };
+    }
+  },
+
+  fetchParticipantsList: async () => {
+    set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
+    try {
+      const response = await fetch('/api/participants?detail=true');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error ${response.status} al cargar lista de participantes`);
+      }
+      const data = await response.json();
+      const participants = data.participants || [];
+      set(state => ({ 
+        adminState: { 
+          ...state.adminState, 
+          participantsStats: { count: data.count, participants }, 
+          isLoading: { ...state.adminState.isLoading, participants: false } 
+        } 
+      }));
+      return participants;
+    } catch (error: Error | unknown) {
+      console.error("Store: fetchParticipantsList error:", error);
+      set(state => ({ 
+        adminState: { 
+          ...state.adminState, 
+          error: error instanceof Error ? error.message : 'Error desconocido', 
+          participantsStats: { count: 0, participants: [] }, 
+          isLoading: { ...state.adminState.isLoading, participants: false } 
+        } 
+      }));
+      return [];
+    }
+  },
+
+  setParticipantsStats: (stats: ParticipantsStats) => set(state => ({
+    adminState: { ...state.adminState, participantsStats: stats }
+  })),
+
   setAdminCurrentSession: (session: PlaySession | null) => set(state => ({
     adminState: { ...state.adminState, currentSession: session }
   })),
@@ -256,9 +327,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const fullUrl = `${window.location.origin}/register/${gameSessionUUID}`;
       try {
         await navigator.clipboard.writeText(fullUrl);
-        get().setAdminNotification('success', 'Juego creado. URL copiada!');
+        get().setAdminNotification('success', 'Sesión de juego creada.');
       } catch {
-        get().setAdminNotification('success', 'Juego creado. (URL no copiada)');
+        get().setAdminNotification('success', 'Error: Sesión de juego no creada.');
       }
       await get().fetchGameSessions();
       return gameSessionUUID;

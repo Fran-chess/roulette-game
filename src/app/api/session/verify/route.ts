@@ -23,6 +23,7 @@ export async function GET(request: Request) {
 
     // Verificar que supabaseAdmin esté disponible
     if (!supabaseAdmin) {
+      console.error('supabaseAdmin no está disponible - verificar SUPABASE_SERVICE_ROLE_KEY');
       return NextResponse.json(
         { message: 'Error en la conexión con la base de datos', valid: false },
         { status: 500 }
@@ -30,24 +31,38 @@ export async function GET(request: Request) {
     }
 
     // [modificación] Realizar la consulta con supabaseAdmin para verificar la existencia de la sesión
-    // usando exactamente el ID proporcionado
-    const { data, error } = await supabaseAdmin
+    // Buscar todos los registros con este session_id y ordenar por prioridad:
+    // 1. Registros con jugador registrado (nombre y email completos)
+    // 2. Registros más recientes
+    const { data: allSessionData, error } = await supabaseAdmin
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
-      .maybeSingle();
+      .order('updated_at', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error(`Error al verificar sesión ${sessionId}:`, error);
       return NextResponse.json(
-        { message: 'Error al verificar la sesión', valid: false, error: error instanceof Error ? error.message : String(error) },
+        { message: 'Error al verificar la sesión', valid: false, error: error.message },
         { status: 500 }
       );
     }
 
-    // [modificación] Si encontramos la sesión, devolvemos sus datos
-    if (data) {
+    // [modificación] Si encontramos registros de la sesión, seleccionar el más apropiado
+    if (allSessionData && allSessionData.length > 0) {
+      // Priorizar registros con datos completos de jugador
+      const playerRegisteredRecord = allSessionData.find(record => 
+        record.status === 'player_registered' && record.nombre && record.email
+      );
+      
+      // Si hay un jugador registrado, usar ese registro
+      const data = playerRegisteredRecord || allSessionData[0];
+      
       console.log(`Sesión ${sessionId} encontrada:`, data);
+      if (allSessionData.length > 1) {
+        console.log(`Múltiples registros encontrados para sesión ${sessionId}, usando el más apropiado`);
+      }
       
       // [modificación] Verificar explícitamente si el jugador está registrado usando funciones utilitarias
       if (isPlayerRegistered(data)) {
@@ -65,65 +80,13 @@ export async function GET(request: Request) {
       });
     }
 
-    // [modificación] Si no encontramos la sesión, intentamos verificar su existencia de otra manera
-    try {
-      // Consulta SQL directa para mayor flexibilidad
-      const { data: sqlData, error: sqlError } = await supabaseAdmin.rpc(
-        'check_session_exists',
-        { session_id_param: sessionId }
-      );
-      
-      if (sqlError) {
-        console.error(`Error en check_session_exists para ${sessionId}:`, sqlError);
-        return NextResponse.json(
-          { message: 'Error al verificar la sesión mediante RPC', valid: false, error: sqlError.message },
-          { status: 500 }
-        );
-      }
-      
-      if (sqlData === true) {
-        // [modificación] Si la sesión existe pero no pudimos obtenerla directamente
-        console.log(`Sesión ${sessionId} existe según RPC pero no obtuvimos sus datos`);
-        return NextResponse.json({
-          message: 'Sesión encontrada por RPC',
-          valid: true,
-          data: {
-            session_id: sessionId,
-            status: 'pending_player_registration',
-            created_at: new Date().toISOString()
-          }
-        });
-      }
-      
-      // [modificación] Si ninguna de las verificaciones encuentra la sesión
-      console.log(`Sesión ${sessionId} no encontrada`);
-      return NextResponse.json(
-        { message: 'Sesión no encontrada', valid: false },
-        { status: 404 }
-      );
-    } catch (rpcError: Error | unknown) {
-      console.error(`Error en verificación RPC para ${sessionId}:`, rpcError);
-      
-      // [modificación] Si la función RPC no existe, indicamos que es necesario crear la migración
-      if (typeof rpcError === 'object' && rpcError !== null && 'message' in rpcError && 
-          typeof rpcError.message === 'string' && 
-          rpcError.message.includes('function') && rpcError.message.includes('does not exist')) {
-        return NextResponse.json(
-          { 
-            message: 'Es necesario ejecutar la migración para crear la función check_session_exists', 
-            valid: false, 
-            error: rpcError.message,
-            needsMigration: true
-          },
-          { status: 500 }
-        );
-      }
-      
-      return NextResponse.json(
-        { message: 'Error en la verificación RPC', valid: false, error: rpcError instanceof Error ? rpcError.message : 'Error desconocido' },
-        { status: 500 }
-      );
-    }
+    // [modificación] Si no encontramos ningún registro con este session_id
+    console.log(`Sesión ${sessionId} no encontrada en la base de datos`);
+    return NextResponse.json(
+      { message: 'Sesión no encontrada', valid: false },
+      { status: 404 }
+    );
+
   } catch (err: Error | unknown) {
     console.error('Error en la verificación de sesión:', err);
     return NextResponse.json(

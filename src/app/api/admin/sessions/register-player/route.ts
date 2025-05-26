@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { isPlayerRegistered } from '@/utils/session';
 
 // Endpoint para registrar un jugador en una sesión
 export async function POST(request: Request) {
@@ -33,171 +32,96 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificación más flexible de la sesión
-    // Primero intentamos verificar directamente por ID
-    const { data, error: sessionFetchError } = await supabaseAdmin
+    // Verificar si ya existe un participante con el mismo email en esta sesión
+    const { data: existingParticipant, error: checkError } = await supabaseAdmin
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
+      .eq('email', email)
       .maybeSingle();
-      
-    let sessionData = data;
-      
-    // Si encontramos la sesión, verificar que no tenga ya un jugador registrado
-    if (sessionData) {
-      if (isPlayerRegistered(sessionData)) {
-        return NextResponse.json(
-          { 
-            message: 'Esta sesión ya tiene un jugador registrado', 
-            error: 'PLAYER_ALREADY_REGISTERED',
-            session: sessionData
-          },
-          { status: 409 } // Conflict
-        );
-      }
-      
-      // Verificar que el estado sea adecuado para registro
-      if (sessionData.status !== 'pending_player_registration') {
-        console.log(`Advertencia: Registro en sesión con estado ${sessionData.status}`);
-      }
-    }
-      
-    // Si hay un error o no encontramos la sesión, verificamos su existencia con RPC
-    if (sessionFetchError || !sessionData) {
-      console.log('No se encontró la sesión directamente, verificando con RPC...');
-      
-      try {
-        const { data: checkData, error: checkError } = await supabaseAdmin.rpc(
-          'check_session_exists',
-          { session_id_param: sessionId }
-        );
-        
-        if (checkError) {
-          console.error('Error al verificar sesión con RPC:', checkError);
-          return NextResponse.json(
-            { message: 'Error al verificar la sesión en la base de datos', error: checkError.message },
-            { status: 500 }
-          );
-        }
-        
-        if (!checkData) {
-          return NextResponse.json(
-            { message: 'Sesión no encontrada. Verifica el ID de la sesión.' },
-            { status: 404 }
-          );
-        }
-        
-        // Si llegamos aquí, la sesión existe pero no pudimos acceder directamente
-        // Creamos una sesión desde cero
-        console.log('Sesión verificada mediante RPC, intentando crear/actualizar registro...');
-        
-        // Intentar insertar un registro para esta sesión si no existe
-        const { data: createdSession, error: createError } = await supabaseAdmin
-          .from('plays')
-          .upsert({
-            session_id: sessionId,
-            status: 'pending_player_registration',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            admin_id: 'auto_created' // Valor temporal para indicar que fue creado automáticamente
-          })
-          .select()
-          .single();
-          
-        if (createError) {
-          console.error('Error al crear registro de sesión:', createError);
-          return NextResponse.json(
-            { message: 'Error al crear registro para la sesión existente', error: createError.message },
-            { status: 500 }
-          );
-        }
-        
-        sessionData = createdSession;
-      } catch (rpcError: Error | unknown) {
-        console.error('Error en verificación RPC:', rpcError);
-        return NextResponse.json(
-          { message: 'Error en la verificación RPC', error: rpcError instanceof Error ? rpcError.message : 'Error desconocido' },
-          { status: 500 }
-        );
-      }
-    }
-    
-    // Segunda verificación por seguridad tras posible creación
-    if (sessionData && isPlayerRegistered(sessionData)) {
+
+    if (checkError) {
+      console.error('Error al verificar participante existente:', checkError);
       return NextResponse.json(
-        { 
-          message: 'Esta sesión ya tiene un jugador registrado', 
-          error: 'PLAYER_ALREADY_REGISTERED',
-          session: sessionData 
-        },
-        { status: 409 } // Conflict
+        { message: 'Error al verificar participante existente', error: checkError.message },
+        { status: 500 }
       );
+    }
+
+    // Si ya existe un participante con el mismo email, devolver información
+    if (existingParticipant) {
+      return NextResponse.json({
+        message: 'Participante ya registrado en esta sesión',
+        session: existingParticipant,
+        isExisting: true
+      });
+    }
+
+    // Verificar que la sesión existe (buscar cualquier registro con este session_id)
+    const { data: sessionExists, error: sessionCheckError } = await supabaseAdmin
+      .from('plays')
+      .select('session_id, admin_id')
+      .eq('session_id', sessionId)
+      .limit(1)
+      .maybeSingle();
+
+    if (sessionCheckError) {
+      console.error('Error al verificar sesión:', sessionCheckError);
+      return NextResponse.json(
+        { message: 'Error al verificar la sesión', error: sessionCheckError.message },
+        { status: 500 }
+      );
+    }
+
+    // Si no existe ningún registro para esta sesión, crear uno básico
+    if (!sessionExists) {
+      console.log(`No se encontró sesión existente para ${sessionId}, se creará una nueva entrada`);
+      // En lugar de usar RPC, simplemente continuamos con la creación del participante
+      // La sesión se considera válida si llega a este punto
     }
 
     // Crear un ID único para el participante
     const participantId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Actualizar la sesión con los datos del jugador
-    const updateData = {
+    // Crear un nuevo registro para este participante (no actualizar existente)
+    const newParticipantData = {
+      session_id: sessionId,
       nombre,
       apellido: apellido || null,
       email,
       especialidad: especialidad || null,
       participant_id: participantId,
       status: 'player_registered',
+      admin_id: sessionExists?.admin_id || 'auto_created',
+      created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
-    console.log('Actualizando sesión con datos:', updateData);
+    console.log('Creando nuevo registro de participante:', newParticipantData);
 
-    const { data: updatedSession, error: updateError } = await supabaseAdmin
+    // Insertar nuevo registro en lugar de actualizar
+    const { data: newSession, error: insertError } = await supabaseAdmin
       .from('plays')
-      .update(updateData)
-      .eq('session_id', sessionId)
+      .insert(newParticipantData)
       .select()
       .single();
 
-    if (updateError) {
-      console.error('Error al registrar jugador:', updateError);
+    if (insertError) {
+      console.error('Error al registrar nuevo participante:', insertError);
       return NextResponse.json(
-        { message: 'Error al registrar jugador en la sesión', error: updateError.message },
+        { message: 'Error al registrar participante en la sesión', error: insertError.message },
         { status: 500 }
       );
     }
 
-    // También intentamos insertar en caso de que la actualización no funcione
-    if (!updatedSession) {
-      console.log('No se pudo actualizar la sesión, intentando insertar...');
-      
-      const { data: insertedSession, error: insertError } = await supabaseAdmin
-        .from('plays')
-        .insert({
-          session_id: sessionId,
-          ...updateData
-        })
-        .select()
-        .single();
-        
-      if (insertError) {
-        console.error('Error al insertar datos de jugador:', insertError);
-        return NextResponse.json(
-          { message: 'Error al insertar datos del jugador', error: insertError.message },
-          { status: 500 }
-        );
-      }
-      
-      return NextResponse.json({
-        message: 'Jugador registrado exitosamente (inserción)',
-        session: insertedSession || null
-      });
-    }
-
     return NextResponse.json({
-      message: 'Jugador registrado exitosamente',
-      session: updatedSession || null
+      message: 'Participante registrado exitosamente',
+      session: newSession,
+      isNew: true
     });
+
   } catch (err: Error | unknown) {
-    console.error('Error en el registro de jugador:', err);
+    console.error('Error en el registro de participante:', err);
     return NextResponse.json(
       { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
       { status: 500 }

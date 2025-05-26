@@ -165,9 +165,9 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   return (
     <div className="flex flex-col min-h-screen bg-azul-intenso">
       {/* Header - Logo */}
-      <header className="w-full flex justify-center items-center border-b border-white/10 bg-azul-intenso/90 backdrop-blur-sm">
-        {/* [modificación] Contenedor con clase de máximo ancho para limitar tamaño del logo */}
-        <div className="max-w-[180px] sm:max-w-[220px] md:max-w-[250px] lg:max-w-[280px] xl:max-w-[320px] w-full flex justify-center items-center py-1 sm:py-2">
+      <header className="w-full flex justify-center items-center min-h-[65px] border-b border-white/10 bg-azul-intenso/90 backdrop-blur-sm">
+        {/* [modificación] Contenedor con tamaño máximo consistente con GameLayout */}
+        <div className="max-w-[150px] sm:max-w-[165px] md:max-w-[200px] w-full flex justify-center items-center">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}

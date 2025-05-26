@@ -206,21 +206,10 @@ export default function GamePage() {
     );
   }
 
-  // Vista principal: banner + ruleta/pregunta según el estado
+  // Vista principal: ruleta/pregunta según el estado
   return (
     <GameLayout>
       <div className="w-full flex flex-col items-center max-w-[520px] mx-auto">
-        {/* Banner de bienvenida */}
-        <div className="mb-2 text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1">
-            ¡Bienvenido a la Ruleta!
-          </h2>
-          <p className="text-white/80 text-base sm:text-lg">
-            Hola{" "}
-            <span className="font-semibold">{currentParticipant?.nombre}</span>,
-            estás listo para comenzar a jugar.
-          </p>
-        </div>
         {/* [modificación] Muestra la ruleta solo si el estado es "roulette" */}
         {gameState === "roulette" && (
           <>

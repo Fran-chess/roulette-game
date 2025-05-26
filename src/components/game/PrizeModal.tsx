@@ -4,22 +4,20 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PrizeModal() {
+  const router = useRouter();
   const setGameState = useGameStore((state) => state.setGameState);
-  const resetCurrentGame = useGameStore((state) => state.resetCurrentGame);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
   const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
-
-  // Estado para confeti
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [windowSize, setWindowSize] = useState({
-    width: typeof window !== "undefined" ? window.innerWidth : 0,
-    height: typeof window !== "undefined" ? window.innerHeight : 0,
-  });
+  const setGameSession = useGameStore((state) => state.setGameSession);
+  const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
+  const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
+  const setShowConfetti = useGameStore((state) => state.setShowConfetti);
+  const gameSession = useGameStore((state) => state.gameSession);
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
@@ -29,46 +27,48 @@ export default function PrizeModal() {
     ? `/images/premios/${prizeName.replace(/\s+/g, "-")}.png`
     : null;
 
-  // Efecto para mostrar confeti cuando la respuesta es correcta
-  useEffect(() => {
-    // Actualizar tamaño de ventana para el confeti
-    const handleResize = () => {
-      setWindowSize({
-        width: window.innerWidth,
-        height: window.innerHeight,
-      });
-    };
-    window.addEventListener("resize", handleResize);
-
-    // Mostrar confeti cuando responde correctamente
-    if (answeredCorrectly) {
-      setShowConfetti(true);
-      // Detener confeti después de 5 segundos
-      const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 5000);
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener("resize", handleResize);
-      };
-    }
-    return () => window.removeEventListener("resize", handleResize);
-  }, [answeredCorrectly]);
-
+  // [modificación] Función mejorada para volver a jugar - deriva en la ruleta
   const handlePlayAgain = async () => {
-    resetCurrentGame();
-    setCurrentParticipant(null);
+    console.log("PrizeModal: Preparando para volver a jugar...");
+    
+    // Resetear datos específicos de la ronda anterior
     resetPrizeFeedback();
+    setCurrentQuestion(null);
+    setLastSpinResultIndex(null);
     setShowConfetti(false);
-    setGameState("register");
+    
+    // Cambiar al estado de ruleta para permitir nueva participación
+    setGameState("roulette");
+    
+    console.log("PrizeModal: Volviendo a la ruleta para nueva participación");
   };
 
+  // [modificación] Función mejorada para volver al inicio - deriva al formulario de registro
   const handleGoHome = async () => {
-    resetCurrentGame();
+    console.log("PrizeModal: Preparando para volver al formulario de registro...");
+    
+    // Limpiar completamente el estado del participante actual
     setCurrentParticipant(null);
-    resetPrizeFeedback();
+    setCurrentQuestion(null);
+    setLastSpinResultIndex(null);
     setShowConfetti(false);
-    setGameState("screensaver");
+    resetPrizeFeedback();
+    
+    // Obtener el sessionId de la sesión actual
+    const sessionId = gameSession?.session_id || gameSession?.id;
+    
+    if (sessionId) {
+      console.log(`PrizeModal: Redirigiendo al formulario de registro para sesión: ${sessionId}`);
+      // Limpiar la sesión actual del store (permite nuevo registro)
+      setGameSession(null);
+      // Navegar al formulario de registro de la sesión actual
+      router.push(`/register/${sessionId}`);
+    } else {
+      console.log("PrizeModal: No hay sessionId, redirigiendo a página principal");
+      // Si no hay sessionId, ir a la página principal
+      setGameSession(null);
+      router.push('/');
+    }
   };
 
   if (answeredCorrectly === null) {
@@ -157,22 +157,35 @@ export default function PrizeModal() {
               )}
             </div>
 
-            <Button
-              onClick={handlePlayAgain}
-              variant="primary"
-              className="
-    w-full max-w-xs mx-auto
-    text-white font-marineBold text-lg py-3 rounded-xl
-    shadow-2xl border-2 border-celeste-medio
-    bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud
-    transition-all duration-200
-    hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)]
-    active:scale-95
-    focus:outline-none focus:ring-4 focus:ring-celeste-medio/40
-  "
-            >
-              Jugar de nuevo
-            </Button>
+            <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
+              <Button
+                onClick={handlePlayAgain}
+                variant="primary"
+                className="
+                  w-full text-white font-marineBold text-lg py-3 rounded-xl
+                  shadow-2xl border-2 border-celeste-medio
+                  bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud
+                  transition-all duration-200
+                  hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)]
+                  active:scale-95
+                  focus:outline-none focus:ring-4 focus:ring-celeste-medio/40
+                "
+              >
+                Volver a jugar
+              </Button>
+              
+              <Button
+                onClick={handleGoHome}
+                variant="secondary"
+                className="
+                  w-full bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 
+                  text-white font-marineBold text-lg py-3 rounded-xl shadow-lg 
+                  transform active:scale-95 transition-all duration-300
+                "
+              >
+                Volver al inicio
+              </Button>
+            </div>
           </motion.div>
         ) : (
           // --- Vista: Respuesta Correcta (con o sin premio) ---
@@ -240,13 +253,35 @@ export default function PrizeModal() {
               </p>
             )}
 
-            <Button
-              onClick={handleGoHome}
-              variant="secondary"
-              className="w-full max-w-xs mx-auto bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 text-white font-marineBold text-lg py-3 rounded-xl shadow-lg transform active:scale-95 transition-all duration-300"
-            >
-              Volver al Inicio
-            </Button>
+            <div className="flex flex-col gap-3 w-full max-w-xs mx-auto">
+              <Button
+                onClick={handlePlayAgain}
+                variant="primary"
+                className="
+                  w-full text-white font-marineBold text-lg py-3 rounded-xl
+                  shadow-2xl border-2 border-celeste-medio
+                  bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud
+                  transition-all duration-200
+                  hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)]
+                  active:scale-95
+                  focus:outline-none focus:ring-4 focus:ring-celeste-medio/40
+                "
+              >
+                Volver a jugar
+              </Button>
+              
+              <Button
+                onClick={handleGoHome}
+                variant="secondary"
+                className="
+                  w-full bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 
+                  text-white font-marineBold text-lg py-3 rounded-xl shadow-lg 
+                  transform active:scale-95 transition-all duration-300
+                "
+              >
+                Volver al inicio
+              </Button>
+            </div>
           </motion.div>
         )}
       </motion.div>

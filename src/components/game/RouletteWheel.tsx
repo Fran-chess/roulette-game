@@ -281,13 +281,13 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
           // [modificación] Disminuye tamaño de fuente hasta que quepa el texto (mínimo 10px)
           let fontSizeLocal = baseFontSize;
-          ctx.font = `900 ${fontSizeLocal}px "Marine-Bold", Arial, sans-serif`;
+          ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           while (
             ctx.measureText(displayText).width > radius * 0.75 &&
             fontSizeLocal > 10
           ) {
             fontSizeLocal -= 1;
-            ctx.font = `900 ${fontSizeLocal}px "Marine-Bold", Arial, sans-serif`;
+            ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           }
 
           // [modificación] Borde blanco para máxima legibilidad
