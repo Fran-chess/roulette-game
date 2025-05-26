@@ -26,7 +26,7 @@ export default function Modal({ isOpen, onClose, children, title }: ModalProps) 
             initial={{ scale: 0.9, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="bg-white/10 backdrop-blur-sm p-6 rounded-lg shadow-xl w-full max-w-md relative border border-white/30 text-white"
+            className="bg-white/10 backdrop-blur-sm w-full max-w-sm sm:max-w-md lg:max-w-xl p-4 sm:p-6 lg:p-8 rounded-lg shadow-xl relative border border-white/30 text-white"
             onClick={(e) => e.stopPropagation()} // Evita que el clic dentro del modal lo cierre
           >
             {title && (

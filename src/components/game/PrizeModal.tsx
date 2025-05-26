@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function PrizeModal() {
   const setGameState = useGameStore((state) => state.setGameState);
@@ -13,6 +14,8 @@ export default function PrizeModal() {
   const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
+  const gameSession = useGameStore((state) => state.gameSession);
+  const router = useRouter();
 
   // Estado para confeti
   const [showConfetti, setShowConfetti] = useState(false);
@@ -64,11 +67,13 @@ export default function PrizeModal() {
   };
 
   const handleGoHome = async () => {
+    const sessionId = gameSession?.session_id;
     resetCurrentGame();
     setCurrentParticipant(null);
     resetPrizeFeedback();
     setShowConfetti(false);
-    setGameState("screensaver");
+    setGameState("register");
+    if (sessionId) router.push(`/register/${sessionId}`);
   };
 
   if (answeredCorrectly === null) {
