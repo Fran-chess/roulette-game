@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useNavigationStore } from '@/store/navigationStore';
+import { useSessionStore } from '@/store/sessionStore';
 
 // Cargamos los componentes persistentes de manera dinámica
 const NavigationOverlay = dynamic(() => import('./NavigationOverlay'), {
@@ -19,27 +21,77 @@ const NavigationOverlay = dynamic(() => import('./NavigationOverlay'), {
 export default function ShellRootClient({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const [displayChildren, setDisplayChildren] = useState(children);
   const [isChangingRoute, setIsChangingRoute] = useState(false);
+  
+  // [modificación] Acceso al store de navegación para mejor coordinación
+  const { isNavigating, stopNavigation } = useNavigationStore();
+  
+  // [modificación] Estado de sesión y autenticación
+  const { 
+    isAuthenticated, 
+    user, 
+    setCurrentView, 
+    cleanup 
+  } = useSessionStore();
 
   // Control de montaje en cliente
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    
+    // [modificación] Reset del estado de navegación al montar si está bloqueado
+    const checkStuckNavigation = setTimeout(() => {
+      if (isNavigating) {
+        console.warn('Estado de navegación bloqueado detectado al montar, reseteando...');
+        stopNavigation();
+      }
+    }, 1000);
+    
+    return () => clearTimeout(checkStuckNavigation);
+  }, [isNavigating, stopNavigation]);
 
-  // Actualizar contenido con transición suave cuando cambia la ruta
+  // [modificación] Control de rutas y autenticación
   useEffect(() => {
-    // [modificación] Mejorado el manejo de transiciones entre rutas
+    if (!isMounted || !isAuthenticated) return;
+
+    // Lógica de redirección basada en el rol del usuario
+    if (user?.role === 'admin' && pathname === '/') {
+      router.push('/admin');
+      setCurrentView('admin');
+    } else if (user?.role === 'viewer' && pathname === '/') {
+      router.push('/tv');
+      setCurrentView('tv');
+    } else if (pathname === '/admin' && user?.role !== 'admin') {
+      router.push('/tv');
+      setCurrentView('tv');
+    } else if (pathname === '/tv' && user?.role !== 'viewer') {
+      router.push('/admin');
+      setCurrentView('admin');
+    }
+  }, [isAuthenticated, user, pathname, router, setCurrentView, isMounted]);
+
+  // [modificación] Limpieza de recursos al desmontar
+  useEffect(() => {
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+
+  // [modificación] Actualizar contenido con transición suave cuando cambia la ruta
+  useEffect(() => {
+    if (!isMounted) return; // [modificación] Solo ejecutar si está montado
+    
     setIsChangingRoute(true);
     
-    // Pequeño retraso para asegurar transición visual suave
+    // [modificación] Timeout más corto para transiciones más suaves
     const timer = setTimeout(() => {
       setDisplayChildren(children);
       setIsChangingRoute(false);
-    }, 100);
+    }, 50); // [modificación] Reducido de 100ms a 50ms
     
     return () => clearTimeout(timer);
-  }, [pathname, children]);
+  }, [pathname, children, isMounted]);
 
   // Durante SSR o antes del montaje en cliente
   if (!isMounted) {
@@ -48,15 +100,15 @@ export default function ShellRootClient({ children }: { children: React.ReactNod
 
   return (
     <>
-      {/* Overlay de navegación - persiste entre navegaciones */}
-      <NavigationOverlay />
+      {/* [modificación] Overlay de navegación solo para admin */}
+      {user?.role === 'admin' && <NavigationOverlay />}
       
       {/* Contenido dinámico de la página actual con transición suave */}
       <div 
         className="flex-grow w-full h-full relative z-10" 
         style={{ 
-          opacity: isChangingRoute ? 0 : 1,
-          transition: 'opacity 200ms ease-in-out'
+          opacity: isChangingRoute ? 0.7 : 1, // [modificación] Cambio más sutil de opacidad
+          transition: 'opacity 150ms ease-in-out' // [modificación] Transición más rápida
         }}
       >
         {displayChildren}

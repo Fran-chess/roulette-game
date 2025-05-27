@@ -1,0 +1,51 @@
+{
+  "name": "DarSalud - Juego Interactivo",
+  "short_name": "DarSalud",
+  "description": "Juego interactivo de DarSalud para tablets y TV",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "theme_color": "#1e40af",
+  "background_color": "#0f172a",
+  "scope": "/",
+  "categories": ["games", "education"],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Panel Admin",
+      "short_name": "Admin",
+      "description": "Acceso rápido al panel de administración",
+      "url": "/admin",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Vista TV",
+      "short_name": "TV",
+      "description": "Vista para pantalla de televisión",
+      "url": "/tv",
+      "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "prefer_related_applications": false
+} 

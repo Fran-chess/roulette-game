@@ -14,7 +14,7 @@ import Logo from '@/components/ui/Logo';
 const NavigationOverlay = () => {
   const { isNavigating, navigationTarget, loadingMessage, stopNavigation } = useNavigationStore();
   const router = useRouter();
-  const initialRender = useRef(true);
+  const hasNavigated = useRef(false);
   
   // Mensajes predeterminados según el destino de navegación
   const getDefaultMessage = () => {
@@ -29,28 +29,53 @@ const NavigationOverlay = () => {
     return 'Cargando...';
   };
   
-  // Efecto para manejar la navegación cuando cambia isNavigating
+  // Efecto mejorado para manejar la navegación
   useEffect(() => {
-    // Ignorar el primer render
-    if (initialRender.current) {
-      initialRender.current = false;
-      return;
-    }
-    
     if (isNavigating && navigationTarget) {
-      // Usar un timeout para dar tiempo a que se muestre el overlay
-      const timer = setTimeout(() => {
-        router.push(navigationTarget);
-        
-        // Dar tiempo adicional después de iniciar la navegación para que la carga sea perceptible
-        setTimeout(() => {
-          stopNavigation();
-        }, 800);
-      }, 400);
+      if (hasNavigated.current) {
+        return;
+      }
       
-      return () => clearTimeout(timer);
+      hasNavigated.current = true;
+      
+      const navigateTimer = setTimeout(() => {
+        try {
+          router.push(navigationTarget);
+          
+          const completeTimer = setTimeout(() => {
+            stopNavigation();
+            hasNavigated.current = false;
+          }, 600);
+          
+          return () => clearTimeout(completeTimer);
+        } catch (error) {
+          console.error('Error durante la navegación:', error);
+          stopNavigation();
+          hasNavigated.current = false;
+        }
+      }, 200);
+      
+      return () => {
+        clearTimeout(navigateTimer);
+        hasNavigated.current = false;
+      };
+    } else {
+      hasNavigated.current = false;
     }
   }, [isNavigating, navigationTarget, router, stopNavigation]);
+
+  // Timeout de seguridad para evitar estados bloqueados permanentemente
+  useEffect(() => {
+    if (isNavigating) {
+      const safetyTimer = setTimeout(() => {
+        console.warn('Navegación bloqueada detectada, forzando reset del estado');
+        stopNavigation();
+        hasNavigated.current = false;
+      }, 5000);
+      
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [isNavigating, stopNavigation]);
   
   return (
     <AnimatePresence mode="wait">
@@ -91,10 +116,10 @@ const NavigationOverlay = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.3 }}
-              className="w-28 h-1  rounded-full overflow-hidden"
+              className="w-28 h-1 rounded-full overflow-hidden"
             >
               <motion.div 
-                className="h-full"
+                className="h-full bg-gradient-to-r from-blue-400 to-purple-500"
                 initial={{ width: 0 }}
                 animate={{ width: '100%' }}
                 transition={{ duration: 1.2, ease: "linear" }}

@@ -29,22 +29,44 @@ interface NavigationStore {
    * Finaliza la transición de navegación
    */
   stopNavigation: () => void;
+  
+  /**
+   * Reinicia completamente el store de navegación
+   */
+  resetNavigation: () => void;
 }
 
-export const useNavigationStore = create<NavigationStore>((set) => ({
+export const useNavigationStore = create<NavigationStore>((set, get) => ({
   isNavigating: false,
   navigationTarget: null,
   loadingMessage: null,
   
-  startNavigation: (target, message = null) => set({
-    isNavigating: true,
-    navigationTarget: target,
-    loadingMessage: message,
-  }),
+  startNavigation: (target, message = null) => {
+    const current = get();
+    if (current.isNavigating && current.navigationTarget === target) {
+      console.warn(`Ya hay una navegación en curso hacia ${target}`);
+      return;
+    }
+    
+    set({
+      isNavigating: true,
+      navigationTarget: target,
+      loadingMessage: message,
+    });
+  },
   
   stopNavigation: () => set({
     isNavigating: false,
     navigationTarget: null,
     loadingMessage: null,
   }),
+  
+  resetNavigation: () => {
+    console.log('Reseteando store de navegación por emergencia');
+    set({
+      isNavigating: false,
+      navigationTarget: null,
+      loadingMessage: null,
+    });
+  },
 })); 

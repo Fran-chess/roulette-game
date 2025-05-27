@@ -1,8 +1,8 @@
-# Configuración del Proyecto
+# Configuración del Proyecto PWA - DarSalud
 
 ## Configuración de Supabase
 
-Para que la aplicación funcione correctamente, necesitas crear un proyecto en Supabase y configurar las siguientes variables de entorno en un archivo `.env.local` en la raíz del proyecto:
+Para que la aplicación PWA funcione correctamente con sincronización en tiempo real, necesitas crear un proyecto en Supabase y configurar las siguientes variables de entorno en un archivo `.env.local` en la raíz del proyecto:
 
 ```
 # Variables de entorno para Supabase
@@ -21,7 +21,9 @@ SUPABASE_SERVICE_ROLE_KEY=tu-clave-de-servicio-de-supabase
 
 ## Configuración de la Base de Datos
 
-Necesitas crear las siguientes tablas en Supabase:
+Ejecuta el archivo `DATABASE_MIGRATION.sql` en el editor SQL de Supabase para crear todas las tablas necesarias.
+
+### Tablas requeridas:
 
 ### Tabla `participants`
 
@@ -70,17 +72,71 @@ CREATE INDEX idx_plays_created_at ON plays (created_at);
 CREATE INDEX idx_plays_session_id ON plays (session_id);
 ```
 
-## Ejecución del Proyecto
+### Tabla `game_sessions` (Nueva)
 
-Una vez configuradas las variables de entorno y la base de datos, puedes ejecutar el proyecto con:
-
-```bash
-npm run dev
+```sql
+-- Esta tabla se crea automáticamente ejecutando DATABASE_MIGRATION.sql
+-- Gestiona las sesiones de juego con sincronización en tiempo real
+-- Estados: waiting, player_registration, active, completed, paused
 ```
 
-O para producción:
+## Configuración de Autenticación
+
+### Usuarios de Prueba
+
+Crea los siguientes usuarios en Supabase Auth:
+
+1. **Admin**: `admin@darsalud.com` - Para el panel de administración (tablet)
+2. **TV**: `tv@darsalud.com` - Para la vista de televisión
+
+### Configuración de Roles
+
+Los roles se determinan automáticamente por el email:
+- Emails que contengan "admin" → Rol: admin
+- Otros emails → Rol: viewer (TV)
+
+## Características PWA
+
+### Instalación
+- La aplicación se puede instalar en tablets y TVs
+- Funciona en modo kiosk (pantalla completa)
+- Funciona offline una vez instalada
+
+### Sincronización en Tiempo Real
+- Tablet (admin) y TV se sincronizan instantáneamente
+- Los cambios se reflejan en milisegundos
+- Estado persistente entre dispositivos
+
+## Flujo de Uso
+
+1. **Admin** inicia sesión en tablet → Ve panel de administración
+2. **TV** inicia sesión → Ve pantalla de espera
+3. **Admin** crea/activa sesión → TV muestra invitación a jugar
+4. **Admin** registra participante → TV muestra juego activo
+5. **Jugador** completa → TV muestra resultados
+6. **Proceso** se repite para siguiente jugador
+
+## Ejecución del Proyecto
+
+### Instalación de Dependencias
 
 ```bash
+# Instalar dependencias base
+npm install
+
+# Instalar next-pwa para funcionalidad PWA
+npm install next-pwa
+```
+
+### Desarrollo y Producción
+
+```bash
+# Desarrollo (PWA deshabilitado para mejor rendimiento)
+npm run dev
+
+# Producción (PWA habilitado)
 npm run build
 npm start
-``` 
+```
+
+**Nota**: next-pwa está configurado para generar automáticamente el service worker solo en producción. En desarrollo está deshabilitado para mejor rendimiento de desarrollo.

@@ -83,6 +83,7 @@ export interface AdminUser {
   id: string;
   name: string;
   email: string;
+  role?: string; // [modificación] Agregar propiedad role opcional
 }
 
 export interface AnswerOption {

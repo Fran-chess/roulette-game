@@ -1,137 +1,193 @@
-# Juego de Ruleta - DarSalud
+# DarSalud - Juego Interactivo PWA
 
-Aplicación interactiva que simula una ruleta para seleccionar categorías de preguntas de manera aleatoria y atractiva para usuarios, diseñada específicamente para eventos y exhibiciones de DarSalud.
+Una aplicación web progresiva (PWA) para juegos interactivos con sincronización en tiempo real entre tablet (administrador) y TV (visualización).
 
-## Descripción
+## 🚀 Características Principales
 
-Este proyecto es una aplicación web interactiva desarrollada con Next.js que permite a los participantes:
-- Registrarse en el juego
-- Girar una ruleta
-- Responder preguntas según la categoría seleccionada
-- Ganar premios basados en sus respuestas correctas
+### PWA (Progressive Web App)
+- **Instalable** en tablets y TVs
+- **Modo kiosk** (pantalla completa sin barra de URL)
+- **Funciona offline** una vez instalada
+- **Arranque rápido** con prerenderizado
 
-La aplicación incluye un panel de administración para gestionar sesiones de juego, monitorear la participación y exportar resultados.
+### Sincronización en Tiempo Real
+- **Supabase Realtime** para sincronización instantánea
+- **Tablet (Admin)** y **TV** conectados en milisegundos
+- **Estado persistente** entre dispositivos
+- **Actualizaciones automáticas** sin recargar página
 
-## Características Principales
+### Arquitectura Basada en Roles
+- **Admin** (tablet): Panel de control y gestión
+- **Viewer** (TV): Pantallas de visualización
+- **Autenticación automática** por email
+- **Rutas protegidas** según rol
 
-- **Ruleta Interactiva**: Implementada con Canvas API y animaciones realistas
-- **Flujo de Juego Completo**: Desde registro hasta entrega de premios
-- **Modo Pantalla de Reposo**: Screensaver automático que muestra videos promocionales
-- **Panel de Administración**: Para crear y gestionar sesiones de juego
-- **Integración con Supabase**: Almacenamiento seguro y eficiente de datos
-- **Diseño Adaptable**: Optimizado para dispositivos táctiles y pantallas grandes
-- **Personalización Visual**: Utiliza la paleta de colores corporativa de DarSalud
+## 🏗️ Arquitectura Técnica
 
-## Tecnologías Utilizadas
+### Stack Tecnológico
+- **Next.js 15** con App Router
+- **Supabase** para backend y realtime
+- **Zustand** para gestión de estado
+- **Framer Motion** para animaciones
+- **Tailwind CSS** para estilos
+- **TypeScript** para tipado
 
-- **Frontend**: 
-  - Next.js 15.3 (App Router)
-  - React 19
-  - TypeScript
-  - Tailwind CSS 4
-  - Framer Motion para animaciones
-  - Zustand para gestión de estado global
-
-- **Backend**:
-  - Supabase para almacenamiento de datos
-  - API Routes de Next.js
-  - Edge Functions para operaciones de servidor
-
-- **Despliegue**:
-  - Compatible con cualquier plataforma que soporte Next.js
-
-## Estructura del Proyecto
-
+### Flujo de Datos
 ```
-/
-├── src/
-│   ├── app/                    # Páginas de la aplicación (App Router)
-│   ├── components/             # Componentes reutilizables
-│   │   ├── admin/              # Componentes del panel de administración
-│   │   ├── game/               # Componentes del juego (ruleta, preguntas)
-│   │   ├── layout/             # Componentes de estructura (pantalla de reposo)
-│   │   └── ui/                 # Componentes de interfaz de usuario
-│   ├── store/                  # Estado global gestionado con Zustand
-│   ├── lib/                    # Funciones de utilidad y hooks personalizados
-│   ├── types/                  # Definiciones de tipos TypeScript
-│   └── utils/                  # Funciones auxiliares
-├── public/                     # Activos estáticos (sonidos, imágenes)
-└── tailwind.config.ts         # Configuración de Tailwind (colores corporativos)
+Tablet (Admin) → Supabase → TV (Viewer)
+     ↓              ↓           ↓
+  Crear sesión → Realtime → Mostrar invitación
+  Registrar → Actualizar → Mostrar juego activo
+  Completar → Sincronizar → Mostrar resultados
 ```
 
-## Flujo de la Aplicación
+## 📱 Estados de la Aplicación
 
-1. **Pantalla de Reposo** (screensaver): Muestra video promocional y espera interacción
-2. **Registro de Participante**: Captura datos del usuario antes de comenzar
-3. **Ruleta**: El participante gira la ruleta para determinar la categoría de pregunta
-4. **Pregunta**: Se muestra la pregunta según la categoría seleccionada
-5. **Premio**: Se informa al participante del resultado y premio ganado
-6. **Retorno a Pantalla de Reposo**: Tras un periodo de inactividad
+### Pantallas de TV
+1. **Waiting**: Pantalla de espera con reloj
+2. **Invitation**: Invitación a participar
+3. **Active**: Juego en curso con jugador actual
+4. **Completed**: Resultados y celebración
 
-## Características Técnicas Destacadas
+### Panel de Admin
+- Dashboard con sesiones activas
+- Registro de participantes
+- Control de estado del juego
+- Historial de sesiones
 
-- **Animación de Ruleta**: Implementación personalizada con Canvas y ecuaciones físicas de movimiento
-- **Gestión de Estado**: Arquitectura basada en Zustand para manejo eficiente del estado global
-- **Diseño Responsivo**: Interfaz adaptable mediante Tailwind CSS
-- **Detección de Inactividad**: Retorno automático a pantalla de reposo para instalaciones sin supervisión
-- **Persistencia de Datos**: Almacenamiento en Supabase para análisis posterior
+## 🛠️ Configuración
 
-## Administración del Sistema
+### 1. Variables de Entorno
+Crear `.env.local` en la raíz:
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anonima
+SUPABASE_SERVICE_ROLE_KEY=tu-clave-de-servicio
+```
 
-La aplicación cuenta con un panel de administración que permite:
+### 2. Base de Datos
+Ejecutar `DATABASE_MIGRATION.sql` en Supabase SQL Editor.
 
-- Crear nuevas sesiones de juego con enlaces únicos
-- Monitorear participantes en tiempo real
-- Exportar resultados en formato Excel (XLSX)
-- Gestionar el estado de las sesiones (activa, pausada, finalizada)
+### 3. Usuarios de Prueba
+Crear en Supabase Auth:
+- `admin@darsalud.com` (rol: admin)
+- `tv@darsalud.com` (rol: viewer)
 
-## Requisitos de Instalación
+## 🚀 Instalación y Ejecución
 
-- Node.js 18.0 o superior
-- NPM o Yarn
-
-## Instalación
-
-1. Clonar el repositorio:
 ```bash
-git clone <url-del-repositorio>
-cd roulette-game
-```
-
-2. Instalar dependencias:
-```bash
+# Instalar dependencias
 npm install
-```
 
-3. Configurar las variables de entorno:
-   - Crea un archivo `.env.local` en la raíz del proyecto
-   - Añade las variables necesarias según el archivo CONFIGURACION.md
-
-4. Iniciar el servidor de desarrollo:
-```bash
+# Desarrollo
 npm run dev
+
+# Producción
+npm run build
+npm start
 ```
 
-## Personalización
+## 📋 Flujo de Uso
 
-### Colores Corporativos
+1. **Setup Inicial**
+   - Admin inicia sesión en tablet
+   - TV inicia sesión y muestra pantalla de espera
 
-Los colores corporativos de DarSalud están configurados en `tailwind.config.ts`:
+2. **Inicio de Sesión**
+   - Admin crea nueva sesión
+   - TV automáticamente muestra invitación
 
-```javascript
-colors: {
-  "azul-intenso": "#192A6E",
-  "verde-salud": "#5ACCC1",
-  "celeste-medio": "#40C0EF",
-  "amarillo-ds": "#F2BD35",
-  "Rosado-lila": "#D5A7CD",
-}
+3. **Registro de Participante**
+   - Admin registra jugador en tablet
+   - TV muestra información del jugador
+
+4. **Juego Activo**
+   - Admin controla el juego
+   - TV muestra progreso en tiempo real
+
+5. **Finalización**
+   - TV muestra resultados
+   - Sistema listo para siguiente jugador
+
+## 🔧 Desarrollo
+
+### Estructura de Archivos
+```
+src/
+├── app/                 # Rutas de Next.js
+│   ├── admin/          # Panel de administración
+│   ├── tv/             # Vista de televisión
+│   └── layout.tsx      # Layout principal con PWA
+├── components/
+│   ├── auth/           # Autenticación
+│   ├── tv/             # Componentes de TV
+│   ├── admin/          # Componentes de admin
+│   └── layout/         # Layout y navegación
+├── store/
+│   └── sessionStore.ts # Estado global con Zustand
+└── types/              # Tipos TypeScript
 ```
 
-### Animación de la Ruleta
+### Comandos Útiles
+```bash
+# Linting
+npm run lint
 
-La física del movimiento de la ruleta se puede ajustar en `src/components/game/RouletteWheel.tsx` mediante las funciones `customEasingFunction` y `easeOutBounce`.
+# Desarrollo con Turbopack
+npm run dev --turbo
 
-## Licencia
+# Análisis de bundle
+npm run analyze
+```
 
-Este proyecto está bajo la licencia MIT.
+## 🔒 Seguridad
+
+- **Row Level Security** en Supabase
+- **Políticas de acceso** por usuario
+- **Validación de roles** en frontend y backend
+- **Sanitización** de datos de entrada
+
+## 📊 Monitoreo
+
+- **Logs en tiempo real** con Supabase
+- **Estado de conexión** visible en UI
+- **Manejo de errores** con feedback visual
+- **Reconexión automática** en caso de fallo
+
+## 🎯 Optimizaciones PWA
+
+- **Prerenderizado parcial** (PPR)
+- **Compresión** habilitada
+- **Headers de seguridad** configurados
+- **Service Worker** para cache inteligente
+- **Manifest** optimizado para instalación
+
+## 📱 Compatibilidad
+
+- **Tablets**: iPad, Android tablets
+- **TVs**: Smart TVs con navegador
+- **Navegadores**: Chrome, Safari, Edge, Firefox
+- **Orientación**: Landscape optimizado
+
+## 🤝 Contribución
+
+1. Fork del proyecto
+2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit cambios (`git commit -am 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear Pull Request
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+## 🆘 Soporte
+
+Para soporte técnico o preguntas:
+- Crear issue en GitHub
+- Revisar documentación en `/docs`
+- Consultar logs en Supabase Dashboard
+
+---
+
+**DarSalud** - Transformando la experiencia interactiva con tecnología PWA 🚀

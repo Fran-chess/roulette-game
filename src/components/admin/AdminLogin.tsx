@@ -4,16 +4,25 @@ import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import { motion } from 'framer-motion';
 import { AdminUser } from '@/types';
+import { useSessionStore } from '@/store/sessionStore';
 
 interface AdminLoginProps {
-  onLoginSuccess: (adminData: AdminUser) => void;
+  onLoginSuccess?: (adminData: AdminUser) => void;
 }
 
 const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [localError, setLocalError] = useState('');
+  const [localLoading, setLocalLoading] = useState(false);
+  
+  // [modificación] Usar sessionStore para el flujo principal
+  const { isLoading: sessionLoading, error: sessionError } = useSessionStore();
+  
+  // [modificación] Determinar si usar sessionStore o modo local
+  const useSessionStoreMode = !onLoginSuccess;
+  const isLoading = useSessionStoreMode ? sessionLoading : localLoading;
+  const error = useSessionStoreMode ? sessionError : localError;
 
   // Variantes de animación para los componentes
   const fieldsetVariants = {
@@ -45,33 +54,53 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    
+    if (!email || !password) return;
 
-    try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al iniciar sesión');
+    if (useSessionStoreMode) {
+      // [modificación] Usar la función login del sessionStore directamente
+      try {
+        await useSessionStore.getState().login(email, password);
+        console.log('Login exitoso');
+      } catch (err: unknown) {
+        // El error ya se maneja en el sessionStore
+        console.error('Error en login:', err);
       }
+    } else {
+      // [modificación] Modo local con props para compatibilidad con página /admin
+      setLocalError('');
+      setLocalLoading(true);
 
-      if (!data.admin || !data.admin.id || !data.admin.email || !data.admin.name) {
-        throw new Error('Datos de administrador incompletos');
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const { admin, message } = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(message || 'Error al iniciar sesión');
+        }
+
+        const adminData: AdminUser = {
+          id: admin.id,
+          name: admin.name,
+          email: admin.email,
+          role: 'admin'
+        };
+
+        // [modificación] Llamar a onLoginSuccess
+        if (onLoginSuccess) {
+          onLoginSuccess(adminData);
+        }
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Error al iniciar sesión';
+        setLocalError(errorMessage);
+      } finally {
+        setLocalLoading(false);
       }
-
-      onLoginSuccess(data.admin);
-    } catch (err: Error | unknown) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -111,6 +140,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles} h-12 md:h-14 text-lg`}
               autoComplete="email"
               required
+              disabled={isLoading}
             />
           </motion.div>
 
@@ -128,6 +158,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles} h-12 md:h-14 text-lg`}
               autoComplete="current-password"
               required
+              disabled={isLoading}
             />
           </motion.div>
 
@@ -144,7 +175,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
           <motion.div variants={fieldItemVariants} className="pt-2">
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !email || !password}
               touchOptimized={true}
               className="w-full py-4 text-white text-lg btn-touch"
             >
@@ -157,4 +188,4 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   );
 };
 
-export default AdminLogin; 
+export default AdminLogin;
