@@ -18,20 +18,21 @@ export default function TVScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  // [modificación] Determinar qué pantalla mostrar según el estado
+  // [modificación] Determinar qué pantalla mostrar según el estado (usando estados del backend)
   const renderScreen = () => {
     if (!currentSession) {
       return <WaitingScreen currentTime={currentTime} />;
     }
 
     switch (currentSession.status) {
-      case 'waiting':
+      case 'pending_player_registration':
         return <WaitingScreen currentTime={currentTime} />;
-      case 'player_registration':
+      case 'player_registered':
         return <InvitationScreen currentTime={currentTime} />;
-      case 'active':
+      case 'playing':
         return <GameActiveScreen currentSession={currentSession} />;
       case 'completed':
+      case 'archived':
         return <GameCompletedScreen currentSession={currentSession} />;
       default:
         return <WaitingScreen currentTime={currentTime} />;
@@ -241,17 +242,17 @@ function GameActiveScreen({ currentSession }: { currentSession: GameSession }) {
       >
         <h1 className="text-6xl font-bold text-white mb-4">¡Juego en Curso!</h1>
         
-        {currentSession.participant_name && (
+        {currentSession.nombre && (
           <div className="bg-white/10 rounded-2xl p-8">
             <h2 className="text-4xl font-semibold text-green-300 mb-2">
               Jugador Actual
             </h2>
             <p className="text-3xl text-white font-bold">
-              {currentSession.participant_name}
+              {currentSession.nombre}
             </p>
-            {currentSession.participant_email && (
+            {currentSession.email && (
               <p className="text-xl text-white/70 mt-2">
-                {currentSession.participant_email}
+                {currentSession.email}
               </p>
             )}
           </div>
@@ -338,13 +339,13 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
         transition={{ duration: 0.8, delay: 0.2 }}
         className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-lg rounded-3xl p-12 max-w-3xl border border-purple-400/30"
       >
-        {currentSession.participant_name && (
+        {currentSession.nombre && (
           <div className="mb-8">
             <h2 className="text-4xl font-semibold text-purple-300 mb-2">
               Felicitaciones
             </h2>
             <p className="text-3xl text-white font-bold">
-              {currentSession.participant_name}
+              {currentSession.nombre}
             </p>
           </div>
         )}
@@ -357,10 +358,10 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
             </div>
           )}
 
-          {currentSession.prize_won && (
+          {currentSession.premio_ganado && (
             <div className="bg-white/10 rounded-2xl p-6">
               <p className="text-xl text-white/80 mb-2">Premio Ganado</p>
-              <p className="text-2xl font-bold text-green-400">{currentSession.prize_won}</p>
+              <p className="text-2xl font-bold text-green-400">{currentSession.premio_ganado}</p>
             </div>
           )}
         </div>

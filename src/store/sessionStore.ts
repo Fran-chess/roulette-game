@@ -11,19 +11,25 @@ export interface User {
   name?: string;
 }
 
+// [modificación] Actualizar GameSession para usar los estados correctos del backend
 export interface GameSession {
   id: string;
-  status: 'waiting' | 'player_registration' | 'active' | 'completed' | 'paused';
+  session_id: string;
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
   admin_id: string;
   participant_id?: string;
-  participant_name?: string;
-  participant_email?: string;
-  participant_specialty?: string; // [modificación] Campo para especialidad médica
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  especialidad?: string; // [modificación] Campo para especialidad médica
   created_at: string;
   updated_at: string;
-  current_question?: string;
+  admin_updated_at?: string;
+  lastquestionid?: string;
+  answeredcorrectly?: boolean;
   score?: number;
-  prize_won?: string;
+  premio_ganado?: string;
+  detalles_juego?: Record<string, unknown>;
 }
 
 // [modificación] Función para validar y convertir datos de Supabase a GameSession
@@ -36,6 +42,7 @@ function validateGameSession(data: unknown): GameSession {
   
   // Validar campos requeridos
   if (typeof session.id !== 'string' || 
+      typeof session.session_id !== 'string' ||
       typeof session.status !== 'string' || 
       typeof session.admin_id !== 'string' ||
       typeof session.created_at !== 'string' ||
@@ -109,7 +116,7 @@ export const useSessionStore = create<SessionState>()(
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
-    // [modificación] Gestión de sesiones usando el cliente centralizado
+    // [modificación] Gestión de sesiones usando la tabla 'plays' en lugar de 'game_sessions'
     createSession: async () => {
       const { user } = get();
       if (!user) throw new Error('Usuario no autenticado');
@@ -117,11 +124,20 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true, error: null });
       
       try {
+        // [modificación] Generar un session_id único
+        const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        
         const { data, error } = await supabaseClient
-          .from('game_sessions')
+          .from('plays')
           .insert({
+            session_id: sessionId,
             admin_id: user.id,
-            status: 'waiting',
+            status: 'pending_player_registration',
+            nombre: 'Pendiente',
+            email: 'pendiente@registro.com',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            admin_updated_at: new Date().toISOString()
           })
           .select()
           .single();
@@ -149,12 +165,12 @@ export const useSessionStore = create<SessionState>()(
       
       try {
         const { data, error } = await supabaseClient
-          .from('game_sessions')
+          .from('plays')
           .update({
             ...updates,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', sessionId)
+          .eq('session_id', sessionId)
           .select()
           .single();
 
@@ -164,7 +180,7 @@ export const useSessionStore = create<SessionState>()(
         const validatedSession = validateGameSession(data);
 
         const { currentSession } = get();
-        if (currentSession?.id === sessionId) {
+        if (currentSession?.session_id === sessionId) {
           set({ currentSession: validatedSession });
         }
 
@@ -183,17 +199,17 @@ export const useSessionStore = create<SessionState>()(
       
       try {
         const { error } = await supabaseClient
-          .from('game_sessions')
+          .from('plays')
           .delete()
-          .eq('id', sessionId);
+          .eq('session_id', sessionId);
 
         if (error) throw error;
 
         const { currentSession, sessions } = get();
         
         set({
-          currentSession: currentSession?.id === sessionId ? null : currentSession,
-          sessions: sessions.filter(s => s.id !== sessionId),
+          currentSession: currentSession?.session_id === sessionId ? null : currentSession,
+          sessions: sessions.filter(s => s.session_id !== sessionId),
           isLoading: false
         });
       } catch (error: unknown) {
@@ -261,16 +277,16 @@ export const useSessionStore = create<SessionState>()(
       }
     },
 
-    // [modificación] Realtime y sincronización
+    // [modificación] Realtime y sincronización usando tabla 'plays'
     initializeRealtime: () => {
       const channel = supabaseClient
-        .channel('game_sessions')
+        .channel('plays_realtime')
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
-            table: 'game_sessions',
+            table: 'plays',
           },
           (payload) => {
             const { eventType, new: newRecord, old: oldRecord } = payload;
@@ -285,12 +301,12 @@ export const useSessionStore = create<SessionState>()(
               
               case 'UPDATE':
                 const updatedSessions = sessions.map(session =>
-                  session.id === newRecord.id ? newRecord as GameSession : session
+                  session.session_id === newRecord.session_id ? newRecord as GameSession : session
                 );
                 
                 set({
                   sessions: updatedSessions,
-                  currentSession: currentSession?.id === newRecord.id 
+                  currentSession: currentSession?.session_id === newRecord.session_id 
                     ? newRecord as GameSession 
                     : currentSession,
                 });
@@ -298,8 +314,8 @@ export const useSessionStore = create<SessionState>()(
               
               case 'DELETE':
                 set({
-                  sessions: sessions.filter(session => session.id !== oldRecord.id),
-                  currentSession: currentSession?.id === oldRecord.id 
+                  sessions: sessions.filter(session => session.session_id !== oldRecord.session_id),
+                  currentSession: currentSession?.session_id === oldRecord.session_id 
                     ? null 
                     : currentSession,
                 });
