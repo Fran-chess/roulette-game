@@ -2,6 +2,19 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 
+// [modificación] Función auxiliar para convertir de manera segura unknown a Date
+function safeCreateDate(value: unknown): Date {
+  if (typeof value === 'string' || typeof value === 'number') {
+    return new Date(value);
+  }
+  if (value instanceof Date) {
+    return value;
+  }
+  // Si no es un tipo válido, devolver la fecha actual como fallback
+  console.warn('Valor de fecha inválido:', value, 'usando fecha actual como fallback');
+  return new Date();
+}
+
 export async function GET(request: Request) {
   try {
     // Verificar que supabaseAdmin esté disponible
@@ -73,7 +86,7 @@ export async function GET(request: Request) {
         Nombre: p.nombre,
         Apellido: p.apellido || '',
         Email: p.email || '',
-        FechaPrimerRegistro: new Date(p.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
+        FechaPrimerRegistro: safeCreateDate(p.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
         CantidadJugadasHoy: 0,
         CantidadJugadasTotal: 0,
         FechasJugadas: [],
@@ -106,7 +119,7 @@ export async function GET(request: Request) {
         const participant = participantsMap.get(play.participant_id);
         participant.CantidadJugadasHoy++;
         (participant.FechasJugadas as string[]).push(
-          new Date(play.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
+          safeCreateDate(play.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
         );
       }
     }

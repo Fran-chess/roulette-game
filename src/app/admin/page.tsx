@@ -2,14 +2,14 @@
 import { useEffect, useState } from 'react';
 import AdminLogin from '@/components/admin/AdminLogin';
 import AdminPanel from '@/components/admin/AdminPanel';
-import { useGameStore } from '@/store/gameStore';
+import { useSessionStore } from '@/store/sessionStore';
 import { motion } from 'framer-motion';
 import { AdminUser } from '@/types';
 
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [adminData, setAdminData] = useState<AdminUser | null>(null);
-  const { setAdminUser } = useGameStore();
+  const { loginWithAdmin, setUser } = useSessionStore();
 
   // Variantes de animación
   const containerVariants = {
@@ -32,7 +32,12 @@ export default function AdminPage() {
         try {
           const parsedAdmin = JSON.parse(storedAdmin);
           setAdminData(parsedAdmin);
-          setAdminUser(parsedAdmin);
+          loginWithAdmin({
+            id: parsedAdmin.id,
+            email: parsedAdmin.email,
+            name: parsedAdmin.name,
+            role: 'admin' as const
+          });
           setIsLoggedIn(true);
         } catch (error) {
           console.error('Error parsing admin data:', error);
@@ -42,11 +47,16 @@ export default function AdminPage() {
     };
 
     checkAdminStatus();
-  }, [setAdminUser]);
+  }, [loginWithAdmin]);
 
   const handleLoginSuccess = (adminData: AdminUser) => {
     setAdminData(adminData);
-    setAdminUser(adminData);
+    loginWithAdmin({
+      id: adminData.id,
+      email: adminData.email,
+      name: adminData.name,
+      role: 'admin' as const
+    });
     setIsLoggedIn(true);
     localStorage.setItem('adminUser', JSON.stringify(adminData));
   };
@@ -54,7 +64,7 @@ export default function AdminPage() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setAdminData(null);
-    setAdminUser(null);
+    setUser(null);
     localStorage.removeItem('adminUser');
     
     window.location.href = '/admin';

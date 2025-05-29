@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGameStore } from '@/store/gameStore';
+import { useSessionStore } from '@/store/sessionStore';
 import { PlaySession } from '@/types';
 import { isPlayerRegistered } from '@/utils/session';
 
@@ -16,7 +16,7 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   
-  const adminUser = useGameStore(state => state.adminUser);
+  const adminUser = useSessionStore(state => state.user);
   
   /**
    * Resetea los datos del jugador para permitir un nuevo registro

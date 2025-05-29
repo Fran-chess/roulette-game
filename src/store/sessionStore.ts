@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { createClient, type RealtimeChannel } from '@supabase/supabase-js';
+import { type RealtimeChannel } from '@supabase/supabase-js';
+import { supabaseClient } from '@/lib/supabase';
 
 // [modificación] Tipos para la gestión de sesiones y roles
 export interface User {
@@ -23,6 +24,26 @@ export interface GameSession {
   current_question?: string;
   score?: number;
   prize_won?: string;
+}
+
+// [modificación] Función para validar y convertir datos de Supabase a GameSession
+function validateGameSession(data: unknown): GameSession {
+  if (!data || typeof data !== 'object') {
+    throw new Error('Datos de sesión inválidos');
+  }
+  
+  const session = data as Record<string, unknown>;
+  
+  // Validar campos requeridos
+  if (typeof session.id !== 'string' || 
+      typeof session.status !== 'string' || 
+      typeof session.admin_id !== 'string' ||
+      typeof session.created_at !== 'string' ||
+      typeof session.updated_at !== 'string') {
+    throw new Error('Campos requeridos de sesión faltantes o inválidos');
+  }
+  
+  return session as unknown as GameSession;
 }
 
 export interface SessionState {
@@ -67,12 +88,6 @@ export interface SessionState {
   cleanup: () => void;
 }
 
-// Cliente Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 // [modificación] Store principal con sincronización en tiempo real
 export const useSessionStore = create<SessionState>()(
   subscribeWithSelector((set, get) => ({
@@ -94,7 +109,7 @@ export const useSessionStore = create<SessionState>()(
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
-    // [modificación] Gestión de sesiones
+    // [modificación] Gestión de sesiones usando el cliente centralizado
     createSession: async () => {
       const { user } = get();
       if (!user) throw new Error('Usuario no autenticado');
@@ -102,7 +117,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true, error: null });
       
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('game_sessions')
           .insert({
             admin_id: user.id,
@@ -113,8 +128,11 @@ export const useSessionStore = create<SessionState>()(
 
         if (error) throw error;
 
+        // [modificación] Validar y convertir datos usando función helper
+        const validatedSession = validateGameSession(data);
+
         set({ 
-          currentSession: data,
+          currentSession: validatedSession,
           isLoading: false 
         });
       } catch (error: unknown) {
@@ -130,7 +148,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true, error: null });
       
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('game_sessions')
           .update({
             ...updates,
@@ -142,9 +160,12 @@ export const useSessionStore = create<SessionState>()(
 
         if (error) throw error;
 
+        // [modificación] Validar y convertir datos usando función helper
+        const validatedSession = validateGameSession(data);
+
         const { currentSession } = get();
         if (currentSession?.id === sessionId) {
-          set({ currentSession: data });
+          set({ currentSession: validatedSession });
         }
 
         set({ isLoading: false });
@@ -161,7 +182,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true, error: null });
       
       try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('game_sessions')
           .delete()
           .eq('id', sessionId);
@@ -219,7 +240,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true });
       
       try {
-        await supabase.auth.signOut();
+        await supabaseClient.auth.signOut();
         get().cleanup();
         
         set({
@@ -242,7 +263,7 @@ export const useSessionStore = create<SessionState>()(
 
     // [modificación] Realtime y sincronización
     initializeRealtime: () => {
-      const channel = supabase
+      const channel = supabaseClient
         .channel('game_sessions')
         .on(
           'postgres_changes',

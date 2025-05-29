@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 
+// Interfaz para el tipo de administrador
+interface AdminCredentials {
+  id: string;
+  email: string;
+  name: string;
+}
+
 // Endpoint para iniciar sesión como administrador
 export async function POST(request: Request) {
   try {
@@ -37,8 +44,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // No se encontró usuario con esas credenciales
-    if (!data || data.length === 0) {
+    // Verificar si data es un array y tiene elementos
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return NextResponse.json(
         { message: 'Credenciales incorrectas' },
         { status: 401 }
@@ -46,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     // Devolver datos del administrador (sin incluir la contraseña)
-    const admin = data[0];
+    const admin = data[0] as AdminCredentials;
     
     return NextResponse.json({
       message: 'Inicio de sesión exitoso',

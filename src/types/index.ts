@@ -109,7 +109,6 @@ export interface GameStore {
   currentQuestion: Question | null;
   lastSpinResultIndex: number | null;
   currentPlay: Play | null;
-  adminUser: AdminUser | null;
   questions: Question[];
   gameSession: PlaySession | null;
   adminState: AdminState;
@@ -132,7 +131,6 @@ export interface GameStore {
   setPrizeFeedback: (feedback: PrizeFeedback) => void;
   resetPrizeFeedback: () => void;
   setShowConfetti: (value: boolean) => void;
-  setAdminUser: (adminData: AdminUser | null) => void;
   fetchGameSessions: () => Promise<PlaySession[]>;
   setGameSession: (sessionData: PlaySession | null) => void;
   setQuestions: (questions: Question[]) => void;

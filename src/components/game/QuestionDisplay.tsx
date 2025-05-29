@@ -68,6 +68,9 @@ interface QuestionDisplayProps {
 }
 
 export default function QuestionDisplay({ question }: QuestionDisplayProps) {
+  const [isTablet, setIsTablet] = useState(false);
+  const [isTVTouch, setIsTVTouch] = useState(false);
+  
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
   const updateCurrentParticipantScore = useGameStore(
@@ -80,34 +83,55 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   const [isAnswered, setIsAnswered] = useState(false);
 
   useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      
+      setIsTablet(width >= 601 && width <= 1024);
+      setIsTVTouch(width >= 1025);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
     setSelectedAnswer(null);
     setIsAnswered(false);
   }, [question]);
 
   const handleTimeUp = useCallback(() => {
-    if (!isAnswered) {
-      if (currentParticipant) {
-        updateCurrentParticipantScore({
-          questionId: question.id,
-          answeredCorrectly: false,
-        });
-      }
-      
-      const correctOption = question.options.find(o => o.correct);
-      
-      setPrizeFeedback({
+    if (isAnswered) return;
+    setIsAnswered(true);
+
+    const correctOption = question.options.find((o) => o.correct);
+
+    setPrizeFeedback({
+      answeredCorrectly: false,
+      explanation: question.explanation || "",
+      correctOption: correctOption?.text || "",
+      prizeName: "",
+    });
+
+    if (currentParticipant) {
+      updateCurrentParticipantScore({
+        questionId: question.id,
         answeredCorrectly: false,
-        explanation: question.explanation || "",
-        correctOption: correctOption?.text || "",
-        prizeName: "",
+        prizeWon: undefined,
       });
-      
-      setIsAnswered(true);
-      setTimeout(() => {
-        setGameState('prize');
-      }, 1500);
     }
-  }, [isAnswered, question, currentParticipant, updateCurrentParticipantScore, setGameState, setPrizeFeedback]);
+
+    setTimeout(() => {
+      setGameState("prize");
+    }, 2500);
+  }, [
+    isAnswered,
+    question,
+    currentParticipant,
+    updateCurrentParticipantScore,
+    setGameState,
+    setPrizeFeedback,
+  ]);
 
   const handleAnswer = useCallback(
     (option: AnswerOption) => {
@@ -160,17 +184,17 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       opacity: 1,
       scale: 1,
       transition: {
-        duration: 0.5,
+        duration: isTVTouch ? 0.7 : isTablet ? 0.6 : 0.5,
         ease: "easeOut",
         when: "beforeChildren",
-        staggerChildren: 0.06,
+        staggerChildren: isTVTouch ? 0.1 : isTablet ? 0.08 : 0.06,
       },
     },
     exit: { opacity: 0, scale: 0.94, transition: { duration: 0.3 } }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 12 },
+    hidden: { opacity: 0, y: isTVTouch ? 20 : isTablet ? 16 : 12 },
     visible: {
       opacity: 1,
       y: 0,
@@ -178,33 +202,81 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     },
   };
 
+  const getQuestionContainerClasses = () => {
+    const baseClasses = "bg-black/10 backdrop-blur-sm rounded-xl mb-6 w-full border border-white/30 shadow-lg";
+    
+    if (isTVTouch) {
+      return `${baseClasses} p-8 touch-spacing-lg touch-shadow`;
+    } else if (isTablet) {
+      return `${baseClasses} p-6 touch-spacing-md touch-shadow`;
+    }
+    return `${baseClasses} p-5`;
+  };
+
+  const getQuestionTextClasses = () => {
+    const baseClasses = "font-marineBold text-white text-center leading-tight";
+    
+    if (isTVTouch) {
+      return `${baseClasses} text-touch-3xl high-contrast-text`;
+    } else if (isTablet) {
+      return `${baseClasses} text-touch-2xl`;
+    }
+    return `${baseClasses} text-lg md:text-xl`;
+  };
+
+  const getOptionsContainerClasses = () => {
+    if (isTVTouch) {
+      return "w-full space-y-6";
+    } else if (isTablet) {
+      return "w-full space-y-4";
+    }
+    return "w-full space-y-3 md:space-y-4";
+  };
+
+  const getButtonBaseClasses = () => {
+    const baseClasses = "w-full text-left transition-all duration-200 break-words touch-target";
+    
+    if (isTVTouch) {
+      return `${baseClasses} btn-touch text-touch-xl py-6 px-8 rounded-touch-xl touch-shadow touch-hover`;
+    } else if (isTablet) {
+      return `${baseClasses} btn-touch text-touch-lg py-4 px-6 rounded-touch-lg touch-shadow touch-hover`;
+    }
+    return `${baseClasses} py-3 px-4 rounded-lg`;
+  };
+
   const cardBgOnDark = "bg-black/5 backdrop-blur-sm";
   const cardBorderOnDark = "border border-white/30";
   const cardHoverStyles = "hover:bg-black/10 hover:border-white/50";
   const cardFocusStyles = "focus:ring-2 focus:ring-celeste-medio focus:ring-opacity-60";
 
-  const getButtonBaseClasses = () =>
-    `w-full text-left justify-start p-4 md:p-5 rounded-xl transition-all duration-200 text-base font-marineRegular shadow-md ${cardBorderOnDark} focus:outline-none`;
-
   const getButtonStateClasses = (option: AnswerOption) => {
-  if (isAnswered) {
-    const isSelected = selectedAnswer?.text === option.text;
-    if (option.correct) {
-      // Correcta, verde Tailwind
-      return "bg-green-500 text-white ring-green-500 opacity-100 font-semibold border-green-500";
+    if (!isAnswered) {
+      return `${cardBgOnDark} ${cardBorderOnDark} ${cardHoverStyles} ${cardFocusStyles} text-white font-marineBold`;
     }
-    if (isSelected && !option.correct) {
-      // Seleccionada y errónea, rojo Tailwind
-      return "bg-red-500 text-white ring-red-400 opacity-100 font-semibold border-red-500";
-    }
-    // No seleccionada y no es correcta (opaca)
-    return "bg-black/5 text-white/60 ring-gray-600 opacity-70 cursor-not-allowed";
-  }
-  // Estado normal antes de responder
-  return `${cardBgOnDark} text-white ${cardHoverStyles} ${cardFocusStyles} hover:scale-[1.02] active:scale-[0.98] border-white/30 hover:border-celeste-medio`;
-};
 
-  
+    if (selectedAnswer === option) {
+      if (option.correct) {
+        return "bg-green-500/80 border-green-400 text-white font-marineBold shadow-lg";
+      } else {
+        return "bg-red-500/80 border-red-400 text-white font-marineBold shadow-lg";
+      }
+    }
+
+    if (option.correct) {
+      return "bg-green-500/60 border-green-400 text-white font-marineBold shadow-lg";
+    }
+
+    return "bg-black/20 border-white/20 text-white/60 font-marineBold";
+  };
+
+  const getContainerClasses = () => {
+    if (isTVTouch) {
+      return "flex flex-col items-center w-full mx-auto p-0 tv-ultra-layout";
+    } else if (isTablet) {
+      return "flex flex-col items-center w-full mx-auto p-0 tablet-flex";
+    }
+    return "flex flex-col items-center w-full mx-auto p-0";
+  };
 
   return (
     <motion.div
@@ -213,23 +285,26 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       initial="hidden"
       animate="visible"
       exit="exit"
-      className="flex flex-col items-center w-full mx-auto p-0"
+      className={getContainerClasses()}
     >
-      <Timer initialSeconds={15} onTimeUp={handleTimeUp} />
+      <Timer 
+        initialSeconds={isTVTouch ? 20 : isTablet ? 18 : 15} 
+        onTimeUp={handleTimeUp} 
+      />
 
-      <div className="bg-black/10 backdrop-blur-sm p-5 rounded-xl mb-6 w-full border border-white/30 shadow-lg">
-        <h3 className="text-lg md:text-xl font-marineBold text-white text-center leading-tight">
+      <div className={getQuestionContainerClasses()}>
+        <h3 className={getQuestionTextClasses()}>
           {question.text}
         </h3>
       </div>
 
-      <div className="w-full space-y-3 md:space-y-4">
+      <div className={getOptionsContainerClasses()}>
         {question.options.map((option, index) => (
           <motion.div key={index} variants={itemVariants}>
             <Button
               variant="custom"
               onClick={() => handleAnswer(option)}
-              className={`${getButtonBaseClasses()} ${getButtonStateClasses(option)} break-words`}
+              className={`${getButtonBaseClasses()} ${getButtonStateClasses(option)}`}
               disabled={isAnswered}
             >
               <span className="block">{option.text}</span>
@@ -238,7 +313,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         ))}
       </div>
 
-      <div className="mt-6 pt-4 border-t border-white/20 w-full"></div>
+      <div className={`mt-6 pt-4 border-t border-white/20 w-full ${isTVTouch ? 'mt-8 pt-6' : isTablet ? 'mt-6 pt-5' : ''}`}></div>
     </motion.div>
   );
 }

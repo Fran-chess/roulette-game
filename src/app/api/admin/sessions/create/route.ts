@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     }
 
     // Crear nueva sesión de juego
-    const { data: sessionId, error: createError } = await supabaseAdmin.rpc(
+    const { data: sessionIdRaw, error: createError } = await supabaseAdmin.rpc(
       'create_game_session',
       {
         p_admin_id: adminId
@@ -91,6 +91,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // [modificación] Validar y convertir sessionId a string
+    if (!sessionIdRaw || typeof sessionIdRaw !== 'string') {
+      console.error('Error: sessionId no es válido:', sessionIdRaw);
+      return NextResponse.json(
+        { message: 'Error al generar ID de sesión' },
+        { status: 500 }
+      );
+    }
+
+    const sessionId: string = sessionIdRaw;
     console.log(`Juego creado con ID de sesión: ${sessionId}`);
 
     // [modificación] Esperar explícitamente a que el juego esté creado

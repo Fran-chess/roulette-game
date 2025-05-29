@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isPlayerRegistered } from '@/utils/session';
+import type { PlaySession } from '@/types';
 
 /**
  * API endpoint para resetear los datos de un jugador en una sesión
@@ -50,14 +51,19 @@ export async function POST(request: Request) {
       );
     }
     
-    // [modificación] Obtener el primer registro (más reciente) para información
-    const firstSession = allSessionData[0];
+    // [modificación] Obtener el primer registro (más reciente) para información y hacer cast de tipo seguro
+    const firstSessionRaw = allSessionData[0];
+    const firstSession = firstSessionRaw as unknown as PlaySession;
     
-    // Verificar si hay un jugador registrado (solo para información)
-    if (isPlayerRegistered(firstSession)) {
-      console.log(`Reseteando jugador: ${firstSession.nombre} (${firstSession.email})`);
+    // [modificación] Verificar si hay un jugador registrado (solo para información) con validación de tipo
+    if (firstSession && typeof firstSession === 'object' && 'status' in firstSession) {
+      if (isPlayerRegistered(firstSession)) {
+        console.log(`Reseteando jugador: ${firstSession.nombre} (${firstSession.email})`);
+      } else {
+        console.log(`La sesión no tenía un jugador registrado (estado: ${firstSession.status})`);
+      }
     } else {
-      console.log(`La sesión no tenía un jugador registrado (estado: ${firstSession.status})`);
+      console.log('La sesión no tiene un formato válido');
     }
     
     // [modificación] Eliminar TODOS los registros existentes de la sesión (sin importar cuántos sean)

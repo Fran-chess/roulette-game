@@ -7,6 +7,7 @@ import type {
   GameStore,
   ParticipantsStats
 } from '@/types';
+import { useSessionStore } from './sessionStore';
 
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -31,8 +32,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // Estado global para mostrar confeti
   showConfetti: false,
 
-  // Estado del administrador
-  adminUser: null,
+  // [modificación] Removido adminUser del estado ya que se maneja en sessionStore
   adminState: {
     activeSessions: [],
     currentSession: null,
@@ -63,19 +63,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return;
     }
 
-    // [modificación] Verificar si la sesión ya está establecida y es la misma
+    // [modificación] Verificación más estricta para evitar actualizaciones redundantes
     const currentSession = get().gameSession;
+    const currentParticipant = get().currentParticipant;
+    
     if (currentSession && 
         currentSession.id === sessionData.id && 
-        currentSession.status === sessionData.status) {
+        currentSession.status === sessionData.status &&
+        currentSession.nombre === sessionData.nombre &&
+        currentSession.email === sessionData.email &&
+        currentSession.updated_at === sessionData.updated_at) {
       console.log('GameStore: Sesión ya establecida con mismo estado, evitando actualización redundante');
       return;
     }
 
-    console.log('GameStore: Estableciendo sesión de juego:', sessionData);
+    // [modificación] Si solo hay cambios menores en participante, evitar log repetitivo
+    if (currentSession && currentSession.id === sessionData.id && currentParticipant) {
+      console.log('GameStore: Actualizando datos de sesión existente');
+    } else {
+      console.log('GameStore: Estableciendo sesión de juego:', sessionData);
+    }
+    
     let participantForSession: Participant | null = null;
-    // [modificación] Mantener el estado actual del juego por defecto (no modificarlo aquí)
-    // Esta será responsabilidad del componente que llama a setGameSession
     
     // [modificación] Extraer datos del participante si existen
     if (sessionData.nombre && sessionData.email) {
@@ -89,8 +98,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       };
     }
     
-    // [modificación] Sólo guardar los datos, no modificar el estado de la aplicación
-    console.log(`GameStore: Actualizando datos de sesión`);
+    // [modificación] Solo actualizar si hay cambios reales
     set({
       gameSession: sessionData,
       currentParticipant: participantForSession,
@@ -189,10 +197,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
   }),
 
   // --- ACCIONES DEL PANEL DE ADMINISTRADOR ---
-  setAdminUser: (adminData) => set({ adminUser: adminData }),
+  // [modificación] Removido setAdminUser ya que ahora se maneja en sessionStore
 
   fetchGameSessions: async () => {
-    const adminId = get().adminUser?.id;
+    const sessionState = useSessionStore.getState();
+    const adminId = sessionState.user?.id;
+    
     if (!adminId) {
       console.warn("Store: fetchGameSessions - No adminId available.");
       set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, sessionsList: false }, activeSessions: [] }}));
@@ -300,7 +310,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   })),
 
   createNewSession: async () => {
-    const adminId = get().adminUser?.id;
+    // [modificación] Obtener adminId desde sessionStore en lugar de adminUser
+    const sessionState = useSessionStore.getState();
+    const adminId = sessionState.user?.id;
+    
     if (!adminId) {
       get().setAdminNotification('error', 'No se puede crear sesión: ID de Admin no disponible.');
       return null;
@@ -343,7 +356,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   updateSessionStatus: async (sessionId: string, status: string) => {
-    const adminId = get().adminUser?.id;
+    // [modificación] Obtener adminId desde sessionStore en lugar de adminUser
+    const sessionState = useSessionStore.getState();
+    const adminId = sessionState.user?.id;
+    
     get().setAdminLoading('sessionAction', true);
     get().clearAdminNotifications();
     try {
