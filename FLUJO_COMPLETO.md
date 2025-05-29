@@ -1,4 +1,4 @@
-# Flujo Completo PWA - DarSalud
+# Flujo Completo PWA - Roulette Game
 
 ## 🎯 Resumen de Implementación
 
@@ -18,41 +18,33 @@ Hemos implementado completamente la arquitectura PWA con sincronización en tiem
 - Configuración para modo kiosk
 
 ### 3. Rutas Implementadas ✅
-- `/admin` → AdminScreen (tablet)
-- `/tv` → TVScreen (TV)
+- `/admin` → AdminScreen (tablet) - **Requiere autenticación**
+- `/tv` → TVScreen (TV) - **Acceso directo sin login**
 - Redirección automática según rol de usuario
 
 ### 4. Sistema de Autenticación ✅
+- **Solo Admin requiere login** con email/password
+- TV accede directamente sin autenticación
 - Roles basados en email (admin/viewer)
-- LoginScreen unificado
-- Persistencia de sesión con Supabase Auth
+- Persistencia de sesión con sistema personalizado
 
 ### 5. Sincronización en Tiempo Real ✅
 - SessionStore con Zustand
-- Realtime subscriptions de Supabase
+- Realtime subscriptions de Supabase en tabla `plays`
 - Estados sincronizados entre dispositivos
-
-## 🎮 Flujo de Usuario Completo
-
-### Setup Inicial
-1. **Configurar Supabase** → Ejecutar `DATABASE_MIGRATION.sql`
-2. **Crear usuarios**:
-   - `admin@darsalud.com` (tablet)
-   - `tv@darsalud.com` (TV)
-3. **Variables de entorno** → `.env.local`
 
 ### Flujo Operativo
 
-#### 1. Inicio de Sesiones
+#### 1. Inicio de Sesión
 ```
 Tablet → Login admin@darsalud.com → AdminScreen
-TV → Login tv@darsalud.com → TVScreen (WaitingScreen)
+TV → Acceso directo a /tv → TVScreen (sin login)
 ```
 
 #### 2. Crear Sesión de Juego
 ```
 Admin: Botón "Crear Nueva Sesión" 
-→ INSERT game_sessions (status: 'waiting')
+→ INSERT INTO plays (session_id, status: 'pending_player_registration', admin_id)
 → TV recibe realtime → Mantiene WaitingScreen
 ```
 
