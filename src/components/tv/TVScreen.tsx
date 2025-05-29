@@ -1,12 +1,16 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSessionStore, type GameSession } from '@/store/sessionStore';
+import { supabaseClient } from '@/lib/supabase';
+
+// [modificación] Importar función de validación desde sessionStore
+import { validateGameSession } from '@/store/sessionStore';
 
 // [modificación] Componente principal para la vista de TV
 export default function TVScreen() {
-  const { currentSession, user } = useSessionStore();
+  const { currentSession, user, initializeRealtime, setCurrentSession, setUser } = useSessionStore();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // [modificación] Reloj en tiempo real
@@ -17,6 +21,87 @@ export default function TVScreen() {
 
     return () => clearInterval(timer);
   }, []);
+
+  // [modificación] Función memoizada para inicializar la vista de TV
+  const initializeTVView = useCallback(async () => {
+    // [modificación] Verificar que el cliente de Supabase esté disponible
+    if (!supabaseClient) {
+      console.error('Cliente de Supabase no disponible en la vista de TV');
+      return;
+    }
+
+    console.log('Inicializando vista de TV...');
+
+    // Configurar usuario como viewer para la TV si no existe
+    if (!user) {
+      setUser({
+        id: 'tv-viewer',
+        email: 'tv@viewer.local',
+        role: 'viewer',
+        name: 'TV Display'
+      });
+    }
+
+    // Inicializar suscripción en tiempo real
+    try {
+      initializeRealtime();
+      console.log('Suscripción realtime inicializada para TV');
+    } catch (error) {
+      console.error('Error al inicializar realtime:', error);
+    }
+
+    // Cargar sesión activa actual desde la base de datos
+    try {
+      console.log('Cargando sesión activa desde la base de datos...');
+      const { data, error } = await supabaseClient
+        .from('plays')
+        .select('*')
+        .in('status', ['pending_player_registration', 'player_registered', 'playing'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error cargando sesión activa:', error);
+        return;
+      }
+
+      if (data) {
+        console.log('Sesión activa encontrada:', data);
+        // [modificación] Usar función de validación para convertir datos de Supabase
+        try {
+          const validatedSession = validateGameSession(data);
+          setCurrentSession(validatedSession);
+        } catch (validationError) {
+          console.error('Error validando sesión:', validationError);
+          // [modificación] Fallback: usar datos directamente si la validación falla
+          setCurrentSession(data as unknown as GameSession);
+        }
+      } else {
+        console.log('No hay sesión activa en este momento');
+      }
+    } catch (error) {
+      console.error('Error al cargar sesión activa:', error);
+    }
+  }, [user, initializeRealtime, setCurrentSession, setUser]);
+
+  // [modificación] Inicializar realtime y cargar sesión activa para la vista de TV
+  useEffect(() => {
+    let isInitialized = false;
+
+    const runInitialization = async () => {
+      if (isInitialized) return;
+      isInitialized = true;
+      await initializeTVView();
+    };
+
+    runInitialization();
+
+    // Cleanup al desmontar el componente
+    return () => {
+      // No hacer cleanup del realtime aquí para mantener la conexión
+    };
+  }, [initializeTVView]); // [modificación] Solo depende de la función memoizada
 
   // [modificación] Determinar qué pantalla mostrar según el estado (usando estados del backend)
   const renderScreen = () => {
@@ -59,6 +144,17 @@ export default function TVScreen() {
         <div className="absolute top-4 right-4 text-white/60 text-sm">
           <p>Usuario: {user.email}</p>
           <p>Rol: {user.role === 'viewer' ? 'TV' : 'Admin'}</p>
+        </div>
+      )}
+
+      {/* [modificación] Debug info para desarrollo */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute bottom-4 left-4 bg-black/50 text-white text-xs p-4 rounded-lg max-w-md">
+          <h4 className="font-bold mb-2">Debug Info (TV)</h4>
+          <p>Usuario: {user ? `${user.name} (${user.role})` : 'No configurado'}</p>
+          <p>Sesión actual: {currentSession ? `${currentSession.session_id} - ${currentSession.status}` : 'Ninguna'}</p>
+          <p>Participante: {currentSession?.nombre || 'N/A'}</p>
+          <p>Última actualización: {currentSession?.updated_at ? new Date(currentSession.updated_at).toLocaleTimeString() : 'N/A'}</p>
         </div>
       )}
     </div>
