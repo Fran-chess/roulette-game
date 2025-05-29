@@ -150,6 +150,22 @@ Admin: "Reiniciar Sesión"
 - Icono en home screen
 - Modo standalone (sin barra del navegador)
 
+### Dispositivos de Presentación Específicos
+La aplicación está optimizada para estos dispositivos de presentación:
+
+#### **Tablets para Admin (Requieren autenticación)**
+- **Tablet 10″ Android (16:10)**:
+  - Landscape: 1920×1200 px
+  - Portrait: 1200×1920 px
+- **iPad 9.7″ Retina (4:3)**:
+  - Landscape: 2048×1536 px  
+  - Portrait: 1536×2048 px
+
+#### **TV para Visualización (Acceso directo)**
+- **TV Táctil 65″ (4K, 16:9)**:
+  - Landscape: 3840×2160 px
+  - Portrait: 2160×3840 px
+
 ### Performance
 - Service worker automático (next-pwa)
 - Cache inteligente para Supabase APIs
@@ -169,11 +185,9 @@ Admin: "Reiniciar Sesión"
    npm install next-pwa
    ```
 
-2. **Configurar Supabase**:
-   - Crear proyecto
-   - Ejecutar `DATABASE_MIGRATION.sql`
-   - Crear usuarios de prueba
-   - Configurar `.env.local`
+2. **Configurar Variables de Entorno**:
+   - La base de datos ya está configurada con 20 migraciones aplicadas
+   - Solo configurar `.env.local` con las credenciales de Supabase
 
 3. **Desarrollo**:
    ```bash
@@ -187,9 +201,18 @@ Admin: "Reiniciar Sesión"
    npm start
    ```
 
-2. **Instalación en Dispositivos**:
-   - Tablet: Acceder a URL → "Instalar App"
-   - TV: Acceder a URL → "Agregar a pantalla inicio"
+2. **Instalación en Dispositivos Específicos**:
+   
+   #### **Tablets Admin (1920×1200 / 2048×1536)**
+   - Acceder a URL desde Chrome/Safari
+   - Seleccionar "Instalar App" o "Agregar a pantalla inicio"
+   - Configurar en modo landscape para mejor experiencia
+   
+   #### **TV Táctil 65″ (3840×2160)**
+   - Acceder a URL desde navegador de la TV
+   - Instalar como PWA para modo kiosk
+   - Configurar en pantalla completa (F11)
+   - Orientación landscape recomendada
 
 ### Para Personalización
 - **Iconos**: Reemplazar en `/public/` (icon-192x192.png, icon-512x512.png)

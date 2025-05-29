@@ -109,6 +109,24 @@ Los roles se determinan automáticamente por el email:
 - Funciona en modo kiosk (pantalla completa)
 - Funciona offline una vez instalada
 
+### Dispositivos de Presentación Optimizados
+La aplicación está diseñada específicamente para:
+
+#### **Tablet 10″ Android (16:10) - Panel Admin**
+- **Landscape**: 1920×1200 px
+- **Portrait**: 1200×1920 px
+- **Función**: Control y gestión del juego
+
+#### **iPad 9.7″ Retina (4:3) - Panel Admin**
+- **Landscape**: 2048×1536 px  
+- **Portrait**: 1536×2048 px
+- **Función**: Control y gestión del juego
+
+#### **TV Táctil 65″ (4K, 16:9) - Pantalla de Visualización**
+- **Landscape**: 3840×2160 px
+- **Portrait**: 2160×3840 px
+- **Función**: Visualización para participantes y audiencia
+
 ### Sincronización en Tiempo Real ✅ HABILITADA
 - **Realtime habilitado** en Supabase
 - Tablet (admin) y TV se sincronizan instantáneamente

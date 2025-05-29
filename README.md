@@ -179,10 +179,28 @@ npm run analyze
 
 ## 📱 Compatibilidad
 
-- **Tablets**: iPad, Android tablets
-- **TVs**: Smart TVs con navegador
-- **Navegadores**: Chrome, Safari, Edge, Firefox
-- **Orientación**: Landscape optimizado
+### Dispositivos de Presentación
+La aplicación está optimizada para los siguientes dispositivos específicos:
+
+#### **Tablet 10″ Android (16:10)**
+- **Landscape**: 1920×1200 px
+- **Portrait**: 1200×1920 px
+- **Uso**: Panel de administración (Admin)
+
+#### **iPad 9.7″ Retina (4:3)**
+- **Landscape**: 2048×1536 px  
+- **Portrait**: 1536×2048 px
+- **Uso**: Panel de administración (Admin)
+
+#### **TV Táctil 65″ (4K, 16:9)**
+- **Landscape**: 3840×2160 px
+- **Portrait**: 2160×3840 px
+- **Uso**: Pantalla de visualización (Viewer)
+
+### Navegadores Compatibles
+- **Chrome, Safari, Edge, Firefox**
+- **Orientación**: Landscape optimizado para mejor experiencia
+- **PWA**: Instalable en todos los dispositivos mencionados
 
 ## 🤝 Contribución
 
