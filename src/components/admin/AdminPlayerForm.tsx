@@ -69,22 +69,22 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
   return (
     <div className="bg-transparent rounded-lg">
       {success && (
-        <div className="bg-slate-900/20 border border-white/20 text-white p-4 mb-4 rounded-lg" role="alert">
-          <p>{success}</p>
+        <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-4 mb-4 rounded-lg backdrop-blur-sm" role="alert">
+          <p className="font-sans">{success}</p>
         </div>
       )}
       
       {error && (
-        <div className="bg-slate-900/20 border border-white/20 text-white p-4 mb-4 rounded-lg" role="alert">
-          <p>{error}</p>
+        <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 mb-4 rounded-lg backdrop-blur-sm" role="alert">
+          <p className="font-sans">{error}</p>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-white/80 mb-1">
-              Nombre <span className="text-white">*</span>
+            <label htmlFor="nombre" className="block text-sm font-marineBold text-slate-200 mb-1">
+              Nombre <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -92,12 +92,12 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-slate-900/20 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/40 placeholder-white/50"
+              className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
               required
             />
           </div>
           <div>
-            <label htmlFor="apellido" className="block text-sm font-medium text-white/80 mb-1">
+            <label htmlFor="apellido" className="block text-sm font-marineBold text-slate-200 mb-1">
               Apellido
             </label>
             <input
@@ -106,14 +106,14 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
               name="apellido"
               value={formData.apellido}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-slate-900/20 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/40 placeholder-white/50"
+              className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
             />
           </div>
         </div>
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-1">
-            Email <span className="text-white">*</span>
+          <label htmlFor="email" className="block text-sm font-marineBold text-slate-200 mb-1">
+            Email <span className="text-red-400">*</span>
           </label>
           <input
             type="email"
@@ -121,13 +121,13 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-slate-900/20 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/40 placeholder-white/50"
+            className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
             required
           />
         </div>
 
         <div>
-          <label htmlFor="especialidad" className="block text-sm font-medium text-white/80 mb-1">
+          <label htmlFor="especialidad" className="block text-sm font-marineBold text-slate-200 mb-1">
             Especialidad
           </label>
           <input
@@ -136,7 +136,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
             name="especialidad"
             value={formData.especialidad}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-slate-900/20 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-white/40 placeholder-white/50"
+            className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
           />
         </div>
 
@@ -144,7 +144,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
           <Button
             type="submit"
             variant="custom"
-            className="w-full bg-slate-900/30 hover:bg-slate-900/50 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-white/20 transition-colors duration-300"
+            className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-blue-400/50 transition-colors duration-300"
             disabled={isLoading}
           >
             {isLoading ? 'Registrando...' : 'Registrar Jugador'}

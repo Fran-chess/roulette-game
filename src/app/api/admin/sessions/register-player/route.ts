@@ -117,11 +117,37 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`Participante ${nombre} registrado exitosamente en la sesión ${sessionId}`);
+    // Actualizar inmediatamente el estado a 'playing' para que la TV cambie de vista
+    console.log(`Actualizando estado de sesión ${sessionId} a 'playing'`);
+    
+    const { data: updatedSession, error: updateError } = await supabaseAdmin
+      .from('plays')
+      .update({ 
+        status: 'playing',
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', sessionId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('Error al actualizar estado a playing:', updateError);
+      // No fallar por completo, devolver la sesión registrada
+      console.log(`Participante ${nombre} registrado exitosamente en la sesión ${sessionId} (estado: player_registered)`);
+      
+      return NextResponse.json({
+        message: 'Participante registrado exitosamente (advertencia: no se pudo actualizar estado a playing)',
+        session: newSession,
+        isNew: true,
+        warning: 'Estado no actualizado automáticamente'
+      });
+    }
+
+    console.log(`Participante ${nombre} registrado exitosamente en la sesión ${sessionId} y estado actualizado a 'playing'`);
 
     return NextResponse.json({
-      message: 'Participante registrado exitosamente',
-      session: newSession,
+      message: 'Participante registrado exitosamente y juego iniciado',
+      session: updatedSession || newSession,
       isNew: true
     });
 

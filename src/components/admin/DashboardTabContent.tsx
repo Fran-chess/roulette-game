@@ -100,7 +100,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         variants={staggerContainer}
       >
         <div className="p-4 md:p-6">
-          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold mb-4 md:mb-6 text-slate-800">
+          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold mb-4 md:mb-6 text-white">
             Panel Principal
           </motion.h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -110,22 +110,22 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                 variants={fadeInUp}
                 whileHover={{ 
                   scale: 1.03, 
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.1)",
-                  backgroundColor: "rgba(0, 0, 0, 0.1)"
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
+                  backgroundColor: "rgba(255, 255, 255, 0.15)"
                 }}
-                className={`p-4 rounded-xl shadow-lg flex flex-col ${item.color} backdrop-blur-sm border border-white/40 hover:border-white/60 transition-all duration-300 ${item.isClickable ? 'cursor-pointer' : ''}`}
+                className={`p-4 rounded-xl shadow-lg flex flex-col bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 transition-all duration-300 ${item.isClickable ? 'cursor-pointer' : ''}`}
                 onClick={item.isClickable ? item.onClick : undefined}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm text-slate-700 font-marineRegular">{item.title}</p>
-                  <div className={`${item.iconColor} bg-black/10 p-2 rounded-full`}>
-                    <item.icon size={20} />
+                  <p className="text-sm text-slate-200 font-marineBold">{item.title}</p>
+                  <div className={`${item.iconColor} bg-white/10 p-2 rounded-full`}>
+                    <item.icon size={20} className="text-blue-300" />
                   </div>
                 </div>
-                <p className="text-3xl md:text-4xl font-marineBlack text-slate-800 mb-1">{item.value}</p>
-                <p className="text-xs text-slate-600">{item.description}</p>
+                <p className="text-3xl md:text-4xl font-marineBlack text-white mb-1">{item.value}</p>
+                <p className="text-xs text-slate-300 font-sans">{item.description}</p>
                 {item.isClickable && (
-                  <p className="text-xs text-blue-600 mt-2 font-marineRegular">
+                  <p className="text-xs text-blue-300 mt-2 font-marineBold">
                     Click para ver detalle
                   </p>
                 )}
@@ -137,7 +137,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             <Button
               onClick={onInitiateNewSession}
               variant="custom"
-              className="bg-blue-500/80 hover:bg-blue-600/90 text-white font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-blue-400/50 transition-colors duration-300"
+              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-blue-400/50 transition-colors duration-300"
               disabled={isLoading}
             >
               <FiPlusCircle className="mr-3" size={20} />
@@ -147,7 +147,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
             <Button
               onClick={onLogout}
               variant="custom"
-              className="bg-black/10 hover:bg-black/20 text-slate-800 font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-white/40 transition-colors duration-300"
+              className="bg-white/10 hover:bg-white/20 text-white font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-white/20 transition-colors duration-300"
             >
               <FiLogOut className="mr-3" size={20} />
               Cerrar Sesión

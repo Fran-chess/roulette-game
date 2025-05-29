@@ -15,6 +15,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState('');
   const [localLoading, setLocalLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   // [modificación] Usar sessionStore para el flujo principal
   const { isLoading: sessionLoading, error: sessionError } = useSessionStore();
@@ -24,33 +25,48 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   const isLoading = useSessionStoreMode ? sessionLoading : localLoading;
   const error = useSessionStoreMode ? sessionError : localError;
 
-  // Variantes de animación para los componentes
+  // [modificación] Variantes de animación mejoradas para componentes
+  const containerVariants = {
+    hidden: { opacity: 0, scale: 0.95, y: 20 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: { 
+        duration: 0.6, 
+        ease: [0.25, 0.1, 0.25, 1.0],
+        staggerChildren: 0.1, 
+        delayChildren: 0.2
+      },
+    },
+  };
+
   const fieldsetVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1, delayChildren: 0.1 },
+      transition: { staggerChildren: 0.15, delayChildren: 0.1 },
     },
   };
 
   const fieldItemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 30, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1.0] },
+      transition: { duration: 0.5, ease: [0.25, 0.1, 0.25, 1.0] },
     },
   };
 
-  // [modificación] Estilos actualizados para el diseño claro
-  const textOnLightBase = "text-slate-800";
-  const labelColorOnLight = "text-slate-700";
-  const inputTextColorOnLight = "text-slate-800";
-  const placeholderColorOnLight = "placeholder-slate-500";
-  const inputBgOnLight = "bg-black/5";
-  const inputBorderOnLight = "border-white/30";
-  const inputHoverStyles = "hover:bg-black/10 hover:border-white/50";
-  const inputFocusStyles = "focus:border-teal-500 focus:ring-1 focus:ring-teal-500";
+  // [modificación] Variantes para efectos de hover en botones
+  const buttonVariants = {
+    hover: { 
+      scale: 1.02,
+      boxShadow: "0 10px 30px -10px rgba(14, 165, 233, 0.4)",
+      transition: { duration: 0.2 }
+    },
+    tap: { scale: 0.98 }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,85 +121,177 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div 
-      className={`flex flex-col items-center justify-between w-full max-w-lg mx-auto p-5 md:p-8 rounded-xl bg-black/5 ${textOnLightBase} shadow-xl backdrop-blur-md border border-white/10 touch-optimized`}
-    >
+    <div className="flex items-center justify-center min-h-screen w-full p-4">
+      {/* [modificación] - Fondo mejorado con gradiente animado */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-transparent to-teal-500/10"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(14,165,233,0.1),transparent_50%)]"></div>
+      </div>
+
       <motion.div
-        className="w-full flex flex-col items-center shrink-0"
-        variants={fieldItemVariants}
+        variants={containerVariants}
         initial="hidden"
         animate="visible"
+        className="relative z-10 w-full max-w-md mx-auto"
       >
-        <h2 className="text-xl md:text-2xl font-marineBold text-center mb-5 text-slate-800">
-          Iniciar Sesión como Administrador
-        </h2>
-      </motion.div>
-
-      <form onSubmit={handleLogin} className="flex flex-col space-y-3 md:space-y-4 w-full overflow-y-auto px-1 custom-scrollbar" style={{ flexGrow: 1 }}>
-        <motion.div
-          variants={fieldsetVariants}
-          initial="hidden"
-          animate="visible"
-          className="space-y-3 md:space-y-4"
-        >
-          {/* Email */}
-          <motion.div variants={fieldItemVariants}>
-            <Input
-              label="Email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              aria-required="true"
-              containerClassName="w-full"
-              labelClassName={`${labelColorOnLight} text-sm`}
-              className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles} h-12 md:h-14 text-lg`}
-              autoComplete="email"
-              required
-              disabled={isLoading}
-            />
+        {/* [modificación] - Contenedor principal mejorado con mejor glassmorphism */}
+        <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 space-y-6">
+          
+          {/* [modificación] - Header mejorado con iconos y mejor tipografía */}
+          <motion.div
+            variants={fieldItemVariants}
+            className="text-center space-y-4"
+          >
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+              <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-marineBold text-white mb-2">
+                Panel Administrativo
+              </h2>
+              <p className="text-slate-300 text-sm font-sans">
+                Ingresa tus credenciales para continuar
+              </p>
+            </div>
           </motion.div>
 
-          {/* Contraseña */}
-          <motion.div variants={fieldItemVariants}>
-            <Input
-              label="Contraseña"
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              aria-required="true"
-              containerClassName="w-full"
-              labelClassName={`${labelColorOnLight} text-sm`}
-              className={`${inputBgOnLight} ${inputTextColorOnLight} ${placeholderColorOnLight} ${inputBorderOnLight} ${inputHoverStyles} ${inputFocusStyles} h-12 md:h-14 text-lg`}
-              autoComplete="current-password"
-              required
-              disabled={isLoading}
-            />
-          </motion.div>
-
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="py-2 px-3 bg-red-500/10 text-red-600 rounded-md text-sm"
+          <form onSubmit={handleLogin} className="space-y-6">
+            <motion.div
+              variants={fieldsetVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-4"
             >
-              {error}
+              {/* [modificación] - Campo Email mejorado con icono */}
+              <motion.div variants={fieldItemVariants}>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                    </svg>
+                  </div>
+                  <Input
+                    label="Correo electrónico"
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="admin@empresa.com"
+                    aria-required="true"
+                    containerClassName="w-full"
+                    labelClassName="text-slate-200 text-sm font-marineBold mb-2 block"
+                    className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans"
+                    autoComplete="email"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </motion.div>
+
+              {/* [modificación] - Campo Contraseña mejorado con toggle visibility */}
+              <motion.div variants={fieldItemVariants}>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <Input
+                    label="Contraseña"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    aria-required="true"
+                    containerClassName="w-full"
+                    labelClassName="text-slate-200 text-sm font-marineBold mb-2 block"
+                    className="w-full pl-10 pr-12 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans"
+                    autoComplete="current-password"
+                    required
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200 transition-colors duration-200"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                      </svg>
+                    ) : (
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* [modificación] - Mensaje de error mejorado */}
+              {error && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  className="flex items-center space-x-2 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm backdrop-blur-sm font-sans"
+                >
+                  <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>{error}</span>
+                </motion.div>
+              )}
+
+              {/* [modificación] - Botón mejorado con animaciones y gradiente */}
+              <motion.div variants={fieldItemVariants} className="pt-2">
+                <motion.div
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !email || !password}
+                    className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-transparent"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="font-marineBold">Iniciando sesión...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center space-x-2">
+                        <span className="font-marineBold">Iniciar Sesión</span>
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                      </div>
+                    )}
+                  </Button>
+                </motion.div>
+              </motion.div>
             </motion.div>
-          )}
+          </form>
 
-          <motion.div variants={fieldItemVariants} className="pt-2">
-            <Button
-              type="submit"
-              disabled={isLoading || !email || !password}
-              touchOptimized={true}
-              className="w-full py-4 text-white text-lg btn-touch"
-            >
-              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-            </Button>
+          {/* [modificación] - Footer con información adicional */}
+          <motion.div 
+            variants={fieldItemVariants}
+            className="text-center pt-4 border-t border-white/10"
+          >
+            <p className="text-slate-400 text-xs font-sans">
+              Acceso seguro protegido • Solo personal autorizado
+            </p>
           </motion.div>
-        </motion.div>
-      </form>
+        </div>
+      </motion.div>
     </div>
   );
 };

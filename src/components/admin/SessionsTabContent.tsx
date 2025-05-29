@@ -181,13 +181,13 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     >
       <div className="p-4 md:p-6">
         <div className="flex justify-between items-center mb-4">
-          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold text-slate-800">
+          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold text-white">
             Gestión de Juegos
           </motion.h3>
           <Button
             onClick={onCreateNewSession}
             variant="custom"
-            className="bg-blue-500/80 hover:bg-blue-600/90 text-white font-marineBold py-2 px-3 rounded-lg shadow-md text-sm flex items-center border border-blue-400/50 transition-colors duration-300"
+            className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-3 rounded-lg shadow-md text-sm flex items-center border border-blue-400/50 transition-colors duration-300"
             disabled={isLoadingCreation}
           >
             <FiPlusCircle className="mr-1.5" size={16} />
@@ -196,23 +196,23 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         </div>
 
         {isLoadingList && activeSessions.length === 0 && (
-          <p className="text-center text-slate-700 py-8">Cargando juegos...</p>
+          <p className="text-center text-slate-300 py-8 font-sans">Cargando juegos...</p>
         )}
         
         {!isLoadingList && activeSessions.length === 0 ? (
           <motion.div
             variants={fadeInUp}
-            className="bg-black/5 backdrop-blur-sm rounded-xl shadow-lg p-6 text-center my-4 border border-white/30"
-            whileHover={{ scale: 1.01, backgroundColor: "rgba(0, 0, 0, 0.1)" }}
+            className="bg-white/10 backdrop-blur-sm rounded-xl shadow-lg p-6 text-center my-4 border border-white/20"
+            whileHover={{ scale: 1.01, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
           >
-            <FiCalendar className="text-slate-600 mb-3 mx-auto" size={40} />
-            <p className="text-slate-800 font-marineRegular mb-4 text-base md:text-lg">
+            <FiCalendar className="text-slate-300 mb-3 mx-auto" size={40} />
+            <p className="text-white font-marineBold mb-4 text-base md:text-lg">
               Aún no hay juegos registrados.
             </p>
             <Button
               onClick={onCreateNewSession}
               variant="custom"
-              className="bg-blue-500/80 hover:bg-blue-600/90 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-blue-400/50 transition-colors duration-300"
+              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-blue-400/50 transition-colors duration-300"
               disabled={isLoadingCreation}
             >
               {isLoadingCreation ? 'Creando...' : 'Crear el Primer Juego'}
@@ -226,10 +226,10 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                 variants={fadeInUp}
                 whileHover={{ 
                   scale: 1.01, 
-                  backgroundColor: "rgba(0, 0, 0, 0.1)",
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.07)"
+                  backgroundColor: "rgba(255, 255, 255, 0.15)",
+                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)"
                 }}
-                className="bg-black/5 hover:bg-black/10 border border-white/30 rounded-lg p-3 transition-all shadow-md"
+                className="bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg p-3 transition-all shadow-md"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between">
                   <div className="flex-1">
@@ -240,15 +240,15 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs mt-2">
-                      <div className="flex items-center gap-1.5 text-slate-700">
-                        <FiUser className="text-slate-500" size={12} />
-                        <span>
+                      <div className="flex items-center gap-1.5 text-slate-200">
+                        <FiUser className="text-slate-300" size={12} />
+                        <span className="font-sans">
                           {session.nombre ? `${session.nombre} ${session.apellido || ''}` : 'Sin registrar'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-slate-600">
-                        <FiClock className="text-slate-500" size={12} />
-                        <span>
+                      <div className="flex items-center gap-1.5 text-slate-300">
+                        <FiClock className="text-slate-400" size={12} />
+                        <span className="font-sans">
                           {new Date(session.created_at).toLocaleDateString()} {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -266,12 +266,12 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                         className={`${
                           activatingSession === session.session_id
                             ? 'bg-blue-500/90 text-white/80 cursor-wait'
-                            : 'bg-green-500/80 hover:bg-green-600/90 text-white'
-                        } text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-green-400/50 transition-colors duration-300`}
+                            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                        } text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-green-400/50 transition-colors duration-300 font-marineBold`}
                       >
                         {activatingSession === session.session_id ? (
                           <>
-                            <span className="w-3 h-3 mr-2 rounded-full bg-black/80 animate-pulse"></span>
+                            <span className="w-3 h-3 mr-2 rounded-full bg-white/80 animate-pulse"></span>
                             Activando...
                           </>
                         ) : (
@@ -288,7 +288,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                       <Button
                         onClick={(e) => handleShowGameInfo(session, e)}
                         variant="custom"
-                        className="bg-blue-600/80 hover:bg-blue-700/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-blue-500/50 transition-colors duration-300"
+                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-blue-500/50 transition-colors duration-300 font-marineBold"
                       >
                         <FiInfo className="mr-1" size={12} />
                         Info
@@ -298,7 +298,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                         onClick={(e) => handleCloseSession(session, e)}
                         variant="custom"
                         disabled={closingSessionId === session.session_id}
-                        className="bg-red-700/80 hover:bg-red-800/90 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-600/50 transition-colors duration-300"
+                        className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-600/50 transition-colors duration-300 font-marineBold"
                       >
                         <FiX className="mr-1" size={12} />
                         Cerrar

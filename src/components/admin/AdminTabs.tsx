@@ -18,15 +18,13 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
   ];
 
   return (
-    // Contenedor principal de la barra de pestañas.
-    // La clase `border-slate-300` define la línea base delgada que corre debajo de todas las pestañas.
-    // Ajusta 'border-slate-300' si prefieres otro de tus grises estándar de Tailwind.
-    <div className="relative border-b border-slate-300">
+    // Contenedor principal con esquema oscuro
+    <div className="relative border-b border-white/20">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1.0] }}
-        className="flex" // Permite que los botones hijos usen `flex-1` para distribuirse
+        className="flex"
       >
         {tabs.map((tab) => (
           <motion.button
@@ -39,25 +37,19 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1.0] }}
-            whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }} // Sutil feedback visual en hover
+            whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
             className={`
               flex flex-1 items-center justify-center      // Ocupa espacio equitativamente y centra contenido
               py-3 sm:py-4                               // Padding vertical para altura
-              text-sm sm:text-base font-marineBold whitespace-nowrap // Estilo de texto (usa tu font-marineBold)
+              text-sm sm:text-base font-marineBold whitespace-nowrap // Usar font-marineBold
               transition-colors duration-200 ease-in-out  // Transición suave para colores
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-verde-salud // Estilos de foco usando tu color
+              focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 focus-visible:ring-blue-500/50 // Ring azul para consistencia
               ${ // Lógica condicional para estilos de activo/inactivo
                 activeTab === tab.id
-                  ? // Pestaña Activa:
-                    "text-verde-salud border-b-2 border-verde-salud -mb-px"
-                    // - `text-verde-salud`: Usa tu color personalizado.
-                    // - `border-b-2 border-verde-salud`: Borde inferior grueso con tu color.
-                    // - `-mb-px`: Margen inferior negativo para superponer el borde a la línea base.
-                  : // Pestaña Inactiva:
-                    "text-slate-500 hover:text-verde-salud border-b border-transparent"
-                    // - `text-slate-500`: Un gris estándar de Tailwind para texto inactivo.
-                    // - `hover:text-verde-salud`: Cambia a tu color activo en hover.
-                    // - `border-b border-transparent`: Borde transparente; la línea visible es la del contenedor.
+                  ? // Pestaña Activa con colores oscuros:
+                    "text-blue-400 border-b-2 border-blue-400 -mb-px"
+                  : // Pestaña Inactiva con colores oscuros:
+                    "text-slate-300 hover:text-blue-300 border-b border-transparent"
               }
             `}
           >

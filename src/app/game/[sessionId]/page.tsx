@@ -73,6 +73,32 @@ export default function GamePage() {
           handleRedirect(`/register/${sessionId}`);
           return;
         }
+
+        // [modificación] Actualizar estado a 'playing' si no está ya en ese estado
+        if (session.status !== 'playing') {
+          console.log(`Actualizando estado de sesión ${sessionId} a 'playing' desde el juego`);
+          try {
+            const updateResponse = await fetch('/api/admin/sessions/update-status', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                sessionId: sessionId,
+                status: 'playing'
+              }),
+            });
+
+            if (updateResponse.ok) {
+              console.log(`Estado de sesión ${sessionId} actualizado exitosamente a 'playing'`);
+            } else {
+              console.warn(`No se pudo actualizar el estado de la sesión ${sessionId} a 'playing'`);
+            }
+          } catch (updateError) {
+            console.warn('Error al actualizar estado de sesión:', updateError);
+          }
+        }
+
         if (
           !loadingQuestionsRef.current &&
           (!questions || questions.length === 0)

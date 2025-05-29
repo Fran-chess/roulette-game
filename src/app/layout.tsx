@@ -1,13 +1,22 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import ShellRootClient from "@/components/layout/ShellRootClient";
 
-// [modificación] Configuración PWA y metadatos optimizados
+// [modificación] Configuración de viewport separada según Next.js 15
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#1e40af",
+};
+
+// [modificación] Configuración PWA y metadatos optimizados (sin viewport y themeColor)
 export const metadata: Metadata = {
   title: "DarSalud - Juego Interactivo",
   description: "Juego interactivo de DarSalud para tablets y TV con sincronización en tiempo real",
   manifest: "/manifest.json",
-  themeColor: "#1e40af",
   applicationName: "DarSalud",
   appleWebApp: {
     capable: true,
@@ -25,13 +34,6 @@ export const metadata: Metadata = {
     apple: [
       { url: "/icon-192x192.png", sizes: "192x192", type: "image/png" },
     ],
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
   },
 };
 

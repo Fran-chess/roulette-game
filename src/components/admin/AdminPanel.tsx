@@ -241,103 +241,146 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     });
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="w-full max-w-5xl mx-auto rounded-xl overflow-hidden touch-optimized"
-      style={{
-        backdropFilter: "blur(10px)",
-        background: "rgba(255, 255, 255, 0.1)",
-        zIndex: 10,
-        WebkitTapHighlightColor: "transparent",
-      }}
-    >
-      {/* --- Barra de tabs admin arriba --- */}
-      <AdminTabs
-        activeTab={activeTab}
-        setActiveTab={(tabId) => {
-          setActiveTab(tabId as ActiveTabType);
-          clearNotifications();
-          if (tabId !== "new-session") {
-            setAdminCurrentSession(null);
-          }
-        }}
-      />
+    <div className="flex items-center justify-center min-h-screen w-full p-4">
+      {/* [modificación] - Fondo mejorado con gradiente animado */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-transparent to-teal-500/10"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(14,165,233,0.1),transparent_50%)]"></div>
+      </div>
 
-      {/* --- SnackbarNotification flotante --- */}
-      {snackbar && (
-        <SnackbarNotification
-          type={snackbar.type}
-          message={snackbar.message}
-          onClose={() => setSnackbar(null)}
-        />
-      )}
-
-      {/* --- Contenido principal del panel admin --- */}
       <motion.div
-        className="overflow-hidden scrollable-content"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="relative z-10 w-full max-w-5xl mx-auto rounded-2xl overflow-hidden backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl"
         style={{
-          minHeight: "auto",
-          maxHeight: "calc(100vh - 180px)",
+          WebkitTapHighlightColor: "transparent",
         }}
       >
-        <AnimatePresence mode="wait">
-          {activeTab === "dashboard" && (
-            <DashboardTabContent
-              key="dashboard"
-              // [modificación] Usar estadísticas de participantes del store en lugar del array local
-              participantsCount={adminState.participantsStats.count}
-              activeSessionsCount={
-                adminState.activeSessions.filter(
-                  (s) => s.status !== "completed" && s.status !== "archived"
-                ).length
-              }
-              totalSessionsCount={adminState.activeSessions.length}
-              onInitiateNewSession={handleCreateNewSession}
-              onLogout={handleLogoutCallback}
-              isLoading={adminState.isLoading.sessionAction}
-              onNavigateToSessions={() => setActiveTab("sessions")}
-            />
+        {/* --- Barra de tabs admin arriba --- */}
+        <AdminTabs
+          activeTab={activeTab}
+          setActiveTab={(tabId) => {
+            setActiveTab(tabId as ActiveTabType);
+            clearNotifications();
+            if (tabId !== "new-session") {
+              setAdminCurrentSession(null);
+            }
+          }}
+        />
+
+        {/* --- SnackbarNotification flotante --- */}
+        {snackbar && (
+          <SnackbarNotification
+            type={snackbar.type}
+            message={snackbar.message}
+            onClose={() => setSnackbar(null)}
+          />
+        )}
+
+        {/* --- Contenido principal del panel admin --- */}
+        <motion.div
+          className="overflow-hidden scrollable-content"
+          style={{
+            minHeight: "auto",
+            maxHeight: "calc(100vh - 180px)",
+          }}
+        >
+          {/* [modificación] Panel de debug para desarrollo */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3 m-4">
+              <h4 className="text-yellow-300 font-bold text-sm mb-2">🔧 Debug Panel - Admin</h4>
+              <div className="text-xs text-yellow-200 space-y-1">
+                <p>Admin ID: {adminData?.id}</p>
+                <p>Sesiones activas: {adminState.activeSessions.length}</p>
+                <p>Sesión actual: {adminState.currentSession?.session_id?.substring(0,8) || 'Ninguna'}</p>
+                <div className="flex gap-2 mt-2">
+                  <button 
+                    onClick={async () => {
+                      console.log('🔧 Admin: Forzando recarga de sesiones...');
+                      await fetchActiveSessions();
+                    }}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs"
+                  >
+                    🔄 Refrescar Sesiones
+                  </button>
+                  {adminState.currentSession && (
+                    <button 
+                      onClick={async () => {
+                        console.log('🔧 Admin: Cambiando estado para probar conectividad con TV...');
+                        const newStatus = adminState.currentSession?.status === 'playing' ? 'player_registered' : 'playing';
+                        await updateSessionStatus(adminState.currentSession!.session_id, newStatus);
+                        setTimeout(() => {
+                          console.log('📺 TV debería haber cambiado de pantalla ahora');
+                        }, 1000);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs"
+                    >
+                      🧪 Test TV Sync
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
           )}
-          {activeTab === "sessions" && (
-            <SessionsTabContent
-              key="sessions"
-              activeSessions={adminState.activeSessions}
-              onCreateNewSession={handleCreateNewSession}
-              isLoadingCreation={adminState.isLoading.sessionAction}
-              isLoadingList={adminState.isLoading.sessionsList}
-            />
-          )}
-          {activeTab === "new-session" && adminState.currentSession && (
-            <SessionDetailView
-              key={`session-detail-${adminState.currentSession.id}`}
-              session={adminState.currentSession}
-              onBackToSessions={() => {
-                setActiveTab("sessions");
-                clearNotifications();
-                setAdminCurrentSession(null);
-              }}
-              onUpdateStatus={handleUpdateSessionStatus}
-              isLoadingUpdate={adminState.isLoading.sessionAction}
-              onPlayerRegistered={handlePlayerRegistered}
-            />
-          )}
-          {activeTab === "new-session" && !adminState.currentSession && (
-            <motion.div
-              key="no-session-selected"
-              className="p-6 text-center text-slate-600 dark:text-slate-300"
-              variants={fadeInUp}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <p>Selecciona un juego de la lista para ver sus detalles.</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+          <AnimatePresence mode="wait">
+            {activeTab === "dashboard" && (
+              <DashboardTabContent
+                key="dashboard"
+                // [modificación] Usar estadísticas de participantes del store en lugar del array local
+                participantsCount={adminState.participantsStats.count}
+                activeSessionsCount={
+                  adminState.activeSessions.filter(
+                    (s) => s.status !== "completed" && s.status !== "archived"
+                  ).length
+                }
+                totalSessionsCount={adminState.activeSessions.length}
+                onInitiateNewSession={handleCreateNewSession}
+                onLogout={handleLogoutCallback}
+                isLoading={adminState.isLoading.sessionAction}
+                onNavigateToSessions={() => setActiveTab("sessions")}
+              />
+            )}
+            {activeTab === "sessions" && (
+              <SessionsTabContent
+                key="sessions"
+                activeSessions={adminState.activeSessions}
+                onCreateNewSession={handleCreateNewSession}
+                isLoadingCreation={adminState.isLoading.sessionAction}
+                isLoadingList={adminState.isLoading.sessionsList}
+              />
+            )}
+            {activeTab === "new-session" && adminState.currentSession && (
+              <SessionDetailView
+                key={`session-detail-${adminState.currentSession.id}`}
+                session={adminState.currentSession}
+                onBackToSessions={() => {
+                  setActiveTab("sessions");
+                  clearNotifications();
+                  setAdminCurrentSession(null);
+                }}
+                onUpdateStatus={handleUpdateSessionStatus}
+                isLoadingUpdate={adminState.isLoading.sessionAction}
+                onPlayerRegistered={handlePlayerRegistered}
+              />
+            )}
+            {activeTab === "new-session" && !adminState.currentSession && (
+              <motion.div
+                key="no-session-selected"
+                className="p-6 text-center text-slate-300"
+                variants={fadeInUp}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+              >
+                <p className="font-sans">Selecciona un juego de la lista para ver sus detalles.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 

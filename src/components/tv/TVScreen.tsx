@@ -10,7 +10,7 @@ import { validateGameSession } from '@/store/sessionStore';
 
 // [modificación] Componente principal para la vista de TV
 export default function TVScreen() {
-  const { currentSession, user, initializeRealtime, setCurrentSession, setUser } = useSessionStore();
+  const { currentSession, user, setCurrentSession, setUser } = useSessionStore();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // [modificación] Reloj en tiempo real
@@ -42,48 +42,92 @@ export default function TVScreen() {
       });
     }
 
-    // Inicializar suscripción en tiempo real
+    // [modificación] Inicializar suscripción en tiempo real específica para TV
     try {
-      initializeRealtime();
-      console.log('Suscripción realtime inicializada para TV');
+      console.log('Configurando realtime específico para TV...');
+      
+      // [modificación] Crear canal específico para la TV y configurar suscripción
+      supabaseClient
+        .channel('tv_plays_realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'plays',
+          },
+          (payload) => {
+            console.log('📺 TV: Evento realtime recibido:', payload.eventType, payload);
+            const { eventType, new: newRecord } = payload;
+
+            if (eventType === 'INSERT' || eventType === 'UPDATE') {
+              if (newRecord) {
+                console.log('📺 TV: Actualizando sesión:', newRecord);
+                try {
+                  const validatedSession = validateGameSession(newRecord);
+                  setCurrentSession(validatedSession);
+                  console.log('📺 TV: Estado actualizado:', validatedSession.status);
+                } catch (validationError) {
+                  console.error('📺 TV: Error validando sesión:', validationError);
+                  setCurrentSession(newRecord as unknown as GameSession);
+                }
+              }
+            } else if (eventType === 'DELETE') {
+              console.log('📺 TV: Sesión eliminada, volviendo a estado de espera');
+              setCurrentSession(null);
+            }
+          }
+        )
+        .subscribe((status) => {
+          console.log('📺 TV: Estado de suscripción realtime:', status);
+          if (status === 'SUBSCRIBED') {
+            console.log('✅ TV: Suscripción realtime activa');
+          } else if (status === 'CHANNEL_ERROR') {
+            console.error('❌ TV: Error en canal realtime');
+          }
+        });
+
+      console.log('📺 TV: Canal realtime configurado');
     } catch (error) {
-      console.error('Error al inicializar realtime:', error);
+      console.error('Error al inicializar realtime específico para TV:', error);
     }
 
     // Cargar sesión activa actual desde la base de datos
     try {
-      console.log('Cargando sesión activa desde la base de datos...');
+      console.log('📺 TV: Cargando sesión activa desde la base de datos...');
       const { data, error } = await supabaseClient
         .from('plays')
         .select('*')
         .in('status', ['pending_player_registration', 'player_registered', 'playing'])
-        .order('created_at', { ascending: false })
+        .order('updated_at', { ascending: false }) // [modificación] Ordenar por updated_at en lugar de created_at
         .limit(1)
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-        console.error('Error cargando sesión activa:', error);
+        console.error('📺 TV: Error cargando sesión activa:', error);
         return;
       }
 
       if (data) {
-        console.log('Sesión activa encontrada:', data);
+        console.log('📺 TV: Sesión activa encontrada:', data);
         // [modificación] Usar función de validación para convertir datos de Supabase
         try {
           const validatedSession = validateGameSession(data);
           setCurrentSession(validatedSession);
+          console.log('📺 TV: Estado inicial configurado:', validatedSession.status);
         } catch (validationError) {
-          console.error('Error validando sesión:', validationError);
+          console.error('📺 TV: Error validando sesión:', validationError);
           // [modificación] Fallback: usar datos directamente si la validación falla
           setCurrentSession(data as unknown as GameSession);
         }
       } else {
-        console.log('No hay sesión activa en este momento');
+        console.log('📺 TV: No hay sesión activa en este momento');
+        setCurrentSession(null);
       }
     } catch (error) {
-      console.error('Error al cargar sesión activa:', error);
+      console.error('📺 TV: Error al cargar sesión activa:', error);
     }
-  }, [user, initializeRealtime, setCurrentSession, setUser]);
+  }, [user, setCurrentSession, setUser]);
 
   // [modificación] Inicializar realtime y cargar sesión activa para la vista de TV
   useEffect(() => {
@@ -101,7 +145,49 @@ export default function TVScreen() {
     return () => {
       // No hacer cleanup del realtime aquí para mantener la conexión
     };
-  }, [initializeTVView]); // [modificación] Solo depende de la función memoizada
+  }, [initializeTVView]);
+
+  // [modificación] Sistema de polling como backup para asegurar sincronización
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const { data, error } = await supabaseClient
+          .from('plays')
+          .select('*')
+          .in('status', ['pending_player_registration', 'player_registered', 'playing'])
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!error && data) {
+          // Solo actualizar si la sesión cambió o es diferente
+          if (!currentSession || 
+              currentSession.session_id !== data.session_id || 
+              currentSession.status !== data.status ||
+              currentSession.updated_at !== data.updated_at) {
+            
+            console.log('📺 TV (Polling): Detectado cambio en sesión:', data);
+            try {
+              const validatedSession = validateGameSession(data);
+              setCurrentSession(validatedSession);
+            } catch (validationError) {
+              console.error('📺 TV (Polling): Error validando sesión:', validationError);
+              setCurrentSession(data as unknown as GameSession);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('📺 TV (Polling): Error verificando actualizaciones:', error);
+      }
+    };
+
+    // [modificación] Polling cada 3 segundos como backup
+    const pollingInterval = setInterval(checkForUpdates, 3000);
+
+    return () => {
+      clearInterval(pollingInterval);
+    };
+  }, [currentSession, setCurrentSession]);
 
   // [modificación] Determinar qué pantalla mostrar según el estado (usando estados del backend)
   const renderScreen = () => {
@@ -149,12 +235,27 @@ export default function TVScreen() {
 
       {/* [modificación] Debug info para desarrollo */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute bottom-4 left-4 bg-black/50 text-white text-xs p-4 rounded-lg max-w-md">
-          <h4 className="font-bold mb-2">Debug Info (TV)</h4>
-          <p>Usuario: {user ? `${user.name} (${user.role})` : 'No configurado'}</p>
-          <p>Sesión actual: {currentSession ? `${currentSession.session_id} - ${currentSession.status}` : 'Ninguna'}</p>
-          <p>Participante: {currentSession?.nombre || 'N/A'}</p>
-          <p>Última actualización: {currentSession?.updated_at ? new Date(currentSession.updated_at).toLocaleTimeString() : 'N/A'}</p>
+        <div className="absolute bottom-4 left-4 bg-black/80 text-white text-xs p-4 rounded-lg max-w-md border border-white/30">
+          <h4 className="font-bold mb-2 text-green-400">📺 TV Debug Info</h4>
+          <div className="space-y-1">
+            <p><span className="text-blue-400">Usuario:</span> {user ? `${user.name} (${user.role})` : 'No configurado'}</p>
+            <p><span className="text-blue-400">Sesión actual:</span> {currentSession ? `${currentSession.session_id.substring(0,8)}... - ${currentSession.status}` : 'Ninguna'}</p>
+            <p><span className="text-blue-400">Participante:</span> {currentSession?.nombre || 'N/A'}</p>
+            <p><span className="text-blue-400">Email:</span> {currentSession?.email || 'N/A'}</p>
+            <p><span className="text-blue-400">Última actualización:</span> {currentSession?.updated_at ? new Date(currentSession.updated_at).toLocaleTimeString() : 'N/A'}</p>
+            <p><span className="text-blue-400">Tiempo actual:</span> {currentTime.toLocaleTimeString()}</p>
+            
+            {/* [modificación] Botón para forzar recarga de sesión */}
+            <button 
+              onClick={async () => {
+                console.log('📺 TV: Forzando recarga de sesión...');
+                await initializeTVView();
+              }}
+              className="mt-2 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs"
+            >
+              🔄 Refrescar
+            </button>
+          </div>
         </div>
       )}
     </div>
