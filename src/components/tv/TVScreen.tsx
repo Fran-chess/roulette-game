@@ -11,10 +11,13 @@ import { validateGameSession } from '@/store/sessionStore';
 // [modificación] Componente principal para la vista de TV
 export default function TVScreen() {
   const { currentSession, user, setCurrentSession, setUser } = useSessionStore();
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
-  // [modificación] Reloj en tiempo real
+  // [modificación] Reloj en tiempo real con inicialización post-mount
   useEffect(() => {
+    // [modificación] Establecer fecha inicial después del mount para evitar hydration mismatch
+    setCurrentTime(new Date());
+    
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -243,7 +246,7 @@ export default function TVScreen() {
             <p><span className="text-blue-400">Participante:</span> {currentSession?.nombre || 'N/A'}</p>
             <p><span className="text-blue-400">Email:</span> {currentSession?.email || 'N/A'}</p>
             <p><span className="text-blue-400">Última actualización:</span> {currentSession?.updated_at ? new Date(currentSession.updated_at).toLocaleTimeString() : 'N/A'}</p>
-            <p><span className="text-blue-400">Tiempo actual:</span> {currentTime.toLocaleTimeString()}</p>
+            <p><span className="text-blue-400">Tiempo actual:</span> {currentTime?.toLocaleTimeString() || 'N/A'}</p>
             
             {/* [modificación] Botón para forzar recarga de sesión */}
             <button 
@@ -263,7 +266,7 @@ export default function TVScreen() {
 }
 
 // [modificación] Pantalla de espera cuando no hay sesión activa
-function WaitingScreen({ currentTime }: { currentTime: Date }) {
+function WaitingScreen({ currentTime }: { currentTime: Date | null }) {
   return (
     <motion.div
       key="waiting"
@@ -302,14 +305,14 @@ function WaitingScreen({ currentTime }: { currentTime: Date }) {
         
         {/* Reloj */}
         <div className="text-white/60 text-lg">
-          <p>{currentTime.toLocaleDateString('es-ES', { 
+          <p>{currentTime?.toLocaleDateString('es-ES', { 
             weekday: 'long', 
             year: 'numeric', 
             month: 'long', 
             day: 'numeric' 
-          })}</p>
+          }) || 'N/A'}</p>
           <p className="text-3xl font-mono mt-2">
-            {currentTime.toLocaleTimeString('es-ES')}
+            {currentTime?.toLocaleTimeString('es-ES') || 'N/A'}
           </p>
         </div>
       </motion.div>
@@ -329,7 +332,7 @@ function WaitingScreen({ currentTime }: { currentTime: Date }) {
 }
 
 // [modificación] Pantalla de invitación cuando hay registro abierto
-function InvitationScreen({ currentTime }: { currentTime: Date }) {
+function InvitationScreen({ currentTime }: { currentTime: Date | null }) {
   return (
     <motion.div
       key="invitation"
@@ -414,7 +417,7 @@ function InvitationScreen({ currentTime }: { currentTime: Date }) {
         transition={{ duration: 0.8, delay: 0.5 }}
         className="mt-8 text-white/60 text-xl"
       >
-        {currentTime.toLocaleTimeString('es-ES')}
+        {currentTime?.toLocaleTimeString('es-ES') || 'N/A'}
       </motion.div>
     </motion.div>
   );
