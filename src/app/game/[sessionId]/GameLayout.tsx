@@ -13,6 +13,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
   // Estado para detectar la orientación y tamaño
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  const [isTV, setIsTV] = useState(false);
   const showConfetti = useGameStore((state) => state.showConfetti);
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -22,6 +23,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
       const width = window.innerWidth;
       setIsMobile(width < 768);
       setIsTablet(width >= 768 && width <= 1280);
+      setIsTV(width >= 1920);
       setWindowSize({ width, height: window.innerHeight });
     };
 
@@ -45,7 +47,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
       {/* [modificación] Header compacto y con layout similar al de registro para consistencia */}
       <header className="w-full flex justify-center items-center min-h-[65px] border-b border-white/10 backdrop-blur-sm">
         {/* [modificación] Contenedor con tamaño máximo consistente con el formulario de registro */}
-        <div className={`${isMobile ? 'max-w-[150px]' : isTablet ? 'max-w-[165px]' : 'max-w-[200px]'} w-full flex justify-center items-center`}>
+        <div className={`${isMobile ? 'max-w-[150px]' : isTablet ? 'max-w-[165px]' : isTV ? 'max-w-[220px]' : 'max-w-[200px]'} w-full flex justify-center items-center`}>
           <Logo
             size="auto"
             animated={true}

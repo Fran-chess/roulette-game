@@ -236,15 +236,16 @@ export default function RegistrationForm({
     typeof window !== "undefined" &&
     window.innerWidth > 500 &&
     window.innerWidth <= 768;
+  const isTV = typeof window !== "undefined" && window.innerWidth >= 1920;
 
   return (
     <div
-      className={`flex flex-col items-center justify-between w-full mx-auto 
+      className={`flex flex-col items-center justify-between w-full mx-auto
         p-4 sm:p-5 md:p-6 rounded-2xl bg-slate-900/20 ${textOnDarkBase} shadow-2xl
-        ${isMobile ? "max-w-full" : isTablet ? "max-w-[95%]" : "max-w-lg"}`}
+        ${isMobile ? "max-w-full" : isTablet ? "max-w-[95%]" : isTV ? "max-w-[800px]" : "max-w-lg"}`}
       style={{
         minHeight: "auto",
-        maxHeight: isMobile ? "80vh" : isTablet ? "75vh" : "70vh",
+        maxHeight: isMobile ? "80vh" : isTablet ? "75vh" : isTV ? "65vh" : "70vh",
       }}
     >
       <motion.div

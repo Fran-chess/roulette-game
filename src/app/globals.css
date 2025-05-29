@@ -537,6 +537,30 @@ body {
   }
 }
 
+/* Optimizaciones para TV táctil de gran tamaño */
+
+@media (min-width: 1921px) {
+  .text-touch-xl {
+    font-size: 2.5rem; /* 40px */
+  }
+
+  .text-touch-lg {
+    font-size: 2rem; /* 32px */
+  }
+
+  .btn-touch {
+    min-height: 72px;
+
+    min-width: 72px;
+
+    padding: 20px 40px;
+  }
+
+  .wheel-canvas {
+    max-height: 90vh;
+  }
+}
+
 /* [modificación] Para orientación landscape en dispositivos táctiles */
 
 @media (orientation: landscape) and (max-height: 768px) {

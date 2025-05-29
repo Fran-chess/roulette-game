@@ -93,6 +93,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     const [isLandscape, setIsLandscape] = useState(false);
     const [isTablet, setIsTablet] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [isTV, setIsTV] = useState(false);
 
     const [isSpinning, setIsSpinning] = useState(false);
     const [currentAngle, setCurrentAngle] = useState(0);
@@ -123,6 +124,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         setIsLandscape(width > height);
         setIsTablet(width >= 768 && width <= 1280);
         setIsMobile(width < 768);
+        setIsTV(width >= 1920);
       };
       handleDeviceDetection();
       window.addEventListener("resize", handleDeviceDetection);
@@ -167,6 +169,8 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           size = Math.max(220, Math.min(size, 400));
         } else if (isTablet) {
           size = Math.max(320, Math.min(size, 520));
+        } else if (isTV) {
+          size = Math.max(700, Math.min(size, 900));
         } else {
           size = Math.max(380, Math.min(size, 640));
         }
@@ -192,6 +196,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       isSpinning,
       isLandscape,
       isTablet,
+      isTV,
       isMobile,
     ]);
 
