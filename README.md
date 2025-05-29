@@ -1,4 +1,4 @@
-# DarSalud - Juego Interactivo PWA
+# Roulette Game - Juego Interactivo PWA
 
 Una aplicación web progresiva (PWA) para juegos interactivos con sincronización en tiempo real entre tablet (administrador) y TV (visualización).
 
@@ -17,9 +17,9 @@ Una aplicación web progresiva (PWA) para juegos interactivos con sincronizació
 - **Actualizaciones automáticas** sin recargar página
 
 ### Arquitectura Basada en Roles
-- **Admin** (tablet): Panel de control y gestión
-- **Viewer** (TV): Pantallas de visualización
-- **Autenticación automática** por email
+- **Admin** (tablet): Panel de control y gestión - **Requiere autenticación**
+- **Viewer** (TV): Pantallas de visualización - **Acceso directo sin login**
+- **Autenticación personalizada** con bcrypt para admin
 - **Rutas protegidas** según rol
 
 ## 🏗️ Arquitectura Técnica
@@ -34,17 +34,17 @@ Una aplicación web progresiva (PWA) para juegos interactivos con sincronizació
 
 ### Flujo de Datos
 ```
-Tablet (Admin) → Supabase → TV (Viewer)
-     ↓              ↓           ↓
-  Crear sesión → Realtime → Mostrar invitación
-  Registrar → Actualizar → Mostrar juego activo
-  Completar → Sincronizar → Mostrar resultados
+Tablet (Admin) → Supabase (tabla plays) → TV (Viewer)
+     ↓                    ↓                     ↓
+  Crear sesión → Realtime subscription → Mostrar invitación
+  Registrar → Actualizar estado → Mostrar juego activo
+  Completar → Sincronizar resultado → Mostrar resultados
 ```
 
 ## 📱 Estados de la Aplicación
 
 ### Pantallas de TV
-1. **Waiting**: Pantalla de espera con reloj
+1. **Waiting**: Esperando nueva sesión
 2. **Invitation**: Invitación a participar
 3. **Active**: Juego en curso con jugador actual
 4. **Completed**: Resultados y celebración
@@ -60,18 +60,24 @@ Tablet (Admin) → Supabase → TV (Viewer)
 ### 1. Variables de Entorno
 Crear `.env.local` en la raíz:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anonima
-SUPABASE_SERVICE_ROLE_KEY=tu-clave-de-servicio
+# Variables de entorno para Supabase - Proyecto: roulette-game
+NEXT_PUBLIC_SUPABASE_URL=https://yinhukkubomcyolkrahg.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpbmh1a2t1Ym9tY3lvbGtyYWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTUyNzIsImV4cCI6MjA2MjI5MTI3Mn0.Bj3CAHgAjenFDoaxbLprlBAHcMyDffbtcHhGOQxu0Mc
+SUPABASE_SERVICE_ROLE_KEY=tu-clave-de-servicio-de-supabase
 ```
 
-### 2. Base de Datos
-Ejecutar `DATABASE_MIGRATION.sql` en Supabase SQL Editor.
+### 2. Base de Datos ✅ CONFIGURADA
+La base de datos ya está completamente configurada con:
+- **20 migraciones aplicadas** exitosamente
+- **Tablas**: `admin_users` y `plays` con todas las columnas necesarias
+- **RLS habilitado** para seguridad
+- **Realtime habilitado** para sincronización
+- **Usuarios de prueba** ya creados
 
-### 3. Usuarios de Prueba
-Crear en Supabase Auth:
-- `admin@darsalud.com` (rol: admin)
-- `tv@darsalud.com` (rol: viewer)
+### 3. Usuarios Disponibles
+Los siguientes usuarios están configurados en la base de datos:
+- `admin@darsalud.com` - Admin principal
+- `admin_prueba@hotmail.com` - Admin de prueba
 
 ## 🚀 Instalación y Ejecución
 
@@ -90,12 +96,12 @@ npm start
 ## 📋 Flujo de Uso
 
 1. **Setup Inicial**
-   - Admin inicia sesión en tablet
-   - TV inicia sesión y muestra pantalla de espera
+   - Admin inicia sesión en tablet con email/password
+   - TV accede directamente a /tv sin login
 
 2. **Inicio de Sesión**
-   - Admin crea nueva sesión
-   - TV automáticamente muestra invitación
+   - Admin crea nueva sesión en tabla `plays`
+   - TV automáticamente muestra invitación via realtime
 
 3. **Registro de Participante**
    - Admin registra jugador en tablet
@@ -115,11 +121,11 @@ npm start
 ```
 src/
 ├── app/                 # Rutas de Next.js
-│   ├── admin/          # Panel de administración
-│   ├── tv/             # Vista de televisión
+│   ├── admin/          # Panel de administración (requiere auth)
+│   ├── tv/             # Vista de televisión (acceso directo)
 │   └── layout.tsx      # Layout principal con PWA
 ├── components/
-│   ├── auth/           # Autenticación
+│   ├── auth/           # Autenticación (solo admin)
 │   ├── tv/             # Componentes de TV
 │   ├── admin/          # Componentes de admin
 │   └── layout/         # Layout y navegación
@@ -142,17 +148,26 @@ npm run analyze
 
 ## 🔒 Seguridad
 
-- **Row Level Security** en Supabase
+- **Row Level Security** habilitado en Supabase
+- **Autenticación personalizada** con bcrypt
 - **Políticas de acceso** por usuario
-- **Validación de roles** en frontend y backend
+- **Validación de roles** en frontend
 - **Sanitización** de datos de entrada
 
-## 📊 Monitoreo
+## 📊 Estado del Proyecto
 
-- **Logs en tiempo real** con Supabase
-- **Estado de conexión** visible en UI
-- **Manejo de errores** con feedback visual
-- **Reconexión automática** en caso de fallo
+### Base de Datos ✅
+- **Estado**: Saludable y operativa
+- **Realtime**: Habilitado
+- **Migraciones**: 20 aplicadas exitosamente
+- **Seguridad**: RLS y encriptación configurados
+- **Datos**: Usuarios y sesiones de prueba disponibles
+
+### Funcionalidades ✅
+- **Autenticación**: Sistema personalizado funcionando
+- **Sesiones**: Manejo de sesiones de juego en tabla `plays`
+- **Sincronización**: Tiempo real entre dispositivos
+- **PWA**: Configuración lista para producción
 
 ## 🎯 Optimizaciones PWA
 
@@ -185,9 +200,9 @@ Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
 
 Para soporte técnico o preguntas:
 - Crear issue en GitHub
-- Revisar documentación en `/docs`
+- Revisar documentación en `CONFIGURACION.md` y `FLUJO_COMPLETO.md`
 - Consultar logs en Supabase Dashboard
 
 ---
 
-**DarSalud** - Transformando la experiencia interactiva con tecnología PWA 🚀
+**Roulette Game** - Aplicación PWA con sincronización en tiempo real 🚀
