@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { useSessionStore, type GameSession } from '@/store/sessionStore';
 import { supabaseClient } from '@/lib/supabase';
 
@@ -12,6 +13,8 @@ import { validateGameSession } from '@/store/sessionStore';
 export default function TVScreen() {
   const { currentSession, user, setCurrentSession, setUser } = useSessionStore();
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  const [realtimeReady, setRealtimeReady] = useState(false); // [modificación] Estado para controlar polling
+  const router = useRouter();
 
   // [modificación] Reloj en tiempo real con inicialización post-mount
   useEffect(() => {
@@ -25,7 +28,15 @@ export default function TVScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  // [modificación] Función memoizada para inicializar la vista de TV
+  // [modificación] Efecto dedicado para navegación automática - único lugar para la navegación
+  useEffect(() => {
+    if (currentSession?.status === 'playing' && currentSession.session_id) {
+      console.log('📺 TV: Navegando automáticamente al juego:', currentSession.session_id);
+      router.push(`/game/${currentSession.session_id}`);
+    }
+  }, [currentSession, router]);
+
+  // [modificación] Función memoizada para inicializar la vista de TV con dependencias optimizadas
   const initializeTVView = useCallback(async () => {
     // [modificación] Verificar que el cliente de Supabase esté disponible
     if (!supabaseClient) {
@@ -45,12 +56,12 @@ export default function TVScreen() {
       });
     }
 
-    // [modificación] Inicializar suscripción en tiempo real específica para TV
+    // [modificación] Inicializar suscripción en tiempo real específica para TV con cleanup
     try {
       console.log('Configurando realtime específico para TV...');
       
       // [modificación] Crear canal específico para la TV y configurar suscripción
-      supabaseClient
+      const channel = supabaseClient
         .channel('tv_plays_realtime')
         .on(
           'postgres_changes',
@@ -94,12 +105,7 @@ export default function TVScreen() {
                 setCurrentSession(validatedSession);
                 console.log('📺 TV: Estado actualizado:', validatedSession.status);
                 
-                // [modificación] Navegación automática cuando el estado cambia a 'playing'
-                if (validatedSession.status === 'playing' && validatedSession.session_id) {
-                  console.log('📺 TV: Navegando automáticamente al juego:', validatedSession.session_id);
-                  // Aquí podrías añadir navegación si usas router
-                  // router.push(`/game/${validatedSession.session_id}`);
-                }
+                // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
               } catch (validationError) {
                 console.error('📺 TV: Error validando sesión:', validationError);
                 setCurrentSession(newRecord as unknown as GameSession);
@@ -124,14 +130,23 @@ export default function TVScreen() {
           console.log('📺 TV: Estado de suscripción realtime:', status);
           if (status === 'SUBSCRIBED') {
             console.log('✅ TV: Suscripción realtime activa');
+            setRealtimeReady(true); // [modificación] Marcar realtime como listo
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ TV: Error en canal realtime');
+            setRealtimeReady(false); // [modificación] Marcar realtime como no listo
           }
         });
 
       console.log('📺 TV: Canal realtime configurado');
+
+      // [modificación] Retornar función de cleanup para remover canal
+      return () => {
+        console.log('📺 TV: Limpiando suscripción realtime...');
+        supabaseClient.removeChannel(channel);
+      };
     } catch (error) {
       console.error('Error al inicializar realtime específico para TV:', error);
+      return () => {}; // [modificación] Retornar función vacía en caso de error
     }
 
     // Cargar sesión activa actual desde la base de datos
@@ -145,7 +160,8 @@ export default function TVScreen() {
         .limit(1)
         .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 cuando no hay sesiones activas
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+      // [modificación] Verificación mejorada para manejar error que puede ser null
+      if (error?.code && error?.code !== 'PGRST116') { // PGRST116 = no rows found
         console.error('📺 TV: Error cargando sesión activa:', error);
         return;
       }
@@ -157,6 +173,8 @@ export default function TVScreen() {
           const validatedSession = validateGameSession(data);
           setCurrentSession(validatedSession);
           console.log('📺 TV: Estado inicial configurado:', validatedSession.status);
+          
+          // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
         } catch (validationError) {
           console.error('📺 TV: Error validando sesión:', validationError);
           // [modificación] Fallback: usar datos directamente si la validación falla
@@ -169,28 +187,35 @@ export default function TVScreen() {
     } catch (error) {
       console.error('📺 TV: Error al cargar sesión activa:', error);
     }
-  }, [user, setCurrentSession, setUser]);
+  }, [user, setUser, setCurrentSession]); // [modificación] Dependencias corregidas incluyendo 'user'
 
-  // [modificación] Inicializar realtime y cargar sesión activa para la vista de TV
+  // [modificación] Inicializar realtime y cargar sesión activa para la vista de TV con cleanup
   useEffect(() => {
-    let isInitialized = false;
+    let cleanupFunction: (() => void) | undefined;
 
     const runInitialization = async () => {
-      if (isInitialized) return;
-      isInitialized = true;
-      await initializeTVView();
+      cleanupFunction = await initializeTVView();
     };
 
     runInitialization();
 
-    // Cleanup al desmontar el componente
+    // [modificación] Cleanup al desmontar el componente
     return () => {
-      // No hacer cleanup del realtime aquí para mantener la conexión
+      if (cleanupFunction) {
+        cleanupFunction();
+      }
     };
   }, [initializeTVView]);
 
-  // [modificación] Sistema de polling como backup para asegurar sincronización
+  // [modificación] Sistema de polling como backup solo cuando realtime no está listo
   useEffect(() => {
+    if (realtimeReady) {
+      console.log('📺 TV: Realtime activo, desactivando polling de backup');
+      return; // [modificación] No ejecutar polling si realtime está activo
+    }
+
+    console.log('📺 TV: Realtime no listo, activando polling de backup');
+
     const checkForUpdates = async () => {
       try {
         const { data, error } = await supabaseClient
@@ -212,6 +237,8 @@ export default function TVScreen() {
             try {
               const validatedSession = validateGameSession(data);
               setCurrentSession(validatedSession);
+              
+              // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
             } catch (validationError) {
               console.error('📺 TV (Polling): Error validando sesión:', validationError);
               setCurrentSession(data as unknown as GameSession);
@@ -229,13 +256,13 @@ export default function TVScreen() {
       }
     };
 
-    // [modificación] Polling cada 3 segundos como backup
+    // [modificación] Polling cada 3 segundos como backup solo cuando sea necesario
     const pollingInterval = setInterval(checkForUpdates, 3000);
 
     return () => {
       clearInterval(pollingInterval);
     };
-  }, [currentSession, setCurrentSession]);
+  }, [realtimeReady, currentSession, setCurrentSession]); // [modificación] Dependencia de realtimeReady
 
   // [modificación] Determinar qué pantalla mostrar según el estado (usando estados del backend)
   const renderScreen = () => {
