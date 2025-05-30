@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
-      .single();
+      .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 si la sesión fue eliminada
 
     if (fetchError) {
       console.error('Error al obtener detalles de sesión:', fetchError);

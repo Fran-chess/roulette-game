@@ -107,18 +107,44 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
         .on<Partial<PlaySession>>(
           "postgres_changes",
           {
-            event: "*",
+            event: "INSERT",
             schema: "public",
             table: "plays",
             filter: `admin_id=eq.${adminData.id}`,
           },
           (payload: PayloadUpdate) => {
             console.log(
-              "AdminPanel: Cambio en plays detectado por suscripción:",
+              "AdminPanel: INSERT detectado por suscripción:",
               payload
             );
             fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
-            // [modificación] Recargar estadísticas de participantes cuando hay cambios
+            loadParticipantsStats();
+
+            if (payload.new && payload.new.session_id) {
+              setAdminNotification(
+                "success",
+                `Nuevo juego ${String(payload.new.session_id).substring(
+                  0,
+                  8
+                )} creado (detectado en tiempo real).`
+              );
+            }
+          }
+        )
+        .on<Partial<PlaySession>>(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "plays",
+            filter: `admin_id=eq.${adminData.id}`,
+          },
+          (payload: PayloadUpdate) => {
+            console.log(
+              "AdminPanel: UPDATE detectado por suscripción:",
+              payload
+            );
+            fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
             loadParticipantsStats();
 
             if (
@@ -134,20 +160,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
               setAdminCurrentSession(updatedSession as PlaySession);
             }
 
-            if (payload.eventType === "INSERT" && payload.new.session_id) {
-              setAdminNotification(
-                "success",
-                `Nuevo juego ${String(payload.new.session_id).substring(
-                  0,
-                  8
-                )} creado (detectado en tiempo real).`
-              );
-            }
-
             if (
-              payload.eventType === "UPDATE" &&
               payload.old?.status !== payload.new?.status &&
-              payload.new.session_id
+              payload.new?.session_id
             ) {
               setAdminNotification(
                 "success",
@@ -157,6 +172,33 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
                 )} actualizado a ${
                   payload.new.status
                 } (detectado en tiempo real).`
+              );
+            }
+          }
+        )
+        .on<Partial<PlaySession>>(
+          "postgres_changes",
+          {
+            event: "DELETE",
+            schema: "public",
+            table: "plays",
+            filter: `admin_id=eq.${adminData.id}`,
+          },
+          (payload: PayloadUpdate) => {
+            console.log(
+              "AdminPanel: DELETE detectado por suscripción:",
+              payload
+            );
+            fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
+            loadParticipantsStats();
+
+            if (payload.old && payload.old.session_id) {
+              setAdminNotification(
+                "success",
+                `Juego ${String(payload.old.session_id).substring(
+                  0,
+                  8
+                )} eliminado (detectado en tiempo real).`
               );
             }
           }

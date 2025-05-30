@@ -55,30 +55,69 @@ export default function TVScreen() {
         .on(
           'postgres_changes',
           {
-            event: '*',
+            event: 'INSERT',
             schema: 'public',
             table: 'plays',
           },
           (payload) => {
-            console.log('📺 TV: Evento realtime recibido:', payload.eventType, payload);
-            const { eventType, new: newRecord } = payload;
+            console.log('📺 TV: INSERT detectado:', payload);
+            const { new: newRecord } = payload;
 
-            if (eventType === 'INSERT' || eventType === 'UPDATE') {
-              if (newRecord) {
-                console.log('📺 TV: Actualizando sesión:', newRecord);
-                try {
-                  const validatedSession = validateGameSession(newRecord);
-                  setCurrentSession(validatedSession);
-                  console.log('📺 TV: Estado actualizado:', validatedSession.status);
-                } catch (validationError) {
-                  console.error('📺 TV: Error validando sesión:', validationError);
-                  setCurrentSession(newRecord as unknown as GameSession);
-                }
+            if (newRecord) {
+              console.log('📺 TV: Nueva sesión insertada:', newRecord);
+              try {
+                const validatedSession = validateGameSession(newRecord);
+                setCurrentSession(validatedSession);
+                console.log('📺 TV: Estado actualizado:', validatedSession.status);
+              } catch (validationError) {
+                console.error('📺 TV: Error validando sesión:', validationError);
+                setCurrentSession(newRecord as unknown as GameSession);
               }
-            } else if (eventType === 'DELETE') {
-              console.log('📺 TV: Sesión eliminada, volviendo a estado de espera');
-              setCurrentSession(null);
             }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'plays',
+          },
+          (payload) => {
+            console.log('📺 TV: UPDATE detectado:', payload);
+            const { new: newRecord } = payload;
+
+            if (newRecord) {
+              console.log('📺 TV: Sesión actualizada:', newRecord);
+              try {
+                const validatedSession = validateGameSession(newRecord);
+                setCurrentSession(validatedSession);
+                console.log('📺 TV: Estado actualizado:', validatedSession.status);
+                
+                // [modificación] Navegación automática cuando el estado cambia a 'playing'
+                if (validatedSession.status === 'playing' && validatedSession.session_id) {
+                  console.log('📺 TV: Navegando automáticamente al juego:', validatedSession.session_id);
+                  // Aquí podrías añadir navegación si usas router
+                  // router.push(`/game/${validatedSession.session_id}`);
+                }
+              } catch (validationError) {
+                console.error('📺 TV: Error validando sesión:', validationError);
+                setCurrentSession(newRecord as unknown as GameSession);
+              }
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'plays',
+          },
+          (payload) => {
+            console.log('📺 TV: DELETE detectado:', payload);
+            console.log('📺 TV: Sesión eliminada, volviendo a estado de espera');
+            setCurrentSession(null);
           }
         )
         .subscribe((status) => {
@@ -104,7 +143,7 @@ export default function TVScreen() {
         .in('status', ['pending_player_registration', 'player_registered', 'playing'])
         .order('updated_at', { ascending: false }) // [modificación] Ordenar por updated_at en lugar de created_at
         .limit(1)
-        .single();
+        .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 cuando no hay sesiones activas
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
         console.error('📺 TV: Error cargando sesión activa:', error);
@@ -160,7 +199,7 @@ export default function TVScreen() {
           .in('status', ['pending_player_registration', 'player_registered', 'playing'])
           .order('updated_at', { ascending: false })
           .limit(1)
-          .single();
+          .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 cuando no hay sesiones activas
 
         if (!error && data) {
           // Solo actualizar si la sesión cambió o es diferente
@@ -177,6 +216,12 @@ export default function TVScreen() {
               console.error('📺 TV (Polling): Error validando sesión:', validationError);
               setCurrentSession(data as unknown as GameSession);
             }
+          }
+        } else if (!data) {
+          // [modificación] Si no hay datos (data = null), limpiar la sesión actual
+          if (currentSession) {
+            console.log('📺 TV (Polling): No hay sesiones activas, limpiando sesión actual');
+            setCurrentSession(null);
           }
         }
       } catch (error) {
