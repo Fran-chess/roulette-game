@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useSessionStore, type GameSession } from '@/store/sessionStore';
 import { supabaseClient } from '@/lib/supabase';
+import Image from 'next/image';
 
 // [modificación] Importar función de validación desde sessionStore
 import { validateGameSession } from '@/store/sessionStore';
@@ -290,12 +291,12 @@ export default function TVScreen() {
   // [modificación] Determinar qué pantalla mostrar según el estado (usando estados del backend)
   const renderScreen = () => {
     if (!currentSession) {
-      return <WaitingScreen currentTime={currentTime} />;
+      return <WaitingScreen />;
     }
 
     switch (currentSession.status) {
       case 'pending_player_registration':
-        return <WaitingScreen currentTime={currentTime} />;
+        return <WaitingScreen />;
       case 'player_registered':
         return <InvitationScreen currentTime={currentTime} />;
       case 'playing':
@@ -304,7 +305,7 @@ export default function TVScreen() {
       case 'archived':
         return <GameCompletedScreen currentSession={currentSession} />;
       default:
-        return <WaitingScreen currentTime={currentTime} />;
+        return <WaitingScreen />;
     }
   };
 
@@ -360,68 +361,171 @@ export default function TVScreen() {
   );
 }
 
-// [modificación] Pantalla de espera cuando no hay sesión activa
-function WaitingScreen({ currentTime }: { currentTime: Date | null }) {
+// [modificación] Pantalla de espera con carrusel autónomo de imágenes publicitarias
+function WaitingScreen() {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // [modificación] Array de imágenes del carrusel
+  const carouselImages = [
+    { src: '/images/carrusel_tv/2.svg', caption: 'Hola mundo' },
+    { src: '/images/carrusel_tv/4.svg', caption: 'Hola mundo' },
+    { src: '/images/carrusel_tv/6.svg', caption: 'Hola mundo' },
+    { src: '/images/carrusel_tv/7.svg', caption: 'Hola mundo' },
+    { src: '/images/carrusel_tv/8.svg', caption: 'Hola mundo' }
+  ];
+
+  // [modificación] Efecto para avanzar automáticamente el carrusel cada 4 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        (prevIndex + 1) % carouselImages.length
+      );
+    }, 4000); // [modificación] Cambio cada 4 segundos para una experiencia fluida
+
+    return () => clearInterval(interval);
+  }, [carouselImages.length]);
+
   return (
     <motion.div
-      key="waiting"
+      key="waiting-carousel"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center min-h-screen text-center px-8"
+      className="relative min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 overflow-hidden"
     >
-      {/* Logo principal */}
-      <motion.div
-        initial={{ scale: 0.8, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="mb-12"
-      >
-        <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center mb-8 mx-auto shadow-2xl">
-          <span className="text-6xl font-bold text-blue-900">DS</span>
-        </div>
-        <h1 className="text-6xl font-bold text-white mb-4">DarSalud</h1>
-        <p className="text-2xl text-blue-200">Juego Interactivo</p>
-      </motion.div>
+      {/* [modificación] Carrusel de imágenes principal que ocupa toda la pantalla */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentImageIndex}
+            initial={{ 
+              opacity: 0, 
+              scale: 1.1,
+              x: 300 
+            }}
+            animate={{ 
+              opacity: 1, 
+              scale: 1,
+              x: 0 
+            }}
+            exit={{ 
+              opacity: 0, 
+              scale: 0.9,
+              x: -300 
+            }}
+            transition={{ 
+              duration: 0.8,
+              ease: [0.25, 0.46, 0.45, 0.94] // [modificación] Easing profesional
+            }}
+            className="relative w-full h-full flex items-center justify-center"
+          >
+            {/* [modificación] Contenedor de la imagen con efecto glass */}
+            <div className="relative max-w-6xl max-h-5xl w-full h-4/5 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+              {/* [modificación] Imagen principal del carrusel */}
+              <div className="w-full h-full flex items-center justify-center p-8">
+                <Image
+                  src={carouselImages[currentImageIndex].src}
+                  alt={`Carrusel imagen ${currentImageIndex + 1}`}
+                  width={1000}
+                  height={1000}
+                  className="max-w-full max-h-full object-contain drop-shadow-lg"
+                />
+              </div>
+              
+              {/* [modificación] Pie de foto con estilo elegante */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-8"
+              >
+                <p className="text-white text-2xl font-light text-center tracking-wide">
+                  {carouselImages[currentImageIndex].caption}
+                </p>
+              </motion.div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
-      {/* Mensaje de espera */}
+      {/* [modificación] Mensaje de espera en la parte inferior */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.3 }}
-        className="bg-white/10 backdrop-blur-lg rounded-3xl p-12 max-w-2xl"
+        transition={{ duration: 1, delay: 1 }}
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
       >
-        <h2 className="text-4xl font-semibold text-white mb-6">
-          Esperando nueva sesión...
-        </h2>
-        <p className="text-xl text-white/80 mb-8">
-          El administrador iniciará el juego desde su tablet
-        </p>
-        
-        {/* Reloj */}
-        <div className="text-white/60 text-lg">
-          <p>{currentTime?.toLocaleDateString('es-ES', { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-          }) || 'N/A'}</p>
-          <p className="text-3xl font-mono mt-2">
-            {currentTime?.toLocaleTimeString('es-ES') || 'N/A'}
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl px-8 py-6 border border-white/20 text-center">
+          <h2 className="text-3xl font-semibold text-white mb-2">
+            Esperando nueva sesión...
+          </h2>
+          <p className="text-xl text-white/80 mb-4">
+            El administrador iniciará el juego desde su tablet
           </p>
+          
+          {/* [modificación] Indicador de conexión elegante */}
+          <div className="flex items-center justify-center text-green-400">
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-3 h-3 bg-green-400 rounded-full mr-3"
+            ></motion.div>
+            <span className="text-lg font-medium">Sistema conectado y listo</span>
+          </div>
         </div>
       </motion.div>
 
-      {/* Indicador de conexión */}
+      {/* [modificación] Indicadores de progreso del carrusel */}
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.6 }}
-        className="mt-12 flex items-center text-green-400"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, delay: 1.2 }}
+        className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-20"
       >
-        <div className="w-3 h-3 bg-green-400 rounded-full mr-3 animate-pulse"></div>
-        <span className="text-lg">Conectado y listo</span>
+        <div className="flex space-x-3">
+          {carouselImages.map((_, index) => (
+            <motion.div
+              key={index}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentImageIndex 
+                  ? 'bg-white scale-125' 
+                  : 'bg-white/40 hover:bg-white/60'
+              }`}
+              whileHover={{ scale: 1.2 }}
+            />
+          ))}
+        </div>
       </motion.div>
+
+      {/* [modificación] Efectos de fondo animados para mayor dinamismo */}
+      <div className="absolute inset-0 pointer-events-none">
+        <motion.div
+          animate={{ 
+            x: [0, 100, 0],
+            y: [0, -50, 0],
+            scale: [1, 1.1, 1]
+          }}
+          transition={{ 
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"
+        />
+        <motion.div
+          animate={{ 
+            x: [0, -100, 0],
+            y: [0, 50, 0],
+            scale: [1, 0.9, 1]
+          }}
+          transition={{ 
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"
+        />
+      </div>
     </motion.div>
   );
 }
