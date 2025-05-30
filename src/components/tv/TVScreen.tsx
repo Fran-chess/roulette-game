@@ -95,21 +95,37 @@ export default function TVScreen() {
             table: 'plays',
           },
           (payload) => {
-            console.log('📺 TV: UPDATE detectado:', payload);
-            const { new: newRecord } = payload;
+            console.log('📺 TV-UPDATE: 🔄 Evento UPDATE detectado en realtime');
+            console.log('📺 TV-UPDATE: Payload completo:', JSON.stringify(payload, null, 2));
+            console.log('📺 TV-UPDATE: Timestamp del evento:', payload.commit_timestamp);
+            
+            const { new: newRecord, old: oldRecord } = payload;
 
             if (newRecord) {
-              console.log('📺 TV: Sesión actualizada:', newRecord);
+              console.log('📺 TV-UPDATE: ✅ Datos nuevos del registro:', newRecord);
+              console.log('📺 TV-UPDATE: Session ID:', newRecord.session_id);
+              console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
+              console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
+              console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
+              console.log('📺 TV-UPDATE: Jugador:', newRecord.nombre || 'N/A');
+              console.log('📺 TV-UPDATE: Email:', newRecord.email || 'N/A');
+              
               try {
                 const validatedSession = validateGameSession(newRecord);
+                console.log('📺 TV-UPDATE: ✅ Sesión validada exitosamente');
+                console.log('📺 TV-UPDATE: Actualizando estado de la TV a:', validatedSession.status);
                 setCurrentSession(validatedSession);
-                console.log('📺 TV: Estado actualizado:', validatedSession.status);
                 
-                // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
+                if (validatedSession.status === 'playing') {
+                  console.log('📺 TV-UPDATE: 🎮 ¡Estado playing detectado! La TV debería cambiar de vista automáticamente');
+                }
               } catch (validationError) {
-                console.error('📺 TV: Error validando sesión:', validationError);
+                console.error('📺 TV-UPDATE: ❌ Error validando sesión:', validationError);
+                console.log('📺 TV-UPDATE: 🔄 Usando datos directamente como fallback');
                 setCurrentSession(newRecord as unknown as GameSession);
               }
+            } else {
+              console.warn('📺 TV-UPDATE: ⚠️ Evento UPDATE sin datos nuevos');
             }
           }
         )
@@ -121,19 +137,26 @@ export default function TVScreen() {
             table: 'plays',
           },
           (payload) => {
-            console.log('📺 TV: DELETE detectado:', payload);
-            console.log('📺 TV: Sesión eliminada, volviendo a estado de espera');
+            console.log('📺 TV-DELETE: 🗑️ Evento DELETE detectado:', payload);
+            console.log('📺 TV-DELETE: Datos del registro eliminado:', payload.old);
+            console.log('📺 TV-DELETE: Limpiando sesión actual y volviendo a estado de espera');
             setCurrentSession(null);
           }
         )
         .subscribe((status) => {
-          console.log('📺 TV: Estado de suscripción realtime:', status);
+          console.log('📺 TV-REALTIME: 📡 Estado de suscripción:', status);
           if (status === 'SUBSCRIBED') {
-            console.log('✅ TV: Suscripción realtime activa');
-            setRealtimeReady(true); // [modificación] Marcar realtime como listo
+            console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
+            console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla plays');
+            setRealtimeReady(true);
           } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ TV: Error en canal realtime');
-            setRealtimeReady(false); // [modificación] Marcar realtime como no listo
+            console.error('❌ TV-REALTIME: Error en canal realtime');
+            setRealtimeReady(false);
+          } else if (status === 'CLOSED') {
+            console.warn('⚠️ TV-REALTIME: Canal cerrado');
+            setRealtimeReady(false);
+          } else {
+            console.log(`📺 TV-REALTIME: Estado de canal: ${status}`);
           }
         });
 
