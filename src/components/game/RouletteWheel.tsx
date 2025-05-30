@@ -13,8 +13,16 @@ import { useGameStore } from "@/store/gameStore";
 import type { RouletteWheelProps, Question } from "@/types";
 import { motion } from "framer-motion";
 import React from "react";
+import { useDOMSafe } from "@/lib/hooks/useSSRSafe";
 
-// --- Funciones Helper (sin cambios) ---
+// [modificación] Interfaz para segmentos de la ruleta
+interface WheelSegment {
+  text: string;
+  color: string;
+  question: Question;
+}
+
+// --- Funciones Helper ---
 const baseColors = [
   "#192A6E", // azul-intenso
   "#5ACCC1", // verde-salud
@@ -27,7 +35,9 @@ const baseColors = [
   "#40C0EF",
   "#D5A7CD",
 ];
+
 let colorIndexGlobal = 0;
+
 function getRandomColor() {
   const previousColorIndex =
     (colorIndexGlobal - 1 + baseColors.length) % baseColors.length;
@@ -43,6 +53,7 @@ function getRandomColor() {
   colorIndexGlobal++;
   return color;
 }
+
 function getContrastYIQ(hexcolor: string): string {
   hexcolor = hexcolor.replace("#", "");
   const r = parseInt(hexcolor.substr(0, 2), 16);
@@ -51,40 +62,27 @@ function getContrastYIQ(hexcolor: string): string {
   const yiq = (r * 299 + g * 587 + b * 114) / 1000;
   return yiq >= 135 ? "#1E1E1E" : "#FFFFFF";
 }
-function easeOutBounce(x: number): number {
-  const n1 = 7.5625;
-  const d1 = 2.75;
-  if (x < 1 / d1) {
-    return n1 * x * x;
-  } else if (x < 2 / d1) {
-    return n1 * (x -= 1.5 / d1) * x + 0.75;
-  } else if (x < 2.5 / d1) {
-    return n1 * (x -= 2.25 / d1) * x + 0.9375;
-  } else {
-    return n1 * (x -= 2.625 / d1) * x + 0.984375;
-  }
-}
+
 function customEasingFunction(t: number): number {
-  if (t < 0.7) {
-    return t * t;
-  } else {
-    return 0.49 + easeOutBounce((t - 0.7) / 0.3) * 0.51;
-  }
+  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 }
-const mapQuestionsToSegments = (questions: Question[]) => {
-  colorIndexGlobal = 0;
-  return questions.map((q) => ({
-    fillStyle: getRandomColor(),
-    text: q.category || q.id,
-    questionId: q.id,
+
+// [modificación] Función para mapear preguntas a segmentos de la ruleta
+function mapQuestionsToSegments(questions: Question[]): WheelSegment[] {
+  return questions.map((question) => ({
+    text: question.category,
+    color: getRandomColor(),
+    question: question,
   }));
-};
+}
 
 // --- Componente principal ---
 const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
   ({ questions }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const { isDOMReady, canUseDOM } = useDOMSafe();
+    
     const setLastSpinResultIndex = useGameStore(
       (state) => state.setLastSpinResultIndex
     );
@@ -117,6 +115,8 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
     // Detectar dispositivo
     useEffect(() => {
+      if (!canUseDOM) return;
+      
       const handleDeviceDetection = () => {
         const width = window.innerWidth;
         const height = window.innerHeight;
@@ -124,12 +124,15 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         setIsTablet(width >= 768 && width <= 1280);
         setIsMobile(width < 768);
       };
+      
       handleDeviceDetection();
       window.addEventListener("resize", handleDeviceDetection);
       return () => window.removeEventListener("resize", handleDeviceDetection);
-    }, []);
+    }, [canUseDOM]);
 
     useEffect(() => {
+      if (!canUseDOM) return;
+      
       try {
         const audio = new Audio("/sounds/wheel-spin.mp3");
         audio.preload = "auto";
@@ -147,59 +150,58 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         console.warn("AUDIO: Error al inicializar el objeto Audio:", error);
       }
       return () => {};
-    }, []);
+    }, [canUseDOM]);
 
     // --- [modificación] Ajuste de tamaño del canvas totalmente automático ---
+    const handleResize = useCallback(() => {
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      if (!container || !canvas) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+
+      // Siempre el tamaño máximo cuadrado posible dentro del contenedor
+      let size = Math.min(containerWidth, containerHeight);
+
+      // Ajuste mínimos según dispositivo
+      if (isMobile) {
+        size = Math.max(220, Math.min(size, 400));
+      } else if (isTablet) {
+        size = Math.max(320, Math.min(size, 520));
+      } else {
+        size = Math.max(380, Math.min(size, 640));
+      }
+
+      // Asigna el size cuadrado
+      if (canvas.width !== size || canvas.height !== size) {
+        canvas.width = size;
+        canvas.height = size;
+      }
+      // Dibuja sólo si no está girando
+      if (!isSpinning && numSegments > 0) {
+        drawRoulette(currentAngle, size);
+      }
+    }, [currentAngle, numSegments, isSpinning, isMobile, isTablet]);
+
     useEffect(() => {
-      const handleResize = () => {
-        const container = containerRef.current;
-        const canvas = canvasRef.current;
-        if (!container || !canvas) return;
-
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-
-        // Siempre el tamaño máximo cuadrado posible dentro del contenedor
-        let size = Math.min(containerWidth, containerHeight);
-
-        // Ajuste mínimos según dispositivo
-        if (isMobile) {
-          size = Math.max(220, Math.min(size, 400));
-        } else if (isTablet) {
-          size = Math.max(320, Math.min(size, 520));
-        } else {
-          size = Math.max(380, Math.min(size, 640));
-        }
-
-        // Asigna el size cuadrado
-        if (canvas.width !== size || canvas.height !== size) {
-          canvas.width = size;
-          canvas.height = size;
-        }
-        // Dibuja sólo si no está girando
-        if (!isSpinning && numSegments > 0) {
-          drawRoulette(currentAngle, size);
-        }
-      };
-
+      if (!isDOMReady || !canUseDOM) return;
+      
       handleResize();
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
-      // eslint-disable-next-line
     }, [
-      currentAngle,
-      numSegments,
-      isSpinning,
+      isDOMReady,
+      canUseDOM,
+      handleResize,
       isLandscape,
-      isTablet,
-      isMobile,
     ]);
 
     // --- [modificación] Dibujo recibe size explícito, nunca usa viewport directamente ---
     const drawRoulette = useCallback(
       (rotationAngle = 0, canvasSize?: number) => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        if (!canvas || !isDOMReady) return;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
         const size = canvasSize || canvas.width;
@@ -230,7 +232,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         ctx.translate(centerX, centerY);
         ctx.rotate(rotationAngle);
 
-        wheelSegments.forEach((segment, i) => {
+        wheelSegments.forEach((segment: WheelSegment, i: number) => {
           const startAngle = i * anglePerSegment;
           const endAngle = (i + 1) * anglePerSegment;
 
@@ -240,25 +242,23 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           ctx.closePath();
 
           if (highlightedSegment === i) {
-            ctx.fillStyle = "#FFFFFF";
-            ctx.fill();
-            ctx.fillStyle = segment.fillStyle;
-            ctx.globalAlpha = 0.7;
-            ctx.fill();
-            ctx.globalAlpha = 1.0;
+            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
+            gradient.addColorStop(0, "#FFD700"); // oro brillante
+            gradient.addColorStop(0.7, segment.color);
+            gradient.addColorStop(1, "#8B7355"); // oro más oscuro
+            ctx.fillStyle = gradient;
           } else {
-            ctx.fillStyle = segment.fillStyle;
-            ctx.fill();
+            ctx.fillStyle = segment.color;
           }
 
-          // Bordes mejorados
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.34)";
+          ctx.fill();
+          ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = 2;
           ctx.stroke();
 
           // [modificación] Renderizado de texto profesional y adaptativo
           ctx.save();
-          ctx.fillStyle = getContrastYIQ(segment.fillStyle);
+          ctx.fillStyle = getContrastYIQ(segment.color);
           const textAngle = startAngle + anglePerSegment / 2;
           ctx.rotate(textAngle);
 
@@ -274,7 +274,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           const displayText = segment.text
             .split(" ")
             .map(
-              (word) =>
+              (word: string) =>
                 word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
             )
             .join(" ");
@@ -349,28 +349,20 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         ctx.stroke();
         ctx.restore();
       },
-      // eslint-disable-next-line
-      [wheelSegments, anglePerSegment, highlightedSegment, isTablet, isMobile]
+      [wheelSegments, anglePerSegment, highlightedSegment, isTablet, isMobile, isDOMReady]
     );
 
-    // Exponer método spin al padre
-    useImperativeHandle(ref, () => ({
-      spin: () => {
-        if (!isSpinning && numSegments > 0) {
-          spin();
-        }
-      },
-    }));
-
     // --- Spin ---
-    const spin = () => {
-      if (isSpinning || numSegments === 0) return;
+    const spin = useCallback(() => {
+      if (isSpinning || numSegments === 0 || !isDOMReady) return;
       setIsSpinning(true);
       setHighlightedSegment(null);
-      if (audioRef.current) {
+      
+      if (audioRef.current && canUseDOM) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});
       }
+      
       const randomSpins = Math.floor(Math.random() * 5) + 8;
       const randomStopSegment = Math.floor(Math.random() * numSegments);
       const stopAngleOnWheel = randomStopSegment * anglePerSegment;
@@ -380,6 +372,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         targetAngle: randomSpins * 2 * Math.PI + stopAngleOnWheel,
         animationFrameId: 0,
       };
+      
       const spinAnimation = (timestamp: number) => {
         const config = animationConfigRef.current;
         const elapsedTime = timestamp - config.startTime;
@@ -391,11 +384,13 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           const winningIndex =
             Math.floor(winningAngle / anglePerSegment) % numSegments;
           setHighlightedSegment(winningIndex);
-          if ("vibrate" in navigator) {
+          
+          if (canUseDOM && "vibrate" in navigator) {
             try {
               navigator.vibrate(200);
             } catch {}
           }
+          
           setTimeout(() => {
             setLastSpinResultIndex(winningIndex);
           }, 800);
@@ -411,7 +406,25 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       };
       animationConfigRef.current.animationFrameId =
         requestAnimationFrame(spinAnimation);
-    };
+    }, [isSpinning, numSegments, isDOMReady, canUseDOM, anglePerSegment, setLastSpinResultIndex, drawRoulette]);
+
+    // Exponer método spin al padre
+    useImperativeHandle(ref, () => ({
+      spin: () => {
+        if (!isSpinning && numSegments > 0 && isDOMReady) {
+          spin();
+        }
+      },
+    }), [isSpinning, numSegments, isDOMReady, spin]);
+
+    // [modificación] No renderizar hasta que DOM esté listo
+    if (!isDOMReady || !canUseDOM) {
+      return (
+        <div className="flex flex-col items-center justify-center w-full min-h-[400px]">
+          <div className="text-white text-lg">Preparando ruleta...</div>
+        </div>
+      );
+    }
 
     // --- Render ---
     return (

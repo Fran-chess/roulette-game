@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useNavigationStore } from '@/store/navigationStore';
 import { useSessionStore } from '@/store/sessionStore';
+import ErrorBoundary from '@/components/ui/ErrorBoundary';
 
 // Cargamos los componentes persistentes de manera dinámica
 const NavigationOverlay = dynamic(() => import('./NavigationOverlay'), {
@@ -17,6 +18,7 @@ const NavigationOverlay = dynamic(() => import('./NavigationOverlay'), {
  * 1. Mantener elementos que NUNCA se desmontan durante la navegación (NavigationOverlay)
  * 2. Gestionar transiciones suaves entre páginas con efecto fade
  * 3. Manejar correctamente el montaje en cliente (client-side hydration)
+ * 4. Capturar errores de DOM y Framer Motion globalmente
  */
 export default function ShellRootClient({ children }: { children: React.ReactNode }) {
   const [isMounted, setIsMounted] = useState(false);
@@ -35,6 +37,25 @@ export default function ShellRootClient({ children }: { children: React.ReactNod
     setCurrentView, 
     cleanup 
   } = useSessionStore();
+
+  // [modificación] Handler para errores capturados por el Error Boundary
+  const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
+    console.error('ShellRootClient: Error global capturado:', {
+      error: error.message,
+      path: pathname,
+      user: user?.role,
+      timestamp: new Date().toISOString(),
+      componentStack: errorInfo.componentStack
+    });
+
+    // [modificación] Si el error es en la TV, intentar reinicializar
+    if (pathname === '/tv' && user?.role === 'viewer') {
+      console.log('ShellRootClient: Error en TV detectado, intentando recuperación...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
+  };
 
   // Control de montaje en cliente
   useEffect(() => {
@@ -99,7 +120,21 @@ export default function ShellRootClient({ children }: { children: React.ReactNod
   }
 
   return (
-    <>
+    <ErrorBoundary 
+      onError={handleError}
+      fallback={
+        // [modificación] Fallback específico para TV
+        pathname === '/tv' ? (
+          <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-6xl mb-6">📺</div>
+              <h1 className="text-4xl font-bold text-white mb-4">Reiniciando TV...</h1>
+              <p className="text-white/80">La pantalla se recuperará automáticamente</p>
+            </div>
+          </div>
+        ) : undefined
+      }
+    >
       {/* [modificación] Overlay de navegación solo para admin */}
       {user?.role === 'admin' && <NavigationOverlay />}
       
@@ -113,6 +148,6 @@ export default function ShellRootClient({ children }: { children: React.ReactNod
       >
         {displayChildren}
       </div>
-    </>
+    </ErrorBoundary>
   );
 }

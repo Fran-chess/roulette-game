@@ -1,47 +1,51 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useSessionStore, type GameSession } from '@/store/sessionStore';
 import { supabaseClient } from '@/lib/supabase';
-import Image from 'next/image';
+
+// [modificación] Importar hooks personalizados extraídos
+import { useIsMounted } from '@/hooks/useIsMounted';
+import { useClock } from '@/hooks/useClock';
 
 // [modificación] Importar función de validación desde sessionStore
 import { validateGameSession } from '@/store/sessionStore';
 
+// [modificación] Importar componentes de Motion centralizados
+import { MotionDiv, AnimatePresence } from './shared/MotionComponents';
+
+// [modificación] Importar componentes de pantalla extraídos
+import LoadingScreen from './screens/LoadingScreen';
+import WaitingScreen from './screens/WaitingScreen';
+import InvitationScreen from './screens/InvitationScreen';
+
 // [modificación] Componente principal para la vista de TV
 export default function TVScreen() {
   const { currentSession, user, setCurrentSession, setUser } = useSessionStore();
-  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [realtimeReady, setRealtimeReady] = useState(false); // [modificación] Estado para controlar polling
+  const [isRealtimeConnecting, setIsRealtimeConnecting] = useState(false); // [modificación] Estado de conexión
+  
+  // [modificación] Usar hooks personalizados extraídos
+  const isMounted = useIsMounted();
+  const currentTime = useClock();
   const router = useRouter();
-
-  // [modificación] Reloj en tiempo real con inicialización post-mount
-  useEffect(() => {
-    // [modificación] Establecer fecha inicial después del mount para evitar hydration mismatch
-    setCurrentTime(new Date());
-    
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
 
   // [modificación] Efecto dedicado para navegación automática - único lugar para la navegación
   useEffect(() => {
-    if (currentSession?.status === 'playing' && currentSession.session_id) {
+    if (!isMounted || !currentSession?.status) return; // [modificación] Verificar mount y session
+    
+    if (currentSession.status === 'playing' && currentSession.session_id) {
       console.log('📺 TV: Navegando automáticamente al juego:', currentSession.session_id);
       router.push(`/game/${currentSession.session_id}`);
     }
-  }, [currentSession, router]);
+  }, [currentSession, router, isMounted]);
 
   // [modificación] Función memoizada para inicializar la vista de TV con dependencias optimizadas
   const initializeTVView = useCallback(async () => {
-    // [modificación] Verificar que el cliente de Supabase esté disponible
-    if (!supabaseClient) {
-      console.error('Cliente de Supabase no disponible en la vista de TV');
+    // [modificación] Verificar que el cliente de Supabase esté disponible y que esté montado
+    if (!supabaseClient || !isMounted) {
+      console.error('Cliente de Supabase no disponible en la vista de TV o componente no montado');
       return;
     }
 
@@ -60,6 +64,7 @@ export default function TVScreen() {
     // [modificación] Inicializar suscripción en tiempo real específica para TV con cleanup
     try {
       console.log('Configurando realtime específico para TV...');
+      setIsRealtimeConnecting(true); // [modificación] Marcar como conectando
       
       // [modificación] Crear canal específico para la TV y configurar suscripción
       const channel = supabaseClient
@@ -150,14 +155,19 @@ export default function TVScreen() {
             console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
             console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla plays');
             setRealtimeReady(true);
+            setIsRealtimeConnecting(false); // [modificación] Ya no está conectando
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ TV-REALTIME: Error en canal realtime');
             setRealtimeReady(false);
+            setIsRealtimeConnecting(false); // [modificación] Error de conexión
           } else if (status === 'CLOSED') {
             console.warn('⚠️ TV-REALTIME: Canal cerrado');
             setRealtimeReady(false);
+            setIsRealtimeConnecting(true); // [modificación] Intentando reconectar
           } else {
             console.log(`📺 TV-REALTIME: Estado de canal: ${status}`);
+            // [modificación] Mantener estado de conexión para estados intermedios
+            setIsRealtimeConnecting(true);
           }
         });
 
@@ -170,6 +180,8 @@ export default function TVScreen() {
       };
     } catch (error) {
       console.error('Error al inicializar realtime específico para TV:', error);
+      setRealtimeReady(false);
+      setIsRealtimeConnecting(false); // [modificación] Error de inicialización
       return () => {}; // [modificación] Retornar función vacía en caso de error
     }
 
@@ -211,10 +223,12 @@ export default function TVScreen() {
     } catch (error) {
       console.error('📺 TV: Error al cargar sesión activa:', error);
     }
-  }, [user, setUser, setCurrentSession]); // [modificación] Dependencias corregidas incluyendo 'user'
+  }, [user, setUser, setCurrentSession, isMounted]); // [modificación] Agregar isMounted a dependencias
 
   // [modificación] Inicializar realtime y cargar sesión activa para la vista de TV con cleanup
   useEffect(() => {
+    if (!isMounted) return; // [modificación] Solo ejecutar después del mount
+    
     let cleanupFunction: (() => void) | undefined;
 
     const runInitialization = async () => {
@@ -229,10 +243,12 @@ export default function TVScreen() {
         cleanupFunction();
       }
     };
-  }, [initializeTVView]);
+  }, [initializeTVView, isMounted]);
 
   // [modificación] Sistema de polling como backup solo cuando realtime no está listo
   useEffect(() => {
+    if (!isMounted) return; // [modificación] Solo ejecutar después del mount
+    
     if (realtimeReady) {
       console.log('📺 TV: Realtime activo, desactivando polling de backup');
       return; // [modificación] No ejecutar polling si realtime está activo
@@ -286,10 +302,15 @@ export default function TVScreen() {
     return () => {
       clearInterval(pollingInterval);
     };
-  }, [realtimeReady, currentSession, setCurrentSession]); // [modificación] Dependencia de realtimeReady
+  }, [realtimeReady, currentSession, setCurrentSession, isMounted]); // [modificación] Agregar isMounted a dependencias
 
   // [modificación] Determinar qué pantalla mostrar según el estado (usando estados del backend)
   const renderScreen = () => {
+    if (!isMounted) {
+      // [modificación] Renderizar pantalla de carga mientras no esté montado
+      return <LoadingScreen />;
+    }
+
     if (!currentSession) {
       return <WaitingScreen />;
     }
@@ -309,31 +330,43 @@ export default function TVScreen() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 relative overflow-hidden">
-      {/* [modificación] Fondo animado */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      </div>
+  // [modificación] No renderizar nada hasta que esté montado para evitar errores de hidratación
+  if (!isMounted) {
+    return <LoadingScreen />;
+  }
 
+  return (
+    <div className="min-h-screen bg-black relative overflow-hidden">
       {/* [modificación] Contenido principal */}
       <div className="relative z-10">
-        <AnimatePresence mode="wait">
-          {renderScreen()}
-        </AnimatePresence>
+        {isMounted && (
+          <AnimatePresence mode="wait">
+            {renderScreen()}
+          </AnimatePresence>
+        )}
       </div>
 
       {/* [modificación] Información del usuario en esquina */}
-      {user && (
+      {user && isMounted && (
         <div className="absolute top-4 right-4 text-white/60 text-sm">
           <p>Usuario: {user.email}</p>
           <p>Rol: {user.role === 'viewer' ? 'TV' : 'Admin'}</p>
+          {/* [modificación] Mostrar estado de conexión realtime */}
+          <div className="flex items-center mt-2">
+            <div className={`w-3 h-3 rounded-full mr-2 ${
+              realtimeReady ? 'bg-green-400' : 
+              isRealtimeConnecting ? 'bg-yellow-400' : 'bg-red-400'
+            }`}></div>
+            <span className="text-xs">
+              {realtimeReady ? 'Conectado' : 
+               isRealtimeConnecting ? 'Conectando...' : 'Desconectado'}
+            </span>
+          </div>
         </div>
       )}
 
       {/* [modificación] Debug info para desarrollo */}
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV === 'development' && isMounted && (
         <div className="absolute bottom-4 left-4 bg-black/80 text-white text-xs p-4 rounded-lg max-w-md border border-white/30">
           <h4 className="font-bold mb-2 text-green-400">📺 TV Debug Info</h4>
           <div className="space-y-1">
@@ -343,6 +376,11 @@ export default function TVScreen() {
             <p><span className="text-blue-400">Email:</span> {currentSession?.email || 'N/A'}</p>
             <p><span className="text-blue-400">Última actualización:</span> {currentSession?.updated_at ? new Date(currentSession.updated_at).toLocaleTimeString() : 'N/A'}</p>
             <p><span className="text-blue-400">Tiempo actual:</span> {currentTime?.toLocaleTimeString() || 'N/A'}</p>
+            <p><span className="text-blue-400">Realtime:</span> 
+              <span className={`ml-1 ${realtimeReady ? 'text-green-400' : isRealtimeConnecting ? 'text-yellow-400' : 'text-red-400'}`}>
+                {realtimeReady ? '✅ Activo' : isRealtimeConnecting ? '🔄 Conectando' : '❌ Inactivo'}
+              </span>
+            </p>
             
             {/* [modificación] Botón para forzar recarga de sesión */}
             <button 
@@ -361,271 +399,16 @@ export default function TVScreen() {
   );
 }
 
-// [modificación] Pantalla de espera con carrusel autónomo de imágenes publicitarias
-function WaitingScreen() {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  // [modificación] Array de imágenes del carrusel
-  const carouselImages = [
-    { src: '/images/carrusel_tv/2.svg', caption: 'Hola mundo' },
-    { src: '/images/carrusel_tv/4.svg', caption: 'Hola mundo' },
-    { src: '/images/carrusel_tv/6.svg', caption: 'Hola mundo' },
-    { src: '/images/carrusel_tv/7.svg', caption: 'Hola mundo' },
-    { src: '/images/carrusel_tv/8.svg', caption: 'Hola mundo' }
-  ];
-
-  // [modificación] Efecto para avanzar automáticamente el carrusel cada 4 segundos
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => 
-        (prevIndex + 1) % carouselImages.length
-      );
-    }, 4000); // [modificación] Cambio cada 4 segundos para una experiencia fluida
-
-    return () => clearInterval(interval);
-  }, [carouselImages.length]);
-
-  return (
-    <motion.div
-      key="waiting-carousel"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="relative min-h-screen w-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 overflow-hidden"
-    >
-      {/* [modificación] Carrusel de imágenes principal que ocupa toda la pantalla */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentImageIndex}
-            initial={{ 
-              opacity: 0, 
-              scale: 1.1,
-              x: 300 
-            }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1,
-              x: 0 
-            }}
-            exit={{ 
-              opacity: 0, 
-              scale: 0.9,
-              x: -300 
-            }}
-            transition={{ 
-              duration: 0.8,
-              ease: [0.25, 0.46, 0.45, 0.94] // [modificación] Easing profesional
-            }}
-            className="relative w-full h-full flex items-center justify-center"
-          >
-            {/* [modificación] Contenedor de la imagen con efecto glass */}
-            <div className="relative max-w-6xl max-h-5xl w-full h-4/5 bg-white/10 backdrop-blur-lg rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
-              {/* [modificación] Imagen principal del carrusel */}
-              <div className="w-full h-full flex items-center justify-center p-8">
-                <Image
-                  src={carouselImages[currentImageIndex].src}
-                  alt={`Carrusel imagen ${currentImageIndex + 1}`}
-                  width={1000}
-                  height={1000}
-                  className="max-w-full max-h-full object-contain drop-shadow-lg"
-                />
-              </div>
-              
-              {/* [modificación] Pie de foto con estilo elegante */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-                className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-8"
-              >
-                <p className="text-white text-2xl font-light text-center tracking-wide">
-                  {carouselImages[currentImageIndex].caption}
-                </p>
-              </motion.div>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {/* [modificación] Mensaje de espera en la parte inferior */}
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 1 }}
-        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
-      >
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl px-8 py-6 border border-white/20 text-center">
-          <h2 className="text-3xl font-semibold text-white mb-2">
-            Esperando nueva sesión...
-          </h2>
-          <p className="text-xl text-white/80 mb-4">
-            El administrador iniciará el juego desde su tablet
-          </p>
-          
-          {/* [modificación] Indicador de conexión elegante */}
-          <div className="flex items-center justify-center text-green-400">
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-3 h-3 bg-green-400 rounded-full mr-3"
-            ></motion.div>
-            <span className="text-lg font-medium">Sistema conectado y listo</span>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* [modificación] Indicadores de progreso del carrusel */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 1.2 }}
-        className="absolute bottom-32 left-1/2 transform -translate-x-1/2 z-20"
-      >
-        <div className="flex space-x-3">
-          {carouselImages.map((_, index) => (
-            <motion.div
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentImageIndex 
-                  ? 'bg-white scale-125' 
-                  : 'bg-white/40 hover:bg-white/60'
-              }`}
-              whileHover={{ scale: 1.2 }}
-            />
-          ))}
-        </div>
-      </motion.div>
-
-      {/* [modificación] Efectos de fondo animados para mayor dinamismo */}
-      <div className="absolute inset-0 pointer-events-none">
-        <motion.div
-          animate={{ 
-            x: [0, 100, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ 
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{ 
-            x: [0, -100, 0],
-            y: [0, 50, 0],
-            scale: [1, 0.9, 1]
-          }}
-          transition={{ 
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-3xl"
-        />
-      </div>
-    </motion.div>
-  );
-}
-
-// [modificación] Pantalla de invitación cuando hay registro abierto
-function InvitationScreen({ currentTime }: { currentTime: Date | null }) {
-  return (
-    <motion.div
-      key="invitation"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="flex flex-col items-center justify-center min-h-screen text-center px-8"
-    >
-      {/* Título principal */}
-      <motion.div
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8 }}
-        className="mb-12"
-      >
-        <h1 className="text-7xl font-bold text-white mb-6">
-          ¡Únete al Juego!
-        </h1>
-        <p className="text-3xl text-blue-200">
-          DarSalud - Experiencia Interactiva
-        </p>
-      </motion.div>
-
-      {/* Card de invitación */}
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-lg rounded-3xl p-16 max-w-4xl border border-white/30"
-      >
-        <div className="space-y-8">
-          <motion.div
-            animate={{ 
-              scale: [1, 1.05, 1],
-              rotate: [0, 2, -2, 0]
-            }}
-            transition={{ 
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="text-8xl mb-8"
-          >
-            🎮
-          </motion.div>
-
-          <h2 className="text-5xl font-bold text-white mb-6">
-            Acércate a la Tablet
-          </h2>
-          
-          <p className="text-2xl text-white/90 leading-relaxed">
-            Regístrate con el administrador para participar en nuestro 
-            emocionante juego de conocimientos
-          </p>
-
-          <div className="bg-white/10 rounded-2xl p-8 mt-8">
-            <h3 className="text-3xl font-semibold text-white mb-4">
-              ¿Qué te espera?
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-white/80">
-              <div className="text-center">
-                <div className="text-4xl mb-2">❓</div>
-                <p className="text-lg">Preguntas desafiantes</p>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl mb-2">🏆</div>
-                <p className="text-lg">Premios increíbles</p>
-              </div>
-              <div className="text-center">
-                <div className="text-4xl mb-2">⚡</div>
-                <p className="text-lg">Acción en tiempo real</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Tiempo */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.8, delay: 0.5 }}
-        className="mt-8 text-white/60 text-xl"
-      >
-        {currentTime?.toLocaleTimeString('es-ES') || 'N/A'}
-      </motion.div>
-    </motion.div>
-  );
-}
-
 // [modificación] Pantalla cuando el juego está activo
 function GameActiveScreen({ currentSession }: { currentSession: GameSession }) {
+  const isMounted = useIsMounted(); // [modificación] Hook para verificar si está montado
+
+  if (!isMounted) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <motion.div
+    <MotionDiv
       key="game-active"
       initial={{ opacity: 0, x: 100 }}
       animate={{ opacity: 1, x: 0 }}
@@ -633,7 +416,7 @@ function GameActiveScreen({ currentSession }: { currentSession: GameSession }) {
       className="flex flex-col items-center justify-center min-h-screen text-center px-8"
     >
       {/* Jugador actual */}
-      <motion.div
+      <MotionDiv
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.6 }}
@@ -656,10 +439,10 @@ function GameActiveScreen({ currentSession }: { currentSession: GameSession }) {
             )}
           </div>
         )}
-      </motion.div>
+      </MotionDiv>
 
       {/* Indicadores de progreso */}
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
@@ -677,11 +460,11 @@ function GameActiveScreen({ currentSession }: { currentSession: GameSession }) {
           <div className="text-4xl mb-2">⏱️</div>
           <p className="text-lg">Tiempo real</p>
         </div>
-      </motion.div>
+      </MotionDiv>
 
       {/* Puntuación si existe */}
       {currentSession.score !== undefined && (
-        <motion.div
+        <MotionDiv
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
@@ -689,16 +472,22 @@ function GameActiveScreen({ currentSession }: { currentSession: GameSession }) {
         >
           <p className="text-2xl text-white/80">Puntuación</p>
           <p className="text-5xl font-bold text-yellow-400">{currentSession.score}</p>
-        </motion.div>
+        </MotionDiv>
       )}
-    </motion.div>
+    </MotionDiv>
   );
 }
 
 // [modificación] Pantalla cuando el juego termina
 function GameCompletedScreen({ currentSession }: { currentSession: GameSession }) {
+  const isMounted = useIsMounted(); // [modificación] Hook para verificar si está montado
+
+  if (!isMounted) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <motion.div
+    <MotionDiv
       key="game-completed"
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
@@ -706,13 +495,13 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
       className="flex flex-col items-center justify-center min-h-screen text-center px-8"
     >
       {/* Celebración */}
-      <motion.div
+      <MotionDiv
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8 }}
         className="mb-12"
       >
-        <motion.div
+        <MotionDiv
           animate={{ 
             rotate: [0, 10, -10, 0],
             scale: [1, 1.1, 1]
@@ -725,14 +514,14 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
           className="text-9xl mb-6"
         >
           🎉
-        </motion.div>
+        </MotionDiv>
         <h1 className="text-7xl font-bold text-white mb-4">
           ¡Juego Completado!
         </h1>
-      </motion.div>
+      </MotionDiv>
 
       {/* Resultados */}
-      <motion.div
+      <MotionDiv
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.2 }}
@@ -765,7 +554,7 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
           )}
         </div>
 
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1, delay: 1 }}
@@ -773,8 +562,8 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
         >
           <p className="text-xl">¡Gracias por participar!</p>
           <p className="text-lg mt-2">Esperando próximo jugador...</p>
-        </motion.div>
-      </motion.div>
-    </motion.div>
+        </MotionDiv>
+      </MotionDiv>
+    </MotionDiv>
   );
 } 
