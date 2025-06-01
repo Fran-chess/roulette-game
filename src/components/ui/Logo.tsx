@@ -15,27 +15,22 @@ interface LogoProps {
   withShadow?: boolean;
 }
 
-/**
- * Componente Logo reutilizable que maneja correctamente las diferentes versiones
- * del logo en toda la aplicación, con soporte para responsive design.
- */
 const Logo = ({
   size = "auto",
   animated = true,
   className = "",
   withShadow = true,
 }: LogoProps) => {
-  // [modificación] Dimensiones predefinidas para diferentes tamaños - versiones más compactas
+  // [modificación] Aumenté los valores de 'lg' para que el logo sea notablemente grande (simétrico con la ruleta y el botón).
   const sizesMap = {
-    sm: { width: 60, height: 18 }, // [modificación] Reducido aún más para la vista de tablet
-    md: { width: 160, height: 48 }, // Tamaño medio optimizado
-    lg: { width: 200, height: 60 }, // Grande pero más compacto
+    sm: { width: 200, height: 60 },   // Tamaño pequeño aumentado
+    md: { width: 600, height: 180 },  // Tamaño mediano ultra grande
+    lg: { width: 1200, height: 360 }, // Tamaño grande ultra optimizado (antes 800×240)
   };
 
   // Estado para manejar dimensiones responsivas si size='auto'
   const [dimensions, setDimensions] = useState(sizesMap.md);
 
-  // Efecto para ajustar el tamaño según el viewport si size='auto'
   useEffect(() => {
     if (size !== "auto") return;
 
@@ -44,20 +39,27 @@ const Logo = ({
       const height = window.innerHeight;
       const isGameView = window.location.pathname.includes("/game/");
 
-      // [modificación] Detector de ruta de juego para aplicar dimensiones más ajustadas
-      if (isGameView) {
-        // En sección de juego usamos tamaños más compactos
-        if (width < 640) {
-          setDimensions({ width: 110, height: 33 }); // Móviles pequeños
-        } else if (width < 768) {
-          setDimensions({ width: 130, height: 40 }); // Móviles
-        } else if (width < 1024) {
-          setDimensions({ width: 150, height: 45 }); // Tablets
-        } else {
-          setDimensions({ width: 180, height: 55 }); // Desktops
-        }
+      // Detección específica para resolución 2160×3840 (portrait)
+      const isUltraHighRes = width === 2160 && height === 3840;
 
-        // Ajuste adicional si es landscape en modo juego
+      if (isUltraHighRes) {
+        // [modificación] En TV vertical dedicamos un logo aún más grande
+        if (isGameView) {
+          setDimensions({ width: 800, height: 240 });   // Vista de juego → grande pero compacto
+        } else {
+          setDimensions({ width: 1200, height: 360 });  // Vista principal → súper grande
+        }
+      } else if (isGameView) {
+        if (width < 640) {
+          setDimensions({ width: 200, height: 60 });
+        } else if (width < 768) {
+          setDimensions({ width: 240, height: 72 });
+        } else if (width < 1024) {
+          setDimensions({ width: 280, height: 84 });
+        } else {
+          setDimensions({ width: 320, height: 96 });
+        }
+        // Si está en landscape, reducimos un poco
         if (width > height) {
           setDimensions((prev) => ({
             width: Math.round(prev.width * 0.85),
@@ -65,33 +67,32 @@ const Logo = ({
           }));
         }
       } else {
-        // En otras secciones mantenemos tamaños estándar
+        // En otras secciones (no juego), tamaños estándar optimizados para TV
         if (width < 640) {
-          setDimensions({ width: 140, height: 42 });
+          setDimensions({ width: 240, height: 72 });
         } else if (width < 768) {
-          setDimensions({ width: 160, height: 48 });
+          setDimensions({ width: 300, height: 90 });
         } else if (width < 1024) {
-          setDimensions({ width: 180, height: 55 });
-        } else if (width < 1280) {
-          setDimensions({ width: 200, height: 60 });
+          setDimensions({ width: 400, height: 120 });
+        } else if (width < 2560) {
+          setDimensions({ width: 800, height: 240 });
         } else {
-          setDimensions({ width: 220, height: 67 });
+          setDimensions({ width: 1200, height: 360 });
         }
       }
     };
 
-    // Inicializar tamaño
     updateSize();
-
-    // Actualizar tamaño al cambiar dimensiones de ventana
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, [size]);
 
   const logoSize = size === "auto" ? dimensions : sizesMap[size];
-  const safeWidth = logoSize?.width ?? 160; // <= Fallback seguro
-  const safeHeight = logoSize?.height ?? 48; // <= Fallback seguro
-  const imageClasses = `w-auto h-auto ${withShadow ? "drop-shadow-lg" : ""}`;
+  const safeWidth = logoSize?.width ?? 160;
+  const safeHeight = logoSize?.height ?? 48;
+
+  // [modificación] Clases de imagen reforzadas para resoluciones grandes
+  const imageClasses = `w-auto h-auto ${withShadow ? "drop-shadow-2xl filter contrast-110 brightness-105" : ""}`;
 
   const logoContent = (
     <Image
@@ -101,15 +102,22 @@ const Logo = ({
       height={safeHeight}
       priority
       className={imageClasses}
+      style={{
+        // [modificación] Sombra más pronunciada en TV
+        filter: withShadow
+          ? 'drop-shadow(0 15px 30px rgba(0, 0, 0, 0.3)) contrast(110%) brightness(105%)'
+          : 'contrast(110%) brightness(105%)',
+        imageRendering: 'crisp-edges',
+      }}
     />
   );
-  // Si es animado, envolvemos en un motion.div
+
   if (animated) {
     return (
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.7, type: "spring", stiffness: 100 }}
+        transition={{ duration: 0.8, type: "spring", stiffness: 120 }}
         className={className}
       >
         {logoContent}
@@ -117,7 +125,6 @@ const Logo = ({
     );
   }
 
-  // Versión no animada
   return <div className={className}>{logoContent}</div>;
 };
 

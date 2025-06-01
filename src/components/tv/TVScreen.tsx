@@ -522,18 +522,18 @@ export default function TVScreen() {
         )}
       </div>
 
-      {/* [modificación] Información del usuario en esquina */}
+      {/* [modificación] Información del usuario optimizada para TV 4K */}
       {user && isMounted && (
-        <div className="absolute top-4 right-4 text-white/60 text-sm">
+        <div className="absolute top-6 right-6 text-white/70 text-lg"> {/* [modificación] Texto más grande y mejor posicionamiento */}
           <p>Usuario: {user.email}</p>
           <p>Rol: {user.role === 'viewer' ? 'TV' : 'Admin'}</p>
-          {/* [modificación] Mostrar estado de conexión realtime */}
-          <div className="flex items-center mt-2">
-            <div className={`w-3 h-3 rounded-full mr-2 ${
+          {/* [modificación] Mostrar estado de conexión realtime más grande */}
+          <div className="flex items-center mt-3"> {/* [modificación] Más margen superior */}
+            <div className={`w-4 h-4 rounded-full mr-3 ${ // [modificación] Indicador más grande
               realtimeReady ? 'bg-green-400' : 
               isRealtimeConnecting ? 'bg-yellow-400' : 'bg-red-400'
             }`}></div>
-            <span className="text-xs">
+            <span className="text-base"> {/* [modificación] Texto más grande */}
               {realtimeReady ? 'Conectado' : 
                isRealtimeConnecting ? 'Conectando...' : 'Desconectado'}
             </span>
@@ -541,11 +541,11 @@ export default function TVScreen() {
         </div>
       )}
 
-      {/* [modificación] Debug info para desarrollo */}
+      {/* [modificación] Debug info optimizado para TV 4K */}
       {process.env.NODE_ENV === 'development' && isMounted && (
-        <div className="absolute bottom-4 left-4 bg-black/80 text-white text-xs p-4 rounded-lg max-w-md border border-white/30">
-          <h4 className="font-bold mb-2 text-green-400">📺 TV Debug Info</h4>
-          <div className="space-y-1">
+        <div className="absolute bottom-6 left-6 bg-black/90 text-white text-base p-6 rounded-xl max-w-lg border border-white/30"> {/* [modificación] Texto más grande y padding aumentado */}
+          <h4 className="font-bold mb-3 text-green-400 text-lg">📺 TV Debug Info</h4> {/* [modificación] Título más grande */}
+          <div className="space-y-2"> {/* [modificación] Más espacio entre líneas */}
             <p><span className="text-blue-400">Usuario:</span> {user ? `${user.name} (${user.role})` : 'No configurado'}</p>
             <p><span className="text-blue-400">Sesión actual:</span> {currentSession ? `${currentSession.session_id.substring(0,8)}... - ${currentSession.status}` : 'Ninguna'}</p>
             <p><span className="text-blue-400">Participante:</span> {currentSession?.nombre || 'N/A'}</p>
@@ -558,13 +558,13 @@ export default function TVScreen() {
               </span>
             </p>
             
-            {/* [modificación] Botón para forzar recarga de sesión */}
+            {/* [modificación] Botones más grandes para TV 4K */}
             <button 
               onClick={async () => {
                 console.log('📺 TV: Forzando recarga de sesión...');
                 await initializeTVView();
               }}
-              className="mt-2 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs mr-2"
+              className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botones más grandes
             >
               🔄 Refrescar
             </button>
@@ -596,7 +596,7 @@ export default function TVScreen() {
                   console.error('📺 TV: Error creando sesión:', error);
                 }
               }}
-              className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs mr-2"
+              className="mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botón más grande
             >
               ⚡ Nueva Sesión
             </button>
@@ -634,7 +634,7 @@ export default function TVScreen() {
                     alert(`Error al resetear sesión: ${error}`);
                   }
                 }}
-                className="mt-2 bg-orange-600 hover:bg-orange-700 text-white px-2 py-1 rounded text-xs mr-2"
+                className="mt-3 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botón más grande
               >
                 🔄 Resetear Sesión Actual
               </button>
@@ -744,7 +744,7 @@ export default function TVScreen() {
                   console.error('🔍 TV-DIAGNOSTICO: Error durante diagnóstico:', error);
                 }
               }}
-              className="mt-2 bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs mr-2"
+              className="mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botón más grande
             >
               🔍 Diagnóstico DB
             </button>
@@ -766,7 +766,7 @@ export default function TVScreen() {
                 setCurrentSession(testSession);
                 console.log('📺 TV-TEST: Estado actualizado a player_registered - la TV debería mostrar ruleta');
               }}
-              className="mt-1 bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs"
+              className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-base" // [modificación] Botón más grande
             >
               🧪 Test Participante
             </button>

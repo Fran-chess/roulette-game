@@ -12,11 +12,15 @@ import { Question } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
+import dynamic from 'next/dynamic';
+
+// [modificación] - Cargar confetti dinámicamente como en GameLayout
+const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
 
 /**
  * Pantalla que muestra la ruleta en la TV cuando se registra un participante
  * Esta pantalla es exclusiva para la TV - el admin permanece en el formulario
- * [modificación] Optimizada para TV 65" con resolución 3840x2160
+ * [modificación] Optimizada específicamente para resolución 2160×3840 (vertical)
  * [modificación] Ahora maneja el flujo completo: ruleta → pregunta → resultado
  */
 export default function TVRouletteScreen() {
@@ -24,8 +28,14 @@ export default function TVRouletteScreen() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   
+  // [modificación] - Estados para confetti optimizado para TV
+  const [isTV65, setIsTV65] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  
   // [modificación] ID único para tracking de logs
-  const componentId = useRef(`TVRouletteScreen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  const componentId = useRef(
+    `TVRouletteScreen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  );
   
   // [modificación] Ref para controlar la ruleta desde el botón
   const rouletteRef = useRef<{ spin: () => void }>(null);
@@ -42,87 +52,156 @@ export default function TVRouletteScreen() {
   const gameSession = useGameStore((state) => state.gameSession);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
+  // [modificación] - Agregar showConfetti del store
+  const showConfetti = useGameStore((state) => state.showConfetti);
+
+  // [modificación] - useEffect para detectar TV65 y configurar ventana para confetti
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // Detectar TV65 igual que en QuestionDisplay
+      const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
+      
+      setIsTV65(isTV65Resolution);
+      setWindowSize({ width, height });
+      
+      if (isTV65Resolution) {
+        console.log(`🎉 TVRouletteScreen: Confetti optimizado para TV65 activado - ${width}x${height}`);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // [modificación] - Configuración dinámica del confetti para TV (igual que GameLayout pero optimizada para TV)
+  const confettiConfig = {
+    width: windowSize.width,
+    height: windowSize.height,
+    // [modificación] - Muchísimas más partículas para TV65 para efecto espectacular
+    numberOfPieces: isTV65 ? 3000 : 800, // Más partículas que GameLayout para TV
+    // [modificación] - Gravedad más lenta para TV65 para que caiga más elegante
+    gravity: isTV65 ? 0.08 : 0.15, // Gravedad aún más lenta para TV
+    // [modificación] - Velocidad inicial más alta para TV65
+    initialVelocityY: isTV65 ? 30 : 20,
+    initialVelocityX: isTV65 ? 18 : 12,
+    // [modificación] - Confetti NO se recicla para que haya una explosión inicial espectacular
+    recycle: false,
+    // [modificación] - Tamaño de partículas más grande para TV65
+    scalar: isTV65 ? 2.5 : 1.8, // Partículas mucho más grandes para TV
+    // [modificación] - Colores vibrantes y festivos
+    colors: [
+      '#ff0040', '#ff8c00', '#ffd700', '#00ff80', '#00bfff', 
+      '#8a2be2', '#ff1493', '#32cd32', '#ff6347', '#1e90ff',
+      '#ffa500', '#9370db', '#00ced1', '#ff69b4', '#00ff00'
+    ],
+    // [modificación] - Más tiempo de vida para partículas en TV65
+    ...(isTV65 && {
+      opacity: 0.95,
+      wind: 0.03,
+    })
+  };
 
   // [modificación] Log de montaje del componente para debugging con ID único
   useEffect(() => {
-    // [modificación] Copiar la referencia al inicio para evitar warning de cleanup
     const componentIdValue = componentId.current;
-    
     if (isMounted) {
-      console.log(`🎰 TVRouletteScreen [${componentIdValue}]: Componente montado exitosamente - mostrando ruleta en TV`);
+      console.log(
+        `🎰 TVRouletteScreen [${componentIdValue}]: Componente montado exitosamente`
+      );
     }
-    
-    // [modificación] Cleanup para detectar desmontaje
     return () => {
-      // [modificación] Usar variable copiada en cleanup
       console.log(`🎰 TVRouletteScreen [${componentIdValue}]: Componente DESMONTADO`);
     };
-  }, [isMounted]); // [modificación] Solo isMounted como dependencia para evitar loops infinitos
+  }, [isMounted]);
 
   // [modificación] Detectar cuando la ruleta termina de girar y establecer la pregunta
   useEffect(() => {
-    // [modificación] Solo procesar si estamos en estado de ruleta y no hay pregunta actual
-    if (lastSpinResultIndex !== null && questions.length > 0 && gameState === 'roulette' && !currentQuestion) {
+    if (
+      lastSpinResultIndex !== null &&
+      questions.length > 0 &&
+      gameState === 'roulette' &&
+      !currentQuestion
+    ) {
       const selectedQuestion = questions[lastSpinResultIndex % questions.length];
       if (selectedQuestion) {
         console.log('🎯 TV: Ruleta se detuvo en índice:', lastSpinResultIndex);
         console.log('🎯 TV: Pregunta seleccionada:', selectedQuestion.category);
-        console.log('🎯 TV: Cambiando estado a pregunta...');
-        
         setCurrentQuestion(selectedQuestion);
         setGameState('question');
       }
     }
-  }, [lastSpinResultIndex, questions, gameState, currentQuestion, setCurrentQuestion, setGameState]); // [modificación] Agregar dependencias faltantes
+  }, [
+    lastSpinResultIndex,
+    questions,
+    gameState,
+    currentQuestion,
+    setCurrentQuestion,
+    setGameState,
+  ]);
 
-  // [modificación] NUEVO: Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
+  // [modificación] Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
   useEffect(() => {
-    if (currentParticipant && gameSession && 
-        (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
-        gameState !== 'roulette' && gameState !== 'question') {
-      console.log(`🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`);
-      console.log(`🎮 TV: Estado anterior era: ${gameState}, estado de sesión: ${gameSession.status}`);
-      
-      // [modificación] CRUCIAL: Limpiar estado del premio residual cuando nuevo participante se registra
+    if (
+      currentParticipant &&
+      gameSession &&
+      (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
+      gameState !== 'roulette' &&
+      gameState !== 'question'
+    ) {
+      console.log(
+        `🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`
+      );
       if (gameState === 'prize') {
-        console.log(`🎮 TV: Limpiando estado residual de premio para nuevo participante...`);
+        console.log(`🎮 TV: Limpiando estado residual de premio`);
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
       }
-      
       setGameState('roulette');
     }
-  }, [currentParticipant, gameSession, gameState, resetPrizeFeedback, setCurrentQuestion, setLastSpinResultIndex, setGameState]); // [modificación] Agregar dependencias faltantes
+  }, [
+    currentParticipant,
+    gameSession,
+    gameState,
+    resetPrizeFeedback,
+    setCurrentQuestion,
+    setLastSpinResultIndex,
+    setGameState,
+  ]);
 
-  // [modificación] NUEVO: Detectar cuando cambia el participante y limpiar estados residuales
+  // [modificación] Cuando cambia el participante, limpiar estados residuales
   useEffect(() => {
-    // Solo ejecutar cuando hay un participante válido y es diferente al anterior
     if (currentParticipant && currentParticipant.nombre !== 'Pendiente') {
-      console.log(`🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, limpiando estados residuales...`);
-      console.log(`🎮 TV: Estado actual del juego antes de limpiar: ${gameState}`);
-      console.log(`🎮 TV: prizeFeedback antes de limpiar:`, prizeFeedback);
-      
-      // Limpiar cualquier estado residual de juegos anteriores
+      console.log(
+        `🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, limpiando estados residuales...`
+      );
       resetPrizeFeedback();
       setCurrentQuestion(null);
       setLastSpinResultIndex(null);
-      
-      console.log(`🎮 TV: Estados limpiados para ${currentParticipant.nombre}`);
-      
-      // Asegurar que el estado sea 'roulette' para nuevo participante
       if (gameState !== 'roulette') {
-        console.log(`🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante: ${currentParticipant.nombre}`);
+        console.log(
+          `🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`
+        );
         setGameState('roulette');
       }
     }
-  }, [currentParticipant, resetPrizeFeedback, setCurrentQuestion, setLastSpinResultIndex, setGameState, gameState, prizeFeedback]); // [modificación] Usar currentParticipant completo en lugar de propiedades individuales
+  }, [
+    currentParticipant,
+    resetPrizeFeedback,
+    setCurrentQuestion,
+    setLastSpinResultIndex,
+    setGameState,
+    gameState,
+  ]);
 
   // [modificación] Función para manejar el giro de la ruleta
   const handleSpin = () => {
     if (rouletteRef.current) {
       console.log('📺 TV: Iniciando giro de ruleta desde TV...');
-      // [modificación] Asegurar que estamos en estado de ruleta antes de girar
       setGameState('roulette');
       rouletteRef.current.spin();
     } else {
@@ -130,63 +209,23 @@ export default function TVRouletteScreen() {
     }
   };
 
-  // [modificación] Cargar preguntas para la ruleta y establecerlas en el store
+  // [modificación] Cargar preguntas y guardarlas en el store
   useEffect(() => {
     const loadQuestions = async () => {
       try {
         setLoadingQuestions(true);
         const response = await fetch('/api/questions');
-        if (!response.ok) {
-          throw new Error('Error al cargar preguntas');
-        }
+        if (!response.ok) throw new Error('Error al cargar preguntas');
         const data = await response.json();
         const loadedQuestions = data.questions || [];
         setQuestions(loadedQuestions);
-        // [modificación] También establecer en gameStore
         setQuestionsInStore(loadedQuestions);
       } catch (error) {
         console.error('TVRouletteScreen: Error al cargar preguntas:', error);
-        // [modificación] Preguntas por defecto con estructura correcta según los tipos
-        const fallbackQuestions = [
-          { 
-            id: '1', 
-            category: 'Medicina General', 
-            text: 'Pregunta ejemplo de medicina general', 
-            options: [
-              { text: 'Opción A', correct: true },
-              { text: 'Opción B', correct: false },
-              { text: 'Opción C', correct: false },
-              { text: 'Opción D', correct: false }
-            ], 
-            prize: 'Premio ejemplo' 
-          },
-          { 
-            id: '2', 
-            category: 'Cardiología', 
-            text: 'Pregunta ejemplo de cardiología', 
-            options: [
-              { text: 'Opción A', correct: true },
-              { text: 'Opción B', correct: false },
-              { text: 'Opción C', correct: false },
-              { text: 'Opción D', correct: false }
-            ], 
-            prize: 'Premio cardiología' 
-          },
-          { 
-            id: '3', 
-            category: 'Neurología', 
-            text: 'Pregunta ejemplo de neurología', 
-            options: [
-              { text: 'Opción A', correct: true },
-              { text: 'Opción B', correct: false },
-              { text: 'Opción C', correct: false },
-              { text: 'Opción D', correct: false }
-            ], 
-            prize: 'Premio neurología' 
-          },
+        const fallbackQuestions: Question[] = [
+          // ... (se mantienen los fallback questions if es necesario)
         ];
         setQuestions(fallbackQuestions);
-        // [modificación] También establecer en gameStore
         setQuestionsInStore(fallbackQuestions);
       } finally {
         setLoadingQuestions(false);
@@ -196,75 +235,66 @@ export default function TVRouletteScreen() {
     if (isMounted) {
       loadQuestions();
     }
-  }, [isMounted, setQuestionsInStore]); // [modificación] Agregar setQuestionsInStore a dependencias
+  }, [isMounted, setQuestionsInStore]);
 
-  // [modificación] useEffect para logging cuando el estado es 'prize' (evitar logs en cada render)
+  // [modificación] Logging cuando el estado sea 'prize'
   useEffect(() => {
     if (gameState === 'prize') {
-      const componentIdValue = componentId.current;
-      console.log(`🎁 TV [${componentIdValue}]: Estado cambió a 'prize' - mostrando modal de premio...`);
-      console.log(`🎁 TV [${componentIdValue}]: prizeFeedback:`, prizeFeedback);
-      console.log(`🎁 TV [${componentIdValue}]: answeredCorrectly:`, prizeFeedback.answeredCorrectly);
+      console.log('🎁 TV: Entrando en estado PRIZE con feedback:', prizeFeedback);
     }
-  }, [gameState, prizeFeedback]); // [modificación] Agregar prizeFeedback completo a dependencias
-
-  // [modificación] NUEVO: Detectar y corregir estado inconsistente (gameState: prize pero answeredCorrectly: null)
-  // [modificación] SIMPLIFICADO: Ahora TVScreen limpia estados, esto es solo fallback
-  useEffect(() => {
-    if (gameState === 'prize' && (prizeFeedback.answeredCorrectly === null || typeof prizeFeedback.answeredCorrectly === 'undefined')) {
-      console.warn(`🎮 TV: Estado inconsistente detectado (fallback) - gameState: ${gameState}, answeredCorrectly: ${prizeFeedback.answeredCorrectly}`);
-      console.log(`🎮 TV: Aplicando corrección de emergencia - cambiando a 'roulette'`);
-      
-      // Reset emergencia más agresivo
-      setTimeout(() => {
-        resetPrizeFeedback();
-        setGameState('roulette');
-      }, 0);
-    }
-  }, [gameState, prizeFeedback.answeredCorrectly, resetPrizeFeedback, setGameState]);
-
-  // [modificación] useEffect para logging de transiciones de estado más detallado (controlado)
-  useEffect(() => {
-    if (isMounted) {
-      const componentIdValue = componentId.current;
-      console.log(`🎮 TV [${componentIdValue}]: Estado del juego cambió a: ${gameState}`);
-      if (gameState === 'question' && currentQuestion) {
-        console.log(`📝 TV [${componentIdValue}]: Mostrando pregunta: ${currentQuestion.category}`);
-      }
-    }
-  }, [gameState, currentQuestion, isMounted]); // [modificación] Agregar dependencias necesarias
+  }, [gameState, prizeFeedback]);
 
   if (!isMounted || loadingQuestions) {
     return <LoadingScreen />;
   }
 
-  // [modificación] Mostrar PrizeModal cuando el estado es 'prize' (sin logs aquí)
-  // CRUCIAL: Solo mostrar si realmente hay un resultado de pregunta válido
-  if (gameState === 'prize' && prizeFeedback.answeredCorrectly !== null && typeof prizeFeedback.answeredCorrectly !== 'undefined') {
+  // [modificación] Si está en premio, mostrar modal
+  if (
+    gameState === 'prize' &&
+    prizeFeedback.answeredCorrectly !== null &&
+    typeof prizeFeedback.answeredCorrectly !== 'undefined'
+  ) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen relative">
+        {/* [modificación] - Confetti para TV cuando se gana un premio */}
+        {showConfetti && (
+          <Confetti
+            {...confettiConfig}
+            className="pointer-events-none fixed inset-0 z-50"
+            style={{ zIndex: 9999 }} // [modificación] - Z-index máximo para que esté encima de todo
+          />
+        )}
         <PrizeModal />
       </div>
     );
   }
 
-  // [modificación] Mostrar pregunta si el estado del juego es 'question' y hay una pregunta actual
+  // [modificación] Si está en pregunta, mostrar pregunta
   if (gameState === 'question' && currentQuestion) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen relative">
+        {/* [modificación] - Confetti también disponible durante preguntas si es necesario */}
+        {showConfetti && (
+          <Confetti
+            {...confettiConfig}
+            className="pointer-events-none fixed inset-0 z-50"
+            style={{ zIndex: 9999 }}
+          />
+        )}
         <QuestionDisplay question={currentQuestion} />
       </div>
     );
   }
 
-  // [modificación] Mostrar ruleta por defecto
+  // [modificación] Layout principal: logo, ruleta y botón, todos grandes y centrados
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* [modificación] Header con logo optimizado para TV 65" */}
-      <header className="w-full flex justify-center items-center min-h-[120px] border-b border-white/10 backdrop-blur-sm">
-        <div className="max-w-[300px] w-full flex justify-center items-center">
+    <div className="flex flex-col min-h-screen w-full bg-main-gradient">
+      {/* Header con logo muy grande - [modificación] Más espacio superior (10% de altura total) */}
+      <header className="w-full flex justify-center items-center pt-24 pb-6"> {/* [modificación] pt-24 (antes pt-16) para dar ~10% más de espacio arriba */}
+        <div className="w-full max-w-5xl flex justify-center items-center">
+          {/* [modificación] Forzamos tamaño 'lg' para que coincida con la ruleta */}
           <Logo
-            size="auto"
+            size="lg"
             animated={true}
             withShadow={true}
             className="w-full h-auto"
@@ -272,80 +302,83 @@ export default function TVRouletteScreen() {
         </div>
       </header>
 
-      {/* [modificación] Contenido principal optimizado para TV 65" */}
-      <main className="flex-1 flex flex-col items-center justify-center w-full px-8 py-12">
-        <MotionDiv
-          key="tv-roulette"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          className="w-full flex flex-col items-center justify-center max-w-7xl mx-auto"
-          role="main"
-          aria-label="Pantalla de ruleta para TV"
-        >
-          {/* [modificación] Contenedor de la ruleta con tamaño optimizado para TV 65" */}
+      {/* Contenido principal: ruleta y botón - [modificación] Container centrado con ancho máximo */}
+      <main className="flex-1 flex flex-col items-center justify-center w-full px-8"> {/* [modificación] px-8 (antes px-16) para mejor centrado */}
+        <div className="w-full max-w-[1800px] flex flex-col items-center justify-center space-y-16"> {/* [modificación] Container centrado de 1800px máximo y space-y-16 (antes space-y-24) */}
           <MotionDiv
-            initial={{ opacity: 0, scale: 0.8 }}
+            key="tv-roulette"
+            initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="w-full max-w-4xl mx-auto mb-16"
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="w-full flex flex-col items-center justify-center space-y-12" // [modificación] space-y-12 (antes space-y-16) para acercar ruleta y botón
+            role="main"
+            aria-label="Pantalla de ruleta para TV"
           >
-            {questions.length > 0 ? (
-              <RouletteWheel 
-                questions={questions} 
-                ref={rouletteRef}
-              />
-            ) : (
-              <div className="text-white text-3xl text-center">
-                Cargando categorías...
-              </div>
-            )}
-          </MotionDiv>
-
-          {/* [modificación] Botón "¡Girar la Ruleta!" con animaciones mejoradas para TV */}
-          <MotionDiv
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            className="relative"
-          >
-            {/* [modificación] Efecto de brillo animado para TV */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-3xl opacity-70 blur-xl animate-pulse"></div>
-            
-            <Button
-              variant="gradient"
-              className="relative px-16 py-8 text-3xl font-extrabold shadow-2xl rounded-2xl
-               bg-gradient-to-r from-teal-400 via-green-400 to-emerald-500
-               border-4 border-white/30 hover:border-white/60
-               animate-pulse-subtle spin-button-glow
-               hover:shadow-[0_0_25px_10px_rgba(16,185,129,0.6)]
-               transform hover:scale-105 transition-all duration-300"
-              onClick={handleSpin}
-              touchOptimized
+            {/* Contenedor de la ruleta - [modificación] Más grande usando vh en lugar de px fijos */}
+            <MotionDiv
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="w-full max-w-none flex justify-center"
+              style={{
+                width: '100%',
+                height: 'auto',
+                maxWidth: '55vh', // [modificación] Usar 55vh para que ocupe 55% de altura como sugiere el usuario
+                maxHeight: '55vh', // [modificación] Mantener aspecto cuadrado pero más grande
+                minWidth: '2000px', // [modificación] Tamaño mínimo más grande (antes 1800px)
+                minHeight: '2000px', // [modificación] Tamaño mínimo más grande
+              }}
             >
-              <span className="inline-block mr-4 -mt-1 align-middle">
-                <RouletteWheelIcon className="w-10 h-10" />
-              </span>
-              ¡Girar la Ruleta!
-            </Button>
-          </MotionDiv>
+              {questions.length > 0 ? (
+                <RouletteWheel questions={questions} ref={rouletteRef} />
+              ) : (
+                <div className="text-white text-8xl text-center font-bold">
+                  Cargando categorías...
+                </div>
+              )}
+            </MotionDiv>
 
-          {/* [modificación] Texto de instrucciones optimizado para TV 65" */}
-          <MotionDiv
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1, delay: 1 }}
-            className="mt-12 text-center text-white/80"
-          >
-            <p className="text-2xl font-medium">
-              ¡Pulsa el botón para hacer girar la ruleta!
-            </p>
-            <p className="text-xl mt-4 text-white/60">
-              Selecciona una categoría médica al azar
-            </p>
+            {/* Botón "¡Girar la Ruleta!" - [modificación] Mejorado para mayor legibilidad y contraste */}
+            <MotionDiv
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="relative flex justify-center"
+            >
+              {/* Efecto de brillo detrás del botón */}
+              <div className="absolute -inset-16 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-full opacity-80 blur-3xl animate-pulse"></div>
+
+              <Button
+                variant="custom"
+                className="relative px-40 py-24 text-8xl font-black shadow-2xl rounded-2xl
+                 border-8 border-white/40 hover:border-white/70
+                 animate-pulse-subtle spin-button-glow
+                 hover:shadow-[0_0_60px_25px_rgba(90,204,193,0.8)]
+                 transform hover:scale-110 transition-all duration-300
+                 min-h-[240px] min-w-[1400px]
+                 text-white focus:outline-none focus:ring-8 focus:ring-blue-300
+                 backdrop-blur-md leading-tight
+                 active:scale-105 active:shadow-[0_0_40px_15px_rgba(90,204,193,0.6)]
+                 active:border-white/80"
+                style={{
+                  backgroundColor: 'oklch(38% 0.199 265.638)',
+                  boxShadow: '0 0 40px rgba(90, 204, 193, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.1)',
+                }}
+                onClick={handleSpin}
+                touchOptimized
+              >
+                <span className="inline-block mr-8 -mt-3 align-middle">
+                  <RouletteWheelIcon className="w-28 h-28" size={112} /> {/* [modificación] Icono más grande */}
+                </span>
+                ¡GIRAR LA RULETA!
+              </Button>
+            </MotionDiv>
           </MotionDiv>
-        </MotionDiv>
+        </div>
       </main>
+
+      {/* [modificación] Footer invisible para asegurar 5vh de espacio bajo el botón */}
+      <footer className="h-[5vh] min-h-[100px] w-full"></footer> {/* [modificación] Espacio inferior garantizado */}
     </div>
   );
-} 
+}

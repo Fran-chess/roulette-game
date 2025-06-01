@@ -169,8 +169,8 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
         ctx.clearRect(0, 0, size, size);
 
-        // [modificación] Fuente base más pequeña, para evitar overflow en títulos largos
-        const baseFontSize = Math.max(14, radius * (isMobile ? 0.09 : 0.12));
+        // [modificación] Fuente base optimizada para TV 4K - mucho más grande y mejor escalado
+        const baseFontSize = Math.max(24, radius * (isMobile ? 0.12 : 0.18));
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
 
@@ -210,9 +210,10 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           }
 
           ctx.fill();
-          ctx.strokeStyle = "#ffffff";
-          ctx.lineWidth = 2;
-          ctx.stroke();
+          // [modificación] Borde blanco de segmentos REMOVIDO según solicitud del usuario
+          // ctx.strokeStyle = "#ffffff";
+          // ctx.lineWidth = 3;
+          // ctx.stroke();
 
           // [modificación] Renderizado de texto profesional y adaptativo
           ctx.save();
@@ -222,11 +223,11 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
           const textX = radius * (isMobile ? 0.52 : 0.62);
 
-          // [modificación] Sombra elegante
-          ctx.shadowColor = "rgba(0,0,0,0.33)";
-          ctx.shadowBlur = 6;
-          ctx.shadowOffsetX = 1;
-          ctx.shadowOffsetY = 1;
+          // [modificación] Sombra elegante más pronunciada para TV 4K
+          ctx.shadowColor = "rgba(0,0,0,0.5)";
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetX = 2;
+          ctx.shadowOffsetY = 2;
 
           // [modificación] Capitaliza cada palabra
           const displayText = segment.text
@@ -248,21 +249,21 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           }
 
-          // [modificación] Borde blanco para máxima legibilidad
-          ctx.strokeStyle = "rgba(255,255,255,0.85)";
-          ctx.lineWidth = 2;
-          ctx.strokeText(displayText, textX, 0);
+          // [modificación] Borde blanco del texto REMOVIDO según solicitud del usuario
+          // ctx.strokeStyle = "rgba(255,255,255,0.9)";
+          // ctx.lineWidth = 3;
+          // ctx.strokeText(displayText, textX, 0);
 
           ctx.fillText(displayText, textX, 0);
           ctx.restore();
         });
         ctx.restore();
 
-        // Puntero
+        // Puntero más grande para TV 4K
         ctx.save();
-        const pointerBaseHalfHeight = radius * (isMobile ? 0.08 : 0.09);
+        const pointerBaseHalfHeight = radius * (isMobile ? 0.10 : 0.12);
         const pointerTipX = centerX + radius - radius * 0.02;
-        const pointerBaseX = centerX + radius + radius * 0.14;
+        const pointerBaseX = centerX + radius + radius * 0.16;
         ctx.beginPath();
         ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
         ctx.lineTo(pointerTipX, centerY);
@@ -273,19 +274,19 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         ctx.shadowBlur = 6;
         ctx.fill();
         ctx.strokeStyle = "rgba(255,255,255,0.8)";
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.stroke();
         ctx.restore();
 
-        // Círculo central con gradiente
+        // Círculo central con gradiente más grande para TV 4K
         ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.11)";
-        ctx.shadowBlur = 7;
+        ctx.shadowColor = "rgba(0,0,0,0.15)";
+        ctx.shadowBlur = 10;
         ctx.beginPath();
         ctx.arc(
           centerX,
           centerY,
-          radius * (isMobile ? 0.09 : 0.11), // Más pequeño
+          radius * (isMobile ? 0.12 : 0.14), // [modificación] Más grande para TV 4K
           0,
           2 * Math.PI
         );
@@ -295,22 +296,22 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           0,
           centerX,
           centerY,
-          radius * (isMobile ? 0.09 : 0.11)
+          radius * (isMobile ? 0.12 : 0.14)
         );
         gradientBg.addColorStop(0, "#50e9ff"); // celeste intenso
         gradientBg.addColorStop(0.6, "#2196f3"); // azul claro
         gradientBg.addColorStop(1, "#153e75"); // azul profundo
         ctx.fillStyle = gradientBg;
         ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.54)"; // Borde más notorio
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,0.7)"; // [modificación] Borde más visible
+        ctx.lineWidth = 3; // [modificación] Borde más grueso para TV 4K
         ctx.stroke();
         ctx.restore();
       },
       [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady]
     );
 
-    // --- [modificación] Ajuste de tamaño del canvas totalmente automático ---
+    // --- [modificación] Ajuste de tamaño del canvas optimizado para TV 4K ---
     const handleResize = useCallback(() => {
       const container = containerRef.current;
       const canvas = canvasRef.current;
@@ -322,13 +323,14 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       // Siempre el tamaño máximo cuadrado posible dentro del contenedor
       let size = Math.min(containerWidth, containerHeight);
 
-      // Ajuste mínimos según dispositivo
+      // [modificación] Ajuste mínimos optimizados para TV 65" 4K (3840x2160) - tamaños más grandes
       if (isMobile) {
-        size = Math.max(220, Math.min(size, 400));
+        size = Math.max(300, Math.min(size, 500));
       } else if (isTablet) {
-        size = Math.max(320, Math.min(size, 520));
+        size = Math.max(450, Math.min(size, 700));
       } else {
-        size = Math.max(380, Math.min(size, 640));
+        // [modificación] Para desktop/TV: tamaños mucho más grandes para 4K, especialmente para 55vh
+        size = Math.max(800, Math.min(size, 2200)); // [modificación] Aumentado de 1000 a 2200 para soportar 55vh
       }
 
       // Asigna el size cuadrado

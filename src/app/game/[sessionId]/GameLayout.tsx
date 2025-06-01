@@ -13,6 +13,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
   // Estado para detectar la orientación y tamaño
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
+  const [isTV65, setIsTV65] = useState(false); // [modificación] - Detectar TV65 para confetti optimizado
   const showConfetti = useGameStore((state) => state.showConfetti);
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -20,9 +21,19 @@ export default function GameLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // [modificación] - Detectar TV65 igual que en QuestionDisplay
+      const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
+      
       setIsMobile(width < 768);
       setIsTablet(width >= 768 && width <= 1280);
-      setWindowSize({ width, height: window.innerHeight });
+      setIsTV65(isTV65Resolution);
+      setWindowSize({ width, height });
+      
+      if (isTV65Resolution) {
+        console.log(`🎉 GameLayout: Confetti optimizado para TV65 activado - ${width}x${height}`);
+      }
     };
 
     handleResize();
@@ -30,16 +41,42 @@ export default function GameLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // [modificación] - Configuración dinámica del confetti según el dispositivo
+  const confettiConfig = {
+    width: windowSize.width,
+    height: windowSize.height,
+    // [modificación] - Muchísimas más partículas para TV65 para efecto espectacular
+    numberOfPieces: isTV65 ? 2000 : isMobile ? 200 : 500,
+    // [modificación] - Gravedad más lenta para TV65 para que caiga más elegante
+    gravity: isTV65 ? 0.1 : 0.2,
+    // [modificación] - Velocidad inicial más alta para TV65
+    initialVelocityY: isTV65 ? 25 : 15,
+    initialVelocityX: isTV65 ? 15 : 10,
+    // [modificación] - Confetti NO se recicla para que haya una explosión inicial espectacular
+    recycle: false,
+    // [modificación] - Tamaño de partículas más grande especialmente para TV65
+    scalar: isTV65 ? 2.2 : isTablet ? 1.5 : isMobile ? 1.2 : 1.3, // Partículas más grandes según dispositivo
+    // [modificación] - Colores vibrantes y festivos
+    colors: [
+      '#ff0040', '#ff8c00', '#ffd700', '#00ff80', '#00bfff', 
+      '#8a2be2', '#ff1493', '#32cd32', '#ff6347', '#1e90ff',
+      '#ffa500', '#9370db', '#00ced1', '#ff69b4', '#00ff00'
+    ],
+    // [modificación] - Más tiempo de vida para partículas en TV65
+    ...(isTV65 && {
+      opacity: 0.9,
+      wind: 0.02,
+    })
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-main-gradient relative">
+      {/* [modificación] - Confetti mejorado con configuración dinámica y z-index alto */}
       {showConfetti && (
         <Confetti
-          width={windowSize.width}
-          height={windowSize.height}
-          recycle={false}
-          numberOfPieces={500}
-          gravity={0.2}
-          className="pointer-events-none fixed inset-0"
+          {...confettiConfig}
+          className="pointer-events-none fixed inset-0 z-50"
+          style={{ zIndex: 9999 }} // [modificación] - Z-index máximo para que esté encima de todo
         />
       )}
       {/* [modificación] Header compacto y con layout similar al de registro para consistencia */}
