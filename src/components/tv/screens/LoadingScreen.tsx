@@ -4,7 +4,7 @@
  */
 export default function LoadingScreen() {
   return (
-    <main className="min-h-screen bg-black flex items-center justify-center">
+    <main className="min-h-screen bg-transparent flex items-center justify-center">
       <section className="text-center" role="status" aria-live="polite">
         {/* [modificación] Icono de TV con semántica mejorada */}
         <div className="text-6xl mb-6" role="img" aria-label="Televisión">

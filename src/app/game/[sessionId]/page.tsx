@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { motion } from "framer-motion";
@@ -39,10 +39,10 @@ export default function GamePage() {
   const gameSession = useGameStore((state) => state.gameSession);
   const currentQuestion = useGameStore((state) => state.currentQuestion);
 
-  // Redirección global
-  const handleRedirect = (path: string) => {
+  // [modificación] Redirección global envuelta en useCallback para estabilizar referencia
+  const handleRedirect = useCallback((path: string) => {
     router.push(path);
-  };
+  }, [router]);
 
   // Efecto de carga de sesión y preguntas
   useEffect(() => {
@@ -133,7 +133,6 @@ export default function GamePage() {
     };
 
     loadSessionData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     sessionId,
     setGameSession,
@@ -141,19 +140,31 @@ export default function GamePage() {
     setGameState,
     gameState,
     questions,
+    handleRedirect,
   ]);
 
   // Al girar la ruleta, mostrar la pregunta correspondiente
   useEffect(() => {
+    // [modificación] Log para rastrear el estado del juego y el índice del resultado del giro
+    console.log("[GamePage] useEffect for lastSpinResultIndex triggered. lastSpinResultIndex:", lastSpinResultIndex, "questions.length:", questions.length);
     if (lastSpinResultIndex !== null && questions.length > 0) {
       const indexToUse = lastSpinResultIndex;
+      // [modificación] Log para rastrear el índice a usar
+      console.log("[GamePage] Valid conditions met. indexToUse:", indexToUse);
       if (indexToUse >= 0 && indexToUse < questions.length) {
-        setCurrentQuestion(questions[indexToUse]);
+        const questionToSet = questions[indexToUse];
+        // [modificación] Log para rastrear la pregunta a establecer
+        console.log("[GamePage] Setting current question:", questionToSet);
+        setCurrentQuestion(questionToSet);
+        // [modificación] Log para rastrear el cambio de estado del juego
+        console.log("[GamePage] Setting gameState to 'question'");
         setGameState("question");
+      } else {
+        // [modificación] Advertencia si el índice está fuera de los límites
+        console.warn("[GamePage] lastSpinResultIndex is out of bounds:", indexToUse, "questions.length:", questions.length);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastSpinResultIndex, questions]);
+  }, [lastSpinResultIndex, questions, setCurrentQuestion, setGameState]); // [modificación] Agregado setCurrentQuestion y setGameState a las dependencias
 
   // Referencia al componente de la ruleta
   const rouletteRef = useRef<{ spin: () => void }>(null);
@@ -233,11 +244,14 @@ export default function GamePage() {
   }
 
   // Vista principal: ruleta/pregunta según el estado
+  // [modificación] Log para rastrear el estado del juego y la pregunta actual antes de renderizar
+  console.log("[GamePage] Rendering. gameState:", gameState, "currentQuestion:", currentQuestion, "lastSpinResultIndex:", lastSpinResultIndex);
   return (
     <GameLayout>
       <div className="w-full flex flex-col items-center max-w-[520px] mx-auto">
-        {/* [modificación] Muestra la ruleta solo si el estado es "roulette" */}
-        {gameState === "roulette" && (
+        {/* [modificación] Muestra la ruleta cuando es estado roulette O cuando está en transición inicial pero ya tenemos preguntas */}
+        {(gameState === "roulette" || 
+          ((gameState === "screensaver" || gameState === "register") && questions && questions.length > 0)) && (
           <>
             <div className="w-full flex justify-center mb-2.5">
               <RouletteWheel questions={questions} ref={rouletteRef} />

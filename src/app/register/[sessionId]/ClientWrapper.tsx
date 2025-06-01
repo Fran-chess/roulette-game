@@ -20,6 +20,8 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   const [error, setError] = useState<string | null>(null);
   const [isRedirecting] = useState(false);
   const [redirectTarget, setRedirectTarget] = useState<string>('');
+  const [playerRegisteredSuccess, setPlayerRegisteredSuccess] = useState(false);
+  const [registeredPlayerName, setRegisteredPlayerName] = useState<string>('');
 
   const router = useRouter();
 
@@ -89,8 +91,20 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
     }
   }, [sessionId, router, setGameSession, startNavigation, handleRedirect]);
 
-  const handlePlayerRegistered = () => {
-    handleRedirect(`/game/${sessionId}`, 'Preparando la ruleta...');
+  const handlePlayerRegistered = (playerName: string = 'Participante') => {
+    console.log('Tablet: Participante registrado exitosamente, mostrando mensaje de confirmación sin navegación');
+    setRegisteredPlayerName(playerName);
+    setPlayerRegisteredSuccess(true);
+    
+    setTimeout(() => {
+      setPlayerRegisteredSuccess(false);
+      setRegisteredPlayerName('');
+    }, 10000);
+  };
+
+  const handlePrepareNextRegistration = () => {
+    setPlayerRegisteredSuccess(false);
+    setRegisteredPlayerName('');
   };
 
   if (isRedirecting) {
@@ -184,7 +198,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
         </div>
       </header>
       
-      {/* Main Content - Formulario */}
+      {/* Main Content - Formulario o mensaje de éxito */}
       <main className="flex-1 flex items-center justify-center w-full px-4 py-6 overflow-y-auto">
         <motion.div 
           className="w-full max-w-md sm:max-w-lg z-10"
@@ -192,10 +206,54 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <RegistrationForm 
-            sessionId={sessionId} 
-            onPlayerRegistered={handlePlayerRegistered}
-          />
+          {playerRegisteredSuccess ? (
+            <motion.div
+              key="success-message"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl bg-green-900/20 border border-green-400/30 shadow-2xl"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 10 }}
+                className="text-6xl mb-4"
+              >
+                ✅
+              </motion.div>
+              
+              <h2 className="text-2xl sm:text-3xl font-marineBold text-green-300 text-center mb-4">
+                ¡Participante Registrado!
+              </h2>
+              
+              <p className="text-xl text-white text-center mb-2">
+                <strong>{registeredPlayerName}</strong>
+              </p>
+              
+              <p className="text-base text-green-100 text-center mb-6">
+                ha sido registrado exitosamente. La TV mostrará la ruleta automáticamente.
+              </p>
+              
+              <div className="flex flex-col gap-3 w-full">
+                <button
+                  onClick={handlePrepareNextRegistration}
+                  className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg border border-blue-400/50 transition-all duration-300"
+                >
+                  Registrar Otro Participante
+                </button>
+                
+                <p className="text-sm text-center text-white/70">
+                  Este mensaje se ocultará automáticamente en 10 segundos
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <RegistrationForm 
+              sessionId={sessionId} 
+              onPlayerRegistered={handlePlayerRegistered}
+            />
+          )}
         </motion.div>
       </main>
     </div>

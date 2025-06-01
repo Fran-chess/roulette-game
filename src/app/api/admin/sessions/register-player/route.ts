@@ -153,6 +153,28 @@ export async function POST(request: Request) {
 
     console.log(`Participante ${nombre} registrado exitosamente en la sesión ${sessionId} con estado: player_registered`);
 
+    // [modificación] Verificación adicional para asegurar que el cambio se propagó
+    console.log('🔍 REGISTER: Verificando que el cambio se aplicó correctamente en la base de datos...');
+    const { data: verificationData, error: verificationError } = await supabaseAdmin
+      .from('plays')
+      .select('*')
+      .eq('session_id', sessionId)
+      .single();
+
+    if (verificationError) {
+      console.warn('⚠️ REGISTER: Error en verificación post-registro:', verificationError);
+    } else {
+      console.log('✅ REGISTER: Verificación exitosa - Estado actual en DB:', verificationData.status);
+      console.log('✅ REGISTER: Participante en DB:', verificationData.nombre, '(' + verificationData.email + ')');
+      console.log('✅ REGISTER: Admin ID:', verificationData.admin_id);
+      console.log('✅ REGISTER: Timestamp updated_at:', verificationData.updated_at);
+      
+      // [modificación] Notificación específica para la TV
+      if (verificationData.status === 'player_registered') {
+        console.log('🎯 REGISTER: ¡Participante registrado exitosamente! La TV debería cambiar a ruleta automáticamente via realtime');
+      }
+    }
+
     return NextResponse.json({
       message: 'Participante registrado exitosamente',
       session: result,

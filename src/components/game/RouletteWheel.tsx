@@ -107,8 +107,11 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     });
 
     const wheelSegments = useMemo(() => {
-      if (!questions || questions.length === 0) return [];
-      return mapQuestionsToSegments(questions);
+      if (!questions || questions.length === 0) {
+        return [];
+      }
+      const segments = mapQuestionsToSegments(questions);
+      return segments;
     }, [questions]);
     const numSegments = wheelSegments.length;
     const anglePerSegment = numSegments > 0 ? (2 * Math.PI) / numSegments : 0;
@@ -152,52 +155,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       return () => {};
     }, [canUseDOM]);
 
-    // --- [modificación] Ajuste de tamaño del canvas totalmente automático ---
-    const handleResize = useCallback(() => {
-      const container = containerRef.current;
-      const canvas = canvasRef.current;
-      if (!container || !canvas) return;
-
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-
-      // Siempre el tamaño máximo cuadrado posible dentro del contenedor
-      let size = Math.min(containerWidth, containerHeight);
-
-      // Ajuste mínimos según dispositivo
-      if (isMobile) {
-        size = Math.max(220, Math.min(size, 400));
-      } else if (isTablet) {
-        size = Math.max(320, Math.min(size, 520));
-      } else {
-        size = Math.max(380, Math.min(size, 640));
-      }
-
-      // Asigna el size cuadrado
-      if (canvas.width !== size || canvas.height !== size) {
-        canvas.width = size;
-        canvas.height = size;
-      }
-      // Dibuja sólo si no está girando
-      if (!isSpinning && numSegments > 0) {
-        drawRoulette(currentAngle, size);
-      }
-    }, [currentAngle, numSegments, isSpinning, isMobile, isTablet]);
-
-    useEffect(() => {
-      if (!isDOMReady || !canUseDOM) return;
-      
-      handleResize();
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
-    }, [
-      isDOMReady,
-      canUseDOM,
-      handleResize,
-      isLandscape,
-    ]);
-
-    // --- [modificación] Dibujo recibe size explícito, nunca usa viewport directamente ---
+    // --- [modificación] Dibujo recibe size explícito, nunca usa viewport directamente (movido antes de handleResize) ---
     const drawRoulette = useCallback(
       (rotationAngle = 0, canvasSize?: number) => {
         const canvas = canvasRef.current;
@@ -349,8 +307,53 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         ctx.stroke();
         ctx.restore();
       },
-      [wheelSegments, anglePerSegment, highlightedSegment, isTablet, isMobile, isDOMReady]
+      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady]
     );
+
+    // --- [modificación] Ajuste de tamaño del canvas totalmente automático ---
+    const handleResize = useCallback(() => {
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+      if (!container || !canvas) return;
+
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+
+      // Siempre el tamaño máximo cuadrado posible dentro del contenedor
+      let size = Math.min(containerWidth, containerHeight);
+
+      // Ajuste mínimos según dispositivo
+      if (isMobile) {
+        size = Math.max(220, Math.min(size, 400));
+      } else if (isTablet) {
+        size = Math.max(320, Math.min(size, 520));
+      } else {
+        size = Math.max(380, Math.min(size, 640));
+      }
+
+      // Asigna el size cuadrado
+      if (canvas.width !== size || canvas.height !== size) {
+        canvas.width = size;
+        canvas.height = size;
+      }
+      // Dibuja sólo si no está girando
+      if (!isSpinning && numSegments > 0) {
+        drawRoulette(currentAngle, size);
+      }
+    }, [currentAngle, numSegments, isSpinning, isMobile, isTablet, drawRoulette]);
+
+    useEffect(() => {
+      if (!isDOMReady || !canUseDOM) return;
+      
+      handleResize();
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }, [
+      isDOMReady,
+      canUseDOM,
+      handleResize,
+      isLandscape,
+    ]);
 
     // --- Spin ---
     const spin = useCallback(() => {
@@ -392,6 +395,8 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           }
           
           setTimeout(() => {
+            // [modificación] Log para verificar el índice del resultado del giro
+            console.log("[RouletteWheel] spinAnimation finished. Setting lastSpinResultIndex:", winningIndex);
             setLastSpinResultIndex(winningIndex);
           }, 800);
           setIsSpinning(false);

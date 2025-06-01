@@ -10,7 +10,7 @@ import { PlayCircleIcon } from "@heroicons/react/24/solid";
 // [modificación] Añadir props para sessionId y onPlayerRegistered
 interface RegistrationFormProps {
   sessionId?: string; // Opcional para mantener compatibilidad con el uso existente
-  onPlayerRegistered?: () => void;
+  onPlayerRegistered?: (playerName?: string) => void; // [modificación] Añadir parámetro opcional para el nombre
 }
 
 // [modificación] Actualizar la firma del componente para aceptar props
@@ -115,7 +115,7 @@ export default function RegistrationForm({
 
             // [modificación] Si hay un callback de éxito de registro, llamarlo
             if (onPlayerRegistered) {
-              onPlayerRegistered();
+              onPlayerRegistered(sessionData.data.nombre);
               return;
             }
           }
@@ -153,12 +153,22 @@ export default function RegistrationForm({
 
         console.log("Registro exitoso:", data);
 
+        // [modificación] Logs adicionales para debugging del flujo tablet → TV
+        console.log('📱 TABLET: Participante registrado exitosamente');
+        console.log('📱 TABLET: Datos de respuesta:', {
+          session: data.session?.session_id?.substring(0, 8) + '...',
+          status: data.session?.status,
+          participante: data.session?.nombre,
+          email: data.session?.email
+        });
+        console.log('📱 TABLET: La TV debería recibir esta actualización via realtime y cambiar a ruleta');
+
         // [modificación] Añadir pequeño retraso para asegurar que los datos se procesan
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Si hay un callback de éxito de registro, llamarlo
         if (onPlayerRegistered) {
-          onPlayerRegistered();
+          onPlayerRegistered(formData.nombre.trim());
         } else {
           // Si no hay callback específico, cambiar al estado de ruleta
           setGameState("roulette");

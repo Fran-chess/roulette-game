@@ -12,7 +12,7 @@ import { useSessionStore } from './sessionStore';
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
 export const useGameStore = create<GameStore>((set, get) => ({
   // Estados principales del juego
-  gameState: 'screensaver',
+  gameState: 'roulette',
   participants: [], // Lista de participantes (podría no ser necesaria si solo gestionas uno a la vez)
   currentParticipant: null,
   currentQuestion: null,
@@ -56,7 +56,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         gameSession: null,
         currentParticipant: null,
-        gameState: 'screensaver',
+        // [modificación] No establecer gameState automáticamente - dejar que los componentes manejen el estado
         currentQuestion: null,
         lastSpinResultIndex: null,
       });
@@ -162,7 +162,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // [modificación] Actualizar clearCurrentGame para resetear completamente el juego
   resetCurrentGame: () => set({
-    gameState: 'screensaver',
+    gameState: 'roulette',
     currentParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
@@ -179,7 +179,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Función de reseteo completo (incluido para compatibilidad)
   resetAllData: () => set({
-    gameState: 'screensaver',
+    gameState: 'roulette',
     participants: [],
     currentParticipant: null,
     currentQuestion: null,

@@ -75,7 +75,7 @@ function ImageCarousel({ currentIndex }: { currentIndex: number }) {
   const currentImage = CAROUSEL_IMAGES[currentIndex]; // [modificación] Obtener imagen actual para acceder a sus propiedades
 
   return (
-    <section className="absolute inset-0 flex items-center justify-center" aria-label="Carrusel publicitario">
+    <section className="absolute inset-0 flex items-center justify-center z-20" aria-label="Carrusel publicitario">
       <AnimatePresence mode="wait">
         <MotionDiv
           key={currentIndex}
@@ -100,8 +100,8 @@ function ImageCarousel({ currentIndex }: { currentIndex: number }) {
           }}
           className="relative w-full h-full flex items-center justify-center"
         >
-          {/* [modificación] Card ampliada con márgenes verticales */}
-          <article className="relative w-11/12 max-w-6xl h-5/6 bg-white rounded-3xl shadow-2xl overflow-hidden my-16">
+          {/* [modificación] Card más visible con márgenes reducidos y z-index alto */}
+          <article className="relative w-11/12 max-w-6xl h-4/5 bg-white rounded-3xl shadow-2xl overflow-hidden z-30">
             {/* [modificación] Imagen optimizada dentro de la card ampliada */}
             <div className="w-full h-full flex items-center justify-center p-8">
               <Image
@@ -171,6 +171,13 @@ export default function WaitingScreen() {
   const { currentImageIndex, totalImages } = useCarousel();
   const isMounted = useIsMounted();
 
+  // [modificación] Log para debugging cuando se muestra la pantalla de espera
+  useEffect(() => {
+    if (isMounted) {
+      console.log('📺 WaitingScreen: Pantalla de espera montada - carrusel publicitario activo');
+    }
+  }, [isMounted]);
+
   if (!isMounted) {
     return null; // [modificación] Retornar null en lugar de LoadingScreen para evitar dependencia circular
   }
@@ -181,7 +188,7 @@ export default function WaitingScreen() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="relative min-h-screen w-full bg-black overflow-hidden"
+      className="relative min-h-screen w-full bg-transparent overflow-hidden"
       role="main"
       aria-label="Pantalla de espera"
     >

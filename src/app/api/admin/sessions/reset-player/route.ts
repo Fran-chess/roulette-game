@@ -11,6 +11,7 @@ export async function POST(request: Request) {
   try {
     // Verificar que supabaseAdmin esté disponible
     if (!supabaseAdmin) {
+      console.error('reset-player: supabaseAdmin no está disponible');
       return NextResponse.json(
         { message: 'Error en la conexión con la base de datos' },
         { status: 500 }
@@ -19,76 +20,91 @@ export async function POST(request: Request) {
     
     const { sessionId, adminId } = await request.json();
     
+    console.log(`reset-player: Iniciando reset para sessionId: ${sessionId}, adminId: ${adminId}`);
+    
     // Validar campos obligatorios
     if (!sessionId) {
+      console.error('reset-player: sessionId no proporcionado');
       return NextResponse.json(
         { message: 'ID de sesión es obligatorio' },
         { status: 400 }
       );
     }
 
-    console.log(`Reseteando datos de jugador para sesión: ${sessionId}`);
+    console.log(`reset-player: Reseteando datos de jugador para sesión: ${sessionId}`);
     
-    // [modificación] Buscar TODOS los registros de la sesión en lugar de uno solo
-    const { data: allSessionData, error: sessionFetchError } = await supabaseAdmin
+    // [modificación] Buscar la sesión existente para obtener información
+    const { data: existingSession, error: sessionFetchError } = await supabaseAdmin
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
-      .order('created_at', { ascending: false });
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
       
     if (sessionFetchError) {
-      console.error('Error al buscar la sesión:', sessionFetchError);
+      console.error('reset-player: Error al buscar la sesión:', sessionFetchError);
       return NextResponse.json(
         { message: 'Error al verificar la sesión', error: sessionFetchError.message },
         { status: 500 }
       );
     }
     
-    if (!allSessionData || allSessionData.length === 0) {
+    if (!existingSession) {
+      console.error(`reset-player: Sesión ${sessionId} no encontrada`);
       return NextResponse.json(
         { message: 'Sesión no encontrada. Verifica el ID de la sesión.' },
         { status: 404 }
       );
     }
     
-    // [modificación] Obtener el primer registro (más reciente) para información y hacer cast de tipo seguro
-    const firstSessionRaw = allSessionData[0];
-    const firstSession = firstSessionRaw as unknown as PlaySession;
+    console.log(`reset-player: Sesión encontrada - estado actual: ${existingSession.status}, participante: ${existingSession.nombre}`);
     
-    // [modificación] Verificar si hay un jugador registrado (solo para información) con validación de tipo
-    if (firstSession && typeof firstSession === 'object' && 'status' in firstSession) {
-      if (isPlayerRegistered(firstSession)) {
-        console.log(`Reseteando jugador: ${firstSession.nombre} (${firstSession.email})`);
+    // [modificación] Cast seguro para TypeScript
+    const session = existingSession as unknown as PlaySession;
+    
+    // [modificación] Log de información del jugador actual (si existe)
+    if (session && typeof session === 'object' && 'status' in session) {
+      if (isPlayerRegistered(session)) {
+        console.log(`reset-player: Reseteando jugador: ${session.nombre} (${session.email})`);
       } else {
-        console.log(`La sesión no tenía un jugador registrado (estado: ${firstSession.status})`);
+        console.log(`reset-player: La sesión no tenía un jugador registrado (estado: ${session.status})`);
       }
-    } else {
-      console.log('La sesión no tiene un formato válido');
     }
     
-    // [modificación] Eliminar TODOS los registros existentes de la sesión (sin importar cuántos sean)
-    if (allSessionData.length > 0) {
-      console.log(`Eliminando ${allSessionData.length} registros existentes para la sesión ${sessionId}`);
-      
-      const { error: deleteError } = await supabaseAdmin
-        .from('plays')
-        .delete()
-        .eq('session_id', sessionId);
-      
-      if (deleteError) {
-        console.error('Error al eliminar registros existentes:', deleteError);
-        return NextResponse.json(
-          { message: 'Error al limpiar registros de la sesión', error: deleteError.message },
-          { status: 500 }
-        );
+    // [modificación] ESTRATEGIA NUEVA: Solo UPDATE en lugar de DELETE + INSERT
+    // Esto evita el evento DELETE que confunde a la TV
+    console.log(`reset-player: Reseteando sesión ${sessionId} con UPDATE (sin DELETE)`);
+    
+    // [modificación] Función para validar y normalizar adminId
+    const normalizeAdminId = (inputAdminId: string | null | undefined): string => {
+      // Si no hay adminId, usar el de la sesión existente
+      if (!inputAdminId) {
+        return session.admin_id || 'system';
       }
       
-      console.log(`Eliminados todos los registros de la sesión ${sessionId}`);
-    }
+      // Validar si es un UUID válido (formato básico)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      
+      if (uuidRegex.test(inputAdminId)) {
+        return inputAdminId; // Es un UUID válido
+      }
+      
+      // Si no es UUID válido, intentar usar el admin_id original de la sesión
+      if (session.admin_id && uuidRegex.test(session.admin_id)) {
+        console.log(`reset-player: adminId "${inputAdminId}" no es UUID válido, usando admin_id original: ${session.admin_id}`);
+        return session.admin_id;
+      }
+      
+      // Como último recurso, usar 'system' 
+      console.log(`reset-player: adminId "${inputAdminId}" no es UUID válido y no hay admin_id válido en sesión, usando 'system'`);
+      return 'system';
+    };
     
-    // [modificación] Crear un nuevo registro limpio con estado pending_player_registration
-    const newSessionData = {
-      session_id: sessionId,
+    const finalAdminId = normalizeAdminId(adminId);
+    console.log(`reset-player: AdminId normalizado de "${adminId}" a "${finalAdminId}"`);
+    
+    const resetData = {
       nombre: 'Pendiente',
       apellido: null,
       email: 'pendiente@registro.com',
@@ -100,46 +116,54 @@ export async function POST(request: Request) {
       premio_ganado: null,
       detalles_juego: null,
       status: 'pending_player_registration',
-      admin_id: adminId || firstSession.admin_id,
-      created_at: new Date().toISOString(),
+      // [modificación] Usar adminId normalizado
+      admin_id: finalAdminId,
       updated_at: new Date().toISOString(),
-      admin_updated_at: new Date().toISOString()
+      // [modificación] NO modificar created_at ni admin_updated_at para preservar historial
     };
     
-    // [modificación] Insertar el nuevo registro limpio
-    const { data: newSession, error: insertError } = await supabaseAdmin
+    console.log(`reset-player: Datos para reset (adminId normalizado):`, resetData);
+    
+    // [modificación] Hacer UPDATE en lugar de DELETE + INSERT
+    const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('plays')
-      .insert(newSessionData)
+      .update(resetData)
+      .eq('session_id', sessionId)
       .select()
       .single();
       
-    if (insertError) {
-      console.error('Error al crear nuevo registro de sesión:', insertError);
+    if (updateError) {
+      console.error('reset-player: Error al resetear la sesión:', updateError);
+      console.error('reset-player: Error details:', JSON.stringify(updateError, null, 2));
       return NextResponse.json(
-        { message: 'Error al crear nuevo registro de sesión', error: insertError.message },
+        { message: 'Error al resetear la sesión', error: updateError.message, details: updateError },
         { status: 500 }
       );
     }
     
-    // Si no hay sesión creada (raro, pero posible)
-    if (!newSession) {
+    // Verificar que la actualización fue exitosa
+    if (!updatedSession) {
+      console.error('reset-player: No se recibieron datos después del update');
       return NextResponse.json(
-        { message: 'No se pudo crear el nuevo registro de sesión.' },
+        { message: 'No se pudo resetear la sesión.' },
         { status: 500 }
       );
     }
     
-    console.log(`Sesión ${sessionId} reseteada exitosamente: nuevo estado pending_player_registration`);
+    console.log(`reset-player: Sesión ${sessionId} reseteada exitosamente: estado cambiado a pending_player_registration`);
+    console.log(`reset-player: Sesión actualizada:`, updatedSession);
     
     return NextResponse.json({
       message: 'Sesión reseteada exitosamente para nuevo participante',
-      session: newSession,
-      recordsRemoved: allSessionData.length
+      session: updatedSession,
+      resetType: 'update_only', // [modificación] Indicar que fue solo UPDATE
+      adminIdUsed: finalAdminId // [modificación] Indicar qué adminId se usó finalmente
     });
   } catch (err: Error | unknown) {
-    console.error('Error al resetear los datos del jugador:', err);
+    console.error('reset-player: Error al resetear los datos del jugador:', err);
+    console.error('reset-player: Stack trace:', err instanceof Error ? err.stack : 'No stack available');
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
+      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido', details: err },
       { status: 500 }
     );
   }

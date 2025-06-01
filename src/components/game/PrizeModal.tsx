@@ -1,13 +1,19 @@
 "use client";
 import { useGameStore } from "@/store/gameStore";
+import { useSessionStore } from "@/store/sessionStore";
 import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
+import { useRef, useEffect } from "react";
 
 export default function PrizeModal() {
   const router = useRouter();
+  
+  // [modificación] ID único para tracking de logs
+  const componentId = useRef(`PrizeModal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
+  
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
   const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
@@ -18,9 +24,32 @@ export default function PrizeModal() {
   const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
   const setShowConfetti = useGameStore((state) => state.setShowConfetti);
   const gameSession = useGameStore((state) => state.gameSession);
+  const gameState = useGameStore((state) => state.gameState);
+
+  const { setCurrentSession } = useSessionStore();
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
+    
+  // [modificación] useEffect para tracking de montaje/desmontaje - más eficiente
+  useEffect(() => {
+    // [modificación] Copiar la referencia para evitar warning de cleanup
+    const componentIdValue = componentId.current;
+    console.log(`🎁 PrizeModal [${componentIdValue}]: Componente montado`);
+    console.log(`🎁 PrizeModal [${componentIdValue}]: Estado inicial - gameState: ${gameState}, answeredCorrectly: ${answeredCorrectly}`);
+    
+    return () => {
+      // [modificación] Usar variable copiada en cleanup
+      console.log(`🎁 PrizeModal [${componentIdValue}]: Componente DESMONTADO`);
+    };
+  }, [answeredCorrectly, gameState]); // [modificación] Agregar dependencias faltantes
+
+  // [modificación] Logging adicional para debug de cambios de estado
+  useEffect(() => {
+    if (gameState === 'prize') {
+      console.log(`🎁 PrizeModal [${componentId.current}]: Estado 'prize' detectado, answeredCorrectly: ${answeredCorrectly}`);
+    }
+  }, [gameState, answeredCorrectly]);
 
   // Normalización del nombre de la imagen (igual que antes)
   const prizeImage = prizeName
@@ -29,39 +58,70 @@ export default function PrizeModal() {
 
   // [modificación] Función para volver a jugar - mantiene el mismo participante y va a la ruleta
   const handlePlayAgain = async () => {
+    console.log(`🎁 PrizeModal [${componentId.current}]: handlePlayAgain iniciado`);
     console.log("PrizeModal: Preparando para volver a jugar con el mismo participante...");
     
-    // Resetear datos específicos de la ronda anterior pero mantener al participante
-    resetPrizeFeedback();
+    // [modificación] Orden optimizado para minimizar re-renders
+    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando currentQuestion`);
     setCurrentQuestion(null);
+    
+    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando lastSpinResultIndex`);
     setLastSpinResultIndex(null);
+    
+    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti`);
     setShowConfetti(false);
     
-    // Cambiar al estado de ruleta para permitir nueva participación del mismo participante
-    setGameState("roulette");
+    // [modificación] Cambiar al estado de ruleta en setTimeout para evitar conflictos
+    setTimeout(() => {
+      console.log(`🎁 PrizeModal [${componentId.current}]: Estableciendo gameState a 'roulette'`);
+      setGameState("roulette");
+      
+      // [modificación] Resetear prizeFeedback después del cambio de estado
+      console.log(`🎁 PrizeModal [${componentId.current}]: Reseteando prizeFeedback`);
+      resetPrizeFeedback();
+      
+      console.log(`🎁 PrizeModal [${componentId.current}]: handlePlayAgain completado`);
+    }, 50); // [modificación] Pequeño delay para evitar conflictos de estado
     
     console.log("PrizeModal: Volviendo a la ruleta con el mismo participante");
   };
 
-  // [modificación] Función mejorada para volver al inicio - deriva al formulario de registro
+  // [modificación] Función corregida para volver al inicio - preservar gameSession hasta reset exitoso
   const handleGoHome = async () => {
-    console.log("PrizeModal: Preparando para volver al formulario de registro...");
+    console.log(`🎁 PrizeModal [${componentId.current}]: handleGoHome iniciado`);
+    console.log("PrizeModal: Preparando para volver al inicio...");
     
-    // Limpiar completamente el estado del participante actual
-    setCurrentParticipant(null);
-    setCurrentQuestion(null);
-    setLastSpinResultIndex(null);
-    setShowConfetti(false);
-    resetPrizeFeedback();
+    // [modificación] Preservar gameSession ANTES de limpiar para usarlo en el reset
+    const sessionForReset = gameSession;
+    const sessionState = useSessionStore.getState();
     
-    // Obtener el sessionId de la sesión actual
-    const sessionId = gameSession?.session_id || gameSession?.id;
+    console.log(`🎁 PrizeModal [${componentId.current}]: gameSession preservado para reset:`, sessionForReset);
+    console.log(`🎁 PrizeModal [${componentId.current}]: sessionState.currentSession:`, sessionState.currentSession);
     
+    // [modificación] Intentar obtener sessionId y adminId de múltiples fuentes
+    const sessionId = sessionForReset?.session_id || 
+                     sessionForReset?.id || 
+                     sessionState.currentSession?.session_id || 
+                     sessionState.currentSession?.id;
+                     
+    const adminId = sessionForReset?.admin_id || 
+                   sessionState.currentSession?.admin_id || 
+                   sessionState.user?.id;
+    
+    console.log(`🎁 PrizeModal [${componentId.current}]: sessionId encontrado: ${sessionId}`);
+    console.log(`🎁 PrizeModal [${componentId.current}]: adminId encontrado: ${adminId}`);
+    
+    // [modificación] Solo proceder con reset si tenemos sessionId
     if (sessionId) {
       console.log(`PrizeModal: Reseteando sesión en el backend para: ${sessionId}`);
       
       try {
-        // [modificación] Resetear los datos del jugador en el backend antes de navegar
+        // [modificación] Usar adminId más robusto o fallback a 'system_reset'
+        const finalAdminId = adminId || 'system_reset';
+        
+        console.log(`🎁 PrizeModal [${componentId.current}]: Usando adminId para reset: ${finalAdminId}`);
+        console.log(`🎁 PrizeModal [${componentId.current}]: Reseteando sesión para próximo participante...`);
+        
         const resetResponse = await fetch('/api/admin/sessions/reset-player', {
           method: 'POST',
           headers: {
@@ -69,36 +129,110 @@ export default function PrizeModal() {
           },
           body: JSON.stringify({ 
             sessionId,
-            adminId: gameSession?.admin_id || 'session_reset'
+            adminId: finalAdminId
           }),
         });
 
         if (!resetResponse.ok) {
           const errorData = await resetResponse.json();
-          console.warn('Advertencia al resetear sesión:', errorData.message);
-          // Continuamos con la navegación aunque el reset falle
+          console.error('🎁 PrizeModal: Error al resetear sesión:', errorData);
+          console.error('🎁 PrizeModal: Status:', resetResponse.status);
+          console.error('🎁 PrizeModal: Error message:', errorData.message);
+          
+          // [modificación] En caso de error, intentar con diferentes estrategias
+          if (resetResponse.status === 500) {
+            console.log('🎁 PrizeModal: Reintentando reset con sessionId directo...');
+            
+            // [modificación] Estrategia 1: Usar el adminId original de la sesión
+            if (sessionForReset?.admin_id && sessionForReset.admin_id !== finalAdminId) {
+              console.log(`🎁 PrizeModal: Reintentando con adminId original: ${sessionForReset.admin_id}`);
+              
+              const retryResponse = await fetch('/api/admin/sessions/reset-player', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                  sessionId,
+                  adminId: sessionForReset.admin_id
+                }),
+              });
+              
+              if (retryResponse.ok) {
+                console.log('🎁 PrizeModal: Sesión reseteada exitosamente con adminId original');
+              } else {
+                const retryErrorData = await retryResponse.json();
+                console.error('🎁 PrizeModal: Error en retry con adminId original:', retryErrorData);
+                throw new Error(`Error en reset: ${retryErrorData.message}`);
+              }
+            } else {
+              throw new Error(`Error en reset: ${errorData.message}`);
+            }
+          } else {
+            throw new Error(`Error en reset: ${errorData.message}`);
+          }
         } else {
-          console.log('PrizeModal: Sesión reseteada exitosamente en el backend');
+          console.log('🎁 PrizeModal: Sesión reseteada exitosamente - lista para próximo participante');
         }
+        
+        // [modificación] Solo limpiar estados DESPUÉS del reset exitoso
+        console.log(`🎁 PrizeModal [${componentId.current}]: Reset exitoso, limpiando estados locales...`);
+        
       } catch (error) {
-        console.warn('Error al resetear sesión:', error);
-        // Continuamos con la navegación aunque el reset falle
+        console.error('🎁 PrizeModal: Error crítico al resetear sesión:', error);
+        
+        // [modificación] En caso de error crítico, mostrar mensaje al usuario pero NO limpiar estados
+        alert(`Error al resetear la sesión: ${error}. La sesión puede seguir activa. Contacte al administrador.`);
+        return; // [modificación] Salir sin limpiar estados si el reset falló
       }
       
-      console.log(`PrizeModal: Redirigiendo al formulario de registro para sesión: ${sessionId}`);
-      // Limpiar la sesión actual del store (permite nuevo registro)
-      setGameSession(null);
-      // Navegar al formulario de registro de la sesión actual
-      router.push(`/register/${sessionId}`);
     } else {
-      console.log("PrizeModal: No hay sessionId, redirigiendo a página principal");
-      // Si no hay sessionId, ir a la página principal
-      setGameSession(null);
-      router.push('/');
+      console.warn("PrizeModal: No hay sessionId disponible para reset, procediendo con limpieza local únicamente");
     }
+    
+    // [modificación] Limpiar estados locales solo DESPUÉS de reset exitoso o si no hay sessionId
+    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando estados locales...`);
+    
+    setCurrentParticipant(null);
+    setCurrentQuestion(null);
+    setLastSpinResultIndex(null);
+    setShowConfetti(false);
+    resetPrizeFeedback();
+    
+    // [modificación] Verificar si estamos en contexto de TV
+    const isTV = window.location.pathname.includes('/tv');
+    
+    if (isTV) {
+      console.log('PrizeModal: Estamos en TV, limpiando sesiones para volver a WaitingScreen');
+      // [modificación] En TV, limpiar tanto gameStore como sessionStore - TVScreen manejará el estado
+      setGameSession(null);
+      setCurrentSession(null);
+      // [modificación] No establecer gameState a 'screensaver' - dejar que TVScreen maneje el estado
+    } else {
+      console.log(`PrizeModal: Redirigiendo a pantalla de espera de TV`);
+      // [modificación] En tablet/admin, limpiar AMBOS stores y navegar
+      setGameSession(null); // Limpiar gameStore
+      setCurrentSession(null); // Limpiar sessionStore para el TVScreen
+      console.log("PrizeModal: Estados de sesión limpiados completamente");
+      
+      // [modificación] Navegar a la pantalla de espera de TV en lugar del formulario de registro
+      router.push(`/tv`);
+    }
+    
+    console.log(`🎁 PrizeModal [${componentId.current}]: handleGoHome completado exitosamente`);
   };
 
-  if (answeredCorrectly === null) {
+  // [modificación] Verificación más estricta para evitar renders innecesarios
+  if (gameState !== "prize" || answeredCorrectly === null || typeof answeredCorrectly === 'undefined') {
+    // [modificación] Si gameState es 'prize' pero answeredCorrectly es null, hay estado inconsistente - resetear
+    if (gameState === "prize" && (answeredCorrectly === null || typeof answeredCorrectly === 'undefined')) {
+      console.warn(`🎁 PrizeModal: Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a roulette`);
+      // Reset automático para evitar loops
+      setTimeout(() => {
+        setGameState('roulette');
+        resetPrizeFeedback();
+      }, 0);
+    }
     return null;
   }
 
@@ -145,7 +279,7 @@ export default function PrizeModal() {
 
   return (
     <motion.div
-      key="prizeModalBackdrop"
+      key={`prizeModal-${currentParticipant?.id || 'anonymous'}`}
       variants={backdropVariants}
       initial="hidden"
       animate="visible"
