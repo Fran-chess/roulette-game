@@ -63,8 +63,11 @@ function getContrastYIQ(hexcolor: string): string {
   return yiq >= 135 ? "#1E1E1E" : "#FFFFFF";
 }
 
+// [modificación] Función de easing mejorada para simular desaceleración realista de ruleta
 function customEasingFunction(t: number): number {
-  return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  // Función cúbica con desaceleración más pronunciada al final
+  // Simula mejor el comportamiento físico de una ruleta real
+  return 1 - Math.pow(1 - t, 3.5);
 }
 
 // [modificación] Función para mapear preguntas a segmentos de la ruleta
@@ -363,6 +366,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       setIsSpinning(true);
       setHighlightedSegment(null);
       
+      // [modificación] Reproducir audio sincronizado
       if (audioRef.current && canUseDOM) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});
@@ -371,9 +375,15 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       const randomSpins = Math.floor(Math.random() * 5) + 8;
       const randomStopSegment = Math.floor(Math.random() * numSegments);
       const stopAngleOnWheel = randomStopSegment * anglePerSegment;
+      
+      // [modificación] Duración fija de 2424ms para sincronizar con el audio
+      // El archivo wheel-spin.mp3 dura aproximadamente 2.42 segundos (2424ms)
+      // Esta sincronización asegura que la animación termine exactamente cuando termina el sonido
+      const AUDIO_DURATION_MS = 2424; // Duración exacta del archivo de audio
+      
       animationConfigRef.current = {
         startTime: performance.now(),
-        duration: Math.random() * 2000 + 6000,
+        duration: AUDIO_DURATION_MS, // [modificación] Cambio de Math.random() * 2000 + 6000 a duración fija
         targetAngle: randomSpins * 2 * Math.PI + stopAngleOnWheel,
         animationFrameId: 0,
       };
