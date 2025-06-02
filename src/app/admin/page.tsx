@@ -61,7 +61,7 @@ export default function AdminPage() {
     setIsLoggedIn(true);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggedIn(false);
     setAdminData(null);
     setUser(null);
