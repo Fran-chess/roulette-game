@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { isPlayerRegistered } from '@/utils/session';
 import type { PlaySession } from '@/types';
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
 /**
  * API endpoint para resetear los datos de un jugador en una sesión
@@ -18,7 +19,16 @@ export async function POST(request: Request) {
       );
     }
     
-    const { sessionId, adminId } = await request.json();
+    const { sessionId } = await request.json();
+    const adminId = await getAuthenticatedAdminId();
+
+    if (!adminId) {
+      return NextResponse.json(
+        { message: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+    void adminId;
     
 // //     console.log(`reset-player: Iniciando reset para sessionId: ${sessionId}, adminId: ${adminId}`);
     

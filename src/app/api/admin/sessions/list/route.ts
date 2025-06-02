@@ -1,19 +1,17 @@
 // src/app/api/admin/sessions/list/route.ts
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase'; // Usamos supabaseAdmin para bypass RLS
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
 // Esta función manejará las solicitudes GET a /api/admin/sessions/list
-export async function GET(request: Request) {
-  // Paso 1: Obtener el adminId del administrador que hace la solicitud.
-  // El frontend (AdminPanel.tsx) enviará el adminId como un parámetro de búsqueda en la URL.
-  const { searchParams } = new URL(request.url);
-  const adminId = searchParams.get('adminId');
+export async function GET() {
+  // Obtener el adminId autenticado a través de la cookie
+  const adminId = await getAuthenticatedAdminId();
 
-  // Paso 2: Validar que se proporcionó el adminId.
   if (!adminId) {
     return NextResponse.json(
-      { message: 'Admin ID es requerido en los parámetros de la URL' },
-      { status: 400 }
+      { message: 'No autorizado' },
+      { status: 401 }
     );
   }
 

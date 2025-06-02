@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { setAdminCookie } from '@/lib/adminAuth';
 
 // Interfaz para el tipo de administrador
 interface AdminCredentials {
@@ -54,7 +55,10 @@ export async function POST(request: Request) {
 
     // Devolver datos del administrador (sin incluir la contraseña)
     const admin = data[0] as AdminCredentials;
-    
+
+    // Establecer cookie de autenticación sencilla
+    await setAdminCookie(admin.id);
+
     return NextResponse.json({
       message: 'Inicio de sesión exitoso',
       admin: {
