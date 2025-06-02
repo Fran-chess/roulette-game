@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     
     const { sessionId, adminId } = await request.json();
     
-    console.log(`reset-player: Iniciando reset para sessionId: ${sessionId}, adminId: ${adminId}`);
+// //     console.log(`reset-player: Iniciando reset para sessionId: ${sessionId}, adminId: ${adminId}`);
     
     // Validar campos obligatorios
     if (!sessionId) {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`reset-player: Reseteando datos de jugador para sesión: ${sessionId}`);
+// //     console.log(`reset-player: Reseteando datos de jugador para sesión: ${sessionId}`);
     
     // [modificación] Buscar la sesión existente para obtener información
     const { data: existingSession, error: sessionFetchError } = await supabaseAdmin
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log(`reset-player: Sesión encontrada - estado actual: ${existingSession.status}, participante: ${existingSession.nombre}`);
+// //     console.log(`reset-player: Sesión encontrada - estado actual: ${existingSession.status}, participante: ${existingSession.nombre}`);
     
     // [modificación] Cast seguro para TypeScript
     const session = existingSession as unknown as PlaySession;
@@ -66,15 +66,15 @@ export async function POST(request: Request) {
     // [modificación] Log de información del jugador actual (si existe)
     if (session && typeof session === 'object' && 'status' in session) {
       if (isPlayerRegistered(session)) {
-        console.log(`reset-player: Reseteando jugador: ${session.nombre} (${session.email})`);
+// //         console.log(`reset-player: Reseteando jugador: ${session.nombre} (${session.email})`);
       } else {
-        console.log(`reset-player: La sesión no tenía un jugador registrado (estado: ${session.status})`);
+// //         console.log(`reset-player: La sesión no tenía un jugador registrado (estado: ${session.status})`);
       }
     }
     
     // [modificación] ESTRATEGIA NUEVA: Solo UPDATE en lugar de DELETE + INSERT
     // Esto evita el evento DELETE que confunde a la TV
-    console.log(`reset-player: Reseteando sesión ${sessionId} con UPDATE (sin DELETE)`);
+// //     console.log(`reset-player: Reseteando sesión ${sessionId} con UPDATE (sin DELETE)`);
     
     // [modificación] Función para validar y normalizar adminId
     const normalizeAdminId = (inputAdminId: string | null | undefined): string => {
@@ -92,17 +92,17 @@ export async function POST(request: Request) {
       
       // Si no es UUID válido, intentar usar el admin_id original de la sesión
       if (session.admin_id && uuidRegex.test(session.admin_id)) {
-        console.log(`reset-player: adminId "${inputAdminId}" no es UUID válido, usando admin_id original: ${session.admin_id}`);
+// //         console.log(`reset-player: adminId "${inputAdminId}" no es UUID válido, usando admin_id original: ${session.admin_id}`);
         return session.admin_id;
       }
       
       // Como último recurso, usar 'system' 
-      console.log(`reset-player: adminId "${inputAdminId}" no es UUID válido y no hay admin_id válido en sesión, usando 'system'`);
+// //       console.log(`reset-player: adminId "${inputAdminId}" no es UUID válido y no hay admin_id válido en sesión, usando 'system'`);
       return 'system';
     };
     
     const finalAdminId = normalizeAdminId(adminId);
-    console.log(`reset-player: AdminId normalizado de "${adminId}" a "${finalAdminId}"`);
+// //     console.log(`reset-player: AdminId normalizado de "${adminId}" a "${finalAdminId}"`);
     
     const resetData = {
       nombre: 'Pendiente',
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
       // [modificación] NO modificar created_at ni admin_updated_at para preservar historial
     };
     
-    console.log(`reset-player: Datos para reset (adminId normalizado):`, resetData);
+// //     console.log(`reset-player: Datos para reset (adminId normalizado):`, resetData);
     
     // [modificación] Hacer UPDATE en lugar de DELETE + INSERT
     const { data: updatedSession, error: updateError } = await supabaseAdmin
@@ -150,8 +150,8 @@ export async function POST(request: Request) {
       );
     }
     
-    console.log(`reset-player: Sesión ${sessionId} reseteada exitosamente: estado cambiado a pending_player_registration`);
-    console.log(`reset-player: Sesión actualizada:`, updatedSession);
+// //     console.log(`reset-player: Sesión ${sessionId} reseteada exitosamente: estado cambiado a pending_player_registration`);
+// //     console.log(`reset-player: Sesión actualizada:`, updatedSession);
     
     return NextResponse.json({
       message: 'Sesión reseteada exitosamente para nuevo participante',

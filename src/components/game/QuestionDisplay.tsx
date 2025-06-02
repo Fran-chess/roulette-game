@@ -51,7 +51,7 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
   // [modificación] Debug info para verificar detección - SOLO CUANDO CAMBIA
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('⏱️ Timer configurado:', { isTV65, isTVTouch, timerSize });
+// //       console.log('⏱️ Timer configurado:', { isTV65, isTVTouch, timerSize });
     }
   }, [isTV65, isTVTouch, timerSize]); // [modificación] Solo cuando cambian estos valores
 
@@ -210,12 +210,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       if (process.env.NODE_ENV === 'development') {
         const hasSignificantChange = Math.abs(debugInfo.width - width) > 100 || Math.abs(debugInfo.height - height) > 100;
         if (hasSignificantChange || debugInfo.width === 0) {
-          console.log('🖥️ Dispositivo actualizado:', { 
-            width, 
-            height, 
-            isTV65Resolution, 
-            ratio: (width/height).toFixed(2)
-          });
+// //           console.log('🖥️ Dispositivo actualizado:', { 
+// //             width, 
+// //             height, 
+// //             isTV65Resolution, 
+// //             ratio: (width/height).toFixed(2)
+// //           });
           setDebugInfo({ width, height });
         }
       }

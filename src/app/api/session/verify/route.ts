@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const sessionId = searchParams.get('sessionId');
 
     // [modificación] Registrar la solicitud para depuración
-    console.log(`Verificando sesión: ${sessionId}`);
+// //     console.log(`Verificando sesión: ${sessionId}`);
 
     // Validar el parámetro sessionId
     if (!sessionId) {
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
       if (playerRegisteredRecords.length > 0) {
         // Si hay múltiples con jugador registrado, tomar el más reciente
         selectedRecord = playerRegisteredRecords[0];
-        console.log(`Sesión ${sessionId} tiene jugador registrado: ${selectedRecord.nombre} (${selectedRecord.email})`);
+// //         console.log(`Sesión ${sessionId} tiene jugador registrado: ${selectedRecord.nombre} (${selectedRecord.email})`);
       } else {
         // 2. Si no hay jugador registrado, buscar registros pendientes
         const pendingRecords = allSessionData.filter(record => 
@@ -74,17 +74,17 @@ export async function GET(request: Request) {
         
         if (pendingRecords.length > 0) {
           selectedRecord = pendingRecords[0];
-          console.log(`Sesión ${sessionId} está pendiente de registro de jugador`);
+// //           console.log(`Sesión ${sessionId} está pendiente de registro de jugador`);
         } else {
           // 3. Como último recurso, usar el registro más reciente
           selectedRecord = allSessionData[0];
-          console.log(`Sesión ${sessionId} está en estado: ${selectedRecord.status}`);
+// //           console.log(`Sesión ${sessionId} está en estado: ${selectedRecord.status}`);
         }
       }
       
       // [modificación] Limpiar registros duplicados si hay más de uno
       if (allSessionData.length > 1) {
-        console.log(`Múltiples registros encontrados para sesión ${sessionId}, usando el más apropiado`);
+// //         console.log(`Múltiples registros encontrados para sesión ${sessionId}, usando el más apropiado`);
         
         // Solo limpiar si hay registros obviamente duplicados o inválidos
         const recordsToDelete = allSessionData.filter(record => 
@@ -95,7 +95,7 @@ export async function GET(request: Request) {
         );
         
         if (recordsToDelete.length > 0) {
-          console.log(`Eliminando ${recordsToDelete.length} registros duplicados de la sesión ${sessionId}`);
+// //           console.log(`Eliminando ${recordsToDelete.length} registros duplicados de la sesión ${sessionId}`);
           
           const deleteIds = recordsToDelete.map(record => record.id);
           const { error: cleanupError } = await supabaseAdmin
@@ -107,14 +107,14 @@ export async function GET(request: Request) {
             console.warn('Advertencia: Error al limpiar registros duplicados:', cleanupError);
             // Continuamos sin fallar, ya que la verificación principal funcionó
           } else {
-            console.log(`Registros duplicados eliminados exitosamente`);
+// //             console.log(`Registros duplicados eliminados exitosamente`);
           }
         }
       }
       
       const data = selectedRecord;
       
-      console.log(`Sesión ${sessionId} encontrada:`, data);
+// //       console.log(`Sesión ${sessionId} encontrada:`, data);
       
       return NextResponse.json({
         message: 'Sesión encontrada',
@@ -124,7 +124,7 @@ export async function GET(request: Request) {
     }
 
     // [modificación] Si no encontramos ningún registro con este session_id
-    console.log(`Sesión ${sessionId} no encontrada en la base de datos`);
+// //     console.log(`Sesión ${sessionId} no encontrada en la base de datos`);
     return NextResponse.json(
       { message: 'Sesión no encontrada', valid: false },
       { status: 404 }

@@ -76,7 +76,7 @@ export default function GamePage() {
 
         // [modificación] Actualizar estado a 'playing' si no está ya en ese estado
         if (session.status !== 'playing') {
-          console.log(`Actualizando estado de sesión ${sessionId} a 'playing' desde el juego`);
+// //           console.log(`Actualizando estado de sesión ${sessionId} a 'playing' desde el juego`);
           try {
             const updateResponse = await fetch('/api/admin/sessions/update-status', {
               method: 'POST',
@@ -90,7 +90,7 @@ export default function GamePage() {
             });
 
             if (updateResponse.ok) {
-              console.log(`Estado de sesión ${sessionId} actualizado exitosamente a 'playing'`);
+// //               console.log(`Estado de sesión ${sessionId} actualizado exitosamente a 'playing'`);
             } else {
               console.warn(`No se pudo actualizar el estado de la sesión ${sessionId} a 'playing'`);
             }
@@ -146,18 +146,18 @@ export default function GamePage() {
   // Al girar la ruleta, mostrar la pregunta correspondiente
   useEffect(() => {
     // [modificación] Log para rastrear el estado del juego y el índice del resultado del giro
-    console.log("[GamePage] useEffect for lastSpinResultIndex triggered. lastSpinResultIndex:", lastSpinResultIndex, "questions.length:", questions.length);
+// //     console.log("[GamePage] useEffect for lastSpinResultIndex triggered. lastSpinResultIndex:", lastSpinResultIndex, "questions.length:", questions.length);
     if (lastSpinResultIndex !== null && questions.length > 0) {
       const indexToUse = lastSpinResultIndex;
       // [modificación] Log para rastrear el índice a usar
-      console.log("[GamePage] Valid conditions met. indexToUse:", indexToUse);
+// //       console.log("[GamePage] Valid conditions met. indexToUse:", indexToUse);
       if (indexToUse >= 0 && indexToUse < questions.length) {
         const questionToSet = questions[indexToUse];
         // [modificación] Log para rastrear la pregunta a establecer
-        console.log("[GamePage] Setting current question:", questionToSet);
+// //         console.log("[GamePage] Setting current question:", questionToSet);
         setCurrentQuestion(questionToSet);
         // [modificación] Log para rastrear el cambio de estado del juego
-        console.log("[GamePage] Setting gameState to 'question'");
+// //         console.log("[GamePage] Setting gameState to 'question'");
         setGameState("question");
       } else {
         // [modificación] Advertencia si el índice está fuera de los límites
@@ -245,7 +245,7 @@ export default function GamePage() {
 
   // Vista principal: ruleta/pregunta según el estado
   // [modificación] Log para rastrear el estado del juego y la pregunta actual antes de renderizar
-  console.log("[GamePage] Rendering. gameState:", gameState, "currentQuestion:", currentQuestion, "lastSpinResultIndex:", lastSpinResultIndex);
+// //   console.log("[GamePage] Rendering. gameState:", gameState, "currentQuestion:", currentQuestion, "lastSpinResultIndex:", lastSpinResultIndex);
   return (
     <GameLayout>
       <div className="w-full flex flex-col items-center max-w-[520px] mx-auto">

@@ -74,7 +74,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
       });
 
       if (response.ok) {
-        console.log('Sesión cerrada exitosamente');
+// //         console.log('Sesión cerrada exitosamente');
         if (onRefreshSessions) {
           onRefreshSessions();
         }
@@ -109,7 +109,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     
     // [modificación] Guard para evitar navegaciones múltiples
     if (navigationInProgress.current) {
-      console.log("Navegación en progreso, evitando redirección duplicada");
+// //       console.log("Navegación en progreso, evitando redirección duplicada");
       return;
     }
     
@@ -119,7 +119,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     
     // [modificación] Usar el overlay global para la navegación
     const targetPath = `/register/${session.session_id}`;
-    console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
+// //     console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
 
     startNavigation(targetPath, 'Activando sesión de juego...');
     

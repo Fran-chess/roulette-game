@@ -77,7 +77,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
       // [modificación] Usar la función login del sessionStore directamente
       try {
         await useSessionStore.getState().login(email, password);
-        console.log('Login exitoso');
+// //         console.log('Login exitoso');
       } catch (err: unknown) {
         // El error ya se maneja en el sessionStore
         console.error('Error en login:', err);

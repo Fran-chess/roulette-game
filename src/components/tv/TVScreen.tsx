@@ -91,11 +91,11 @@ export default function TVScreen() {
     
     const initSupabaseClient = async () => {
       try {
-        console.log('📺 TV: Inicializando cliente Supabase dinámicamente...');
+//         console.log('📺 TV: Inicializando cliente Supabase dinámicamente...');
         const { supabaseClient: client } = await import('@/lib/supabase');
         
         if (client) {
-          console.log('📺 TV: ✅ Cliente Supabase inicializado exitosamente');
+//           console.log('📺 TV: ✅ Cliente Supabase inicializado exitosamente');
           setSupabaseClient(client as unknown as SupabaseClient);
         } else {
           console.error('📺 TV: ❌ Cliente Supabase no disponible después de importación');
@@ -116,11 +116,11 @@ export default function TVScreen() {
     // [modificación] Verificar que el cliente de Supabase esté disponible y que esté montado
     if (!supabaseClient || !isMounted) {
       console.error('Cliente de Supabase no disponible en la vista de TV o componente no montado');
-      console.log('📺 TV: Estado supabaseClient:', !!supabaseClient, 'isMounted:', isMounted);
+//       console.log('📺 TV: Estado supabaseClient:', !!supabaseClient, 'isMounted:', isMounted);
       return;
     }
 
-    console.log('Inicializando vista de TV...');
+//     console.log('Inicializando vista de TV...');
 
     // Configurar usuario como viewer para la TV si no existe
     if (!user) {
@@ -134,7 +134,7 @@ export default function TVScreen() {
 
     // [modificación] Inicializar suscripción en tiempo real específica para TV con cleanup
     try {
-      console.log('Configurando realtime específico para TV...');
+//       console.log('Configurando realtime específico para TV...');
       setIsRealtimeConnecting(true); // [modificación] Marcar como conectando
       
       // [modificación] Crear canal específico para la TV y configurar suscripción
@@ -148,26 +148,26 @@ export default function TVScreen() {
             table: 'plays',
           },
           (payload) => {
-            console.log('📺 TV-INSERT: 🔄 Evento INSERT detectado:', payload);
-            console.log('📺 TV-INSERT: Timestamp del evento:', payload.commit_timestamp);
+//             console.log('📺 TV-INSERT: 🔄 Evento INSERT detectado:', payload);
+//             console.log('📺 TV-INSERT: Timestamp del evento:', payload.commit_timestamp);
             const { new: newRecord } = payload;
 
             if (newRecord) {
-              console.log('📺 TV-INSERT: ✅ Nueva sesión insertada:', newRecord);
-              console.log('📺 TV-INSERT: Session ID:', newRecord.session_id);
-              console.log('📺 TV-INSERT: Estado:', newRecord.status);
-              console.log('📺 TV-INSERT: Participante:', newRecord.nombre || 'N/A');
-              console.log('📺 TV-INSERT: Email:', newRecord.email || 'N/A');
+//               console.log('📺 TV-INSERT: ✅ Nueva sesión insertada:', newRecord);
+//               console.log('📺 TV-INSERT: Session ID:', newRecord.session_id);
+//               console.log('📺 TV-INSERT: Estado:', newRecord.status);
+//               console.log('📺 TV-INSERT: Participante:', newRecord.nombre || 'N/A');
+//               console.log('📺 TV-INSERT: Email:', newRecord.email || 'N/A');
               
               try {
                 const validatedSession = validateGameSession(newRecord);
-                console.log('📺 TV-INSERT: ✅ Sesión validada exitosamente');
-                console.log('📺 TV-INSERT: Actualizando estado de la TV a:', validatedSession.status);
+//                 console.log('📺 TV-INSERT: ✅ Sesión validada exitosamente');
+//                 console.log('📺 TV-INSERT: Actualizando estado de la TV a:', validatedSession.status);
                 setCurrentSession(validatedSession);
-                console.log('📺 TV-INSERT: Estado actualizado en TV');
+//                 console.log('📺 TV-INSERT: Estado actualizado en TV');
               } catch (validationError) {
                 console.error('📺 TV-INSERT: ❌ Error validando sesión:', validationError);
-                console.log('📺 TV-INSERT: 🔄 Usando datos directamente como fallback');
+//                 console.log('📺 TV-INSERT: 🔄 Usando datos directamente como fallback');
                 setCurrentSession(newRecord as unknown as GameSession);
               }
             } else {
@@ -183,25 +183,25 @@ export default function TVScreen() {
             table: 'plays',
           },
           (payload) => {
-            console.log('📺 TV-UPDATE: 🔄 Evento UPDATE detectado en realtime');
-            console.log('📺 TV-UPDATE: Payload completo:', JSON.stringify(payload, null, 2));
-            console.log('📺 TV-UPDATE: Timestamp del evento:', payload.commit_timestamp);
+//             console.log('📺 TV-UPDATE: 🔄 Evento UPDATE detectado en realtime');
+//             console.log('📺 TV-UPDATE: Payload completo:', JSON.stringify(payload, null, 2));
+//             console.log('📺 TV-UPDATE: Timestamp del evento:', payload.commit_timestamp);
             
             const { new: newRecord, old: oldRecord } = payload;
 
             if (newRecord) {
-              console.log('📺 TV-UPDATE: ✅ Datos nuevos del registro:', newRecord);
-              console.log('📺 TV-UPDATE: Session ID:', newRecord.session_id);
-              console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
-              console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
-              console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
-              console.log('📺 TV-UPDATE: Jugador:', newRecord.nombre || 'N/A');
-              console.log('📺 TV-UPDATE: Email:', newRecord.email || 'N/A');
+//               console.log('📺 TV-UPDATE: ✅ Datos nuevos del registro:', newRecord);
+//               console.log('📺 TV-UPDATE: Session ID:', newRecord.session_id);
+//               console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
+//               console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
+//               console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
+//               console.log('📺 TV-UPDATE: Jugador:', newRecord.nombre || 'N/A');
+//               console.log('📺 TV-UPDATE: Email:', newRecord.email || 'N/A');
               
               // [modificación] CRUCIAL: Limpiar gameState residual INMEDIATAMENTE cuando se registra participante
               if (oldRecord?.status === 'pending_player_registration' && newRecord.status === 'player_registered') {
-                console.log('🎉 TV-UPDATE: ¡PARTICIPANTE REGISTRADO! Cambiando a ruleta automáticamente');
-                console.log('🎮 TV-UPDATE: Limpiando estados residuales del gameStore ANTES de mostrar ruleta...');
+//                 console.log('🎉 TV-UPDATE: ¡PARTICIPANTE REGISTRADO! Cambiando a ruleta automáticamente');
+//                 console.log('🎮 TV-UPDATE: Limpiando estados residuales del gameStore ANTES de mostrar ruleta...');
                 
                 // [modificación] Importar y usar las funciones del gameStore directamente
                 const gameStore = useGameStore.getState();
@@ -212,21 +212,21 @@ export default function TVScreen() {
                 gameStore.setLastSpinResultIndex(null);
                 gameStore.setGameState('roulette'); // [modificación] CRUCIAL: Forzar estado a roulette
                 
-                console.log('🎮 TV-UPDATE: Estados del gameStore limpiados - gameState forzado a \'roulette\'');
+//                 console.log('🎮 TV-UPDATE: Estados del gameStore limpiados - gameState forzado a \'roulette\'');
               }
               
               try {
                 const validatedSession = validateGameSession(newRecord);
-                console.log('📺 TV-UPDATE: ✅ Sesión validada exitosamente');
-                console.log('📺 TV-UPDATE: Actualizando estado de la TV a:', validatedSession.status);
+//                 console.log('📺 TV-UPDATE: ✅ Sesión validada exitosamente');
+//                 console.log('📺 TV-UPDATE: Actualizando estado de la TV a:', validatedSession.status);
                 setCurrentSession(validatedSession);
                 
                 if (validatedSession.status === 'player_registered' || validatedSession.status === 'playing') {
-                  console.log('🎮 TV-UPDATE: ¡Estado de juego detectado! La TV debería cambiar a ruleta automáticamente');
+//                   console.log('🎮 TV-UPDATE: ¡Estado de juego detectado! La TV debería cambiar a ruleta automáticamente');
                 }
               } catch (validationError) {
                 console.error('📺 TV-UPDATE: ❌ Error validando sesión:', validationError);
-                console.log('📺 TV-UPDATE: 🔄 Usando datos directamente como fallback');
+//                 console.log('📺 TV-UPDATE: 🔄 Usando datos directamente como fallback');
                 setCurrentSession(newRecord as unknown as GameSession);
               }
             } else {
@@ -241,18 +241,18 @@ export default function TVScreen() {
             schema: 'public',
             table: 'plays',
           },
-          (payload) => {
-            console.log('📺 TV-DELETE: 🗑️ Evento DELETE detectado:', payload);
-            console.log('📺 TV-DELETE: Datos del registro eliminado:', payload.old);
-            console.log('📺 TV-DELETE: Limpiando sesión actual y volviendo a estado de espera');
+          () => {
+//             console.log('📺 TV-DELETE: 🗑️ Evento DELETE detectado:', payload);
+//             console.log('📺 TV-DELETE: Datos del registro eliminado:', payload.old);
+//             console.log('📺 TV-DELETE: Limpiando sesión actual y volviendo a estado de espera');
             setCurrentSession(null);
           }
         )
         .subscribe((status) => {
-          console.log('📺 TV-REALTIME: 📡 Estado de suscripción:', status);
+//           console.log('📺 TV-REALTIME: 📡 Estado de suscripción:', status);
           if (status === 'SUBSCRIBED') {
-            console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
-            console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla plays');
+//             console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
+//             console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla plays');
             setRealtimeReady(true);
             setIsRealtimeConnecting(false); // [modificación] Ya no está conectando
           } else if (status === 'CHANNEL_ERROR') {
@@ -264,17 +264,17 @@ export default function TVScreen() {
             setRealtimeReady(false);
             setIsRealtimeConnecting(true); // [modificación] Intentando reconectar
           } else {
-            console.log(`📺 TV-REALTIME: Estado de canal: ${status}`);
+//             console.log(`📺 TV-REALTIME: Estado de canal: ${status}`);
             // [modificación] Mantener estado de conexión para estados intermedios
             setIsRealtimeConnecting(true);
           }
         });
 
-      console.log('📺 TV: Canal realtime configurado');
+//       console.log('📺 TV: Canal realtime configurado');
 
       // [modificación] Guardar función de cleanup para remover canal
       cleanupFunction = () => {
-        console.log('📺 TV: Limpiando suscripción realtime...');
+//         console.log('📺 TV: Limpiando suscripción realtime...');
         supabaseClient.removeChannel(channel);
       };
     } catch (error) {
@@ -286,11 +286,11 @@ export default function TVScreen() {
 
     // Cargar sesión activa actual desde la base de datos
     try {
-      console.log('📺 TV: Cargando sesión activa desde la base de datos...');
+//       console.log('📺 TV: Cargando sesión activa desde la base de datos...');
       
       // [modificación] Consulta de debug reducida - solo en modo desarrollo
       if (process.env.NODE_ENV === 'development') {
-        console.log('📺 TV-DEBUG: Consultando TODAS las sesiones para debug...');
+//         console.log('📺 TV-DEBUG: Consultando TODAS las sesiones para debug...');
         // [modificación] Corregir consulta para usar await directamente
         try {
           const debugResult = await supabaseClient
@@ -300,9 +300,9 @@ export default function TVScreen() {
             .limit(5);
             
           if (!debugResult.error && debugResult.data) {
-            console.log('📺 TV-DEBUG: Sesiones encontradas (últimas 5):', debugResult.data);
-            debugResult.data?.forEach((session: DatabaseRecord, index: number) => {
-              console.log(`📺 TV-DEBUG: Sesión ${index + 1}: ${session.session_id.substring(0,8)}... - Estado: ${session.status} - Participante: ${session.nombre || 'N/A'}`);
+//             console.log('📺 TV-DEBUG: Sesiones encontradas (últimas 5):', debugResult.data);
+            debugResult.data?.forEach(() => {
+//               console.log(`📺 TV-DEBUG: Sesión ${index + 1}: ${session.session_id.substring(0,8)}... - Estado: ${session.status} - Participante: ${session.nombre || 'N/A'}`);
             });
           }
         } catch (debugError) {
@@ -320,7 +320,7 @@ export default function TVScreen() {
         .limit(1)
         .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 cuando no hay sesiones activas
 
-      console.log('📺 TV: Resultado de consulta de sesión activa:', { data: result.data, error: result.error });
+//       console.log('📺 TV: Resultado de consulta de sesión activa:', { data: result.data, error: result.error });
 
       // [modificación] Verificación mejorada para manejar error que puede ser null
       if (result.error?.code && result.error?.code !== 'PGRST116') { // PGRST116 = no rows found
@@ -329,34 +329,34 @@ export default function TVScreen() {
       }
 
       if (result.data) {
-        console.log('📺 TV: Sesión activa encontrada:', result.data);
-        console.log('📺 TV: ID de sesión:', result.data.session_id);
-        console.log('📺 TV: Estado de sesión:', result.data.status);
-        console.log('📺 TV: Participante:', result.data.nombre || 'N/A');
-        console.log('📺 TV: Email:', result.data.email || 'N/A');
+//         console.log('📺 TV: Sesión activa encontrada:', result.data);
+//         console.log('📺 TV: ID de sesión:', result.data.session_id);
+//         console.log('📺 TV: Estado de sesión:', result.data.status);
+//         console.log('📺 TV: Participante:', result.data.nombre || 'N/A');
+//         console.log('📺 TV: Email:', result.data.email || 'N/A');
         
         // [modificación] Usar función de validación para convertir datos de Supabase
         try {
           const validatedSession = validateGameSession(result.data);
           setCurrentSession(validatedSession);
-          console.log('📺 TV: Estado inicial configurado exitosamente:', validatedSession.status);
+//           console.log('📺 TV: Estado inicial configurado exitosamente:', validatedSession.status);
           
           // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
         } catch (validationError) {
           console.error('📺 TV: Error validando sesión:', validationError);
           // [modificación] Fallback: usar datos directamente si la validación falla
           setCurrentSession(result.data as unknown as GameSession);
-          console.log('📺 TV: Usando datos directamente como fallback');
+//           console.log('📺 TV: Usando datos directamente como fallback');
         }
       } else {
-        console.log('📺 TV: No hay sesión activa en este momento (data es null/undefined)');
+//         console.log('📺 TV: No hay sesión activa en este momento (data es null/undefined)');
         setCurrentSession(null);
       }
     } catch (error) {
       console.error('📺 TV: Error al cargar sesión activa:', error);
     }
     
-    console.log('📺 TV: Inicialización de vista TV completada');
+//     console.log('📺 TV: Inicialización de vista TV completada');
     
     // [modificación] Retornar función de cleanup que incluya la limpieza del realtime
     return cleanupFunction;
@@ -387,11 +387,11 @@ export default function TVScreen() {
     if (!isMounted || !supabaseClient) return; // [modificación] Solo ejecutar después del mount y cuando supabaseClient esté disponible
     
     if (realtimeReady) {
-      console.log('📺 TV: Realtime activo, desactivando polling de backup');
+//       console.log('📺 TV: Realtime activo, desactivando polling de backup');
       return; // [modificación] No ejecutar polling si realtime está activo
     }
 
-    console.log('📺 TV: Realtime no listo, activando polling de backup');
+//     console.log('📺 TV: Realtime no listo, activando polling de backup');
 
     const checkForUpdates = async () => {
       try {
@@ -411,7 +411,7 @@ export default function TVScreen() {
               currentSession.status !== result.data.status ||
               currentSession.updated_at !== result.data.updated_at) {
             
-            console.log('📺 TV (Polling): Detectado cambio en sesión:', result.data);
+//             console.log('📺 TV (Polling): Detectado cambio en sesión:', result.data);
             try {
               const validatedSession = validateGameSession(result.data);
               setCurrentSession(validatedSession);
@@ -425,7 +425,7 @@ export default function TVScreen() {
         } else if (!result.data) {
           // [modificación] Si no hay datos (data = null), limpiar la sesión actual
           if (currentSession) {
-            console.log('📺 TV (Polling): No hay sesiones activas, limpiando sesión actual');
+//             console.log('📺 TV (Polling): No hay sesiones activas, limpiando sesión actual');
             setCurrentSession(null);
           }
         }
@@ -448,25 +448,25 @@ export default function TVScreen() {
     
     // Solo hacer log cuando hay cambios reales en el estado de la sesión
     if (currentSession) {
-      console.log('📺 TV-STATE: Sesión activa detectada');
-      console.log('   Session ID:', currentSession.session_id.substring(0, 8) + '...');
-      console.log('   Estado:', currentSession.status);
-      console.log('   Participante:', currentSession.nombre || 'N/A');
-      console.log('   Email:', currentSession.email || 'N/A');
+//       console.log('📺 TV-STATE: Sesión activa detectada');
+//       console.log('   Session ID:', currentSession.session_id.substring(0, 8) + '...');
+//       console.log('   Estado:', currentSession.status);
+//       console.log('   Participante:', currentSession.nombre || 'N/A');
+//       console.log('   Email:', currentSession.email || 'N/A');
       
       switch (currentSession.status) {
         case 'player_registered':
-          console.log('🎮 TV-STATE: ¡Participante registrado! Mostrando ruleta');
+//           console.log('🎮 TV-STATE: ¡Participante registrado! Mostrando ruleta');
           break;
         case 'playing':
-          console.log('🎮 TV-STATE: Juego en progreso, mostrando ruleta');
+//           console.log('🎮 TV-STATE: Juego en progreso, mostrando ruleta');
           break;
         case 'completed':
-          console.log('🏁 TV-STATE: Juego completado');
+//           console.log('🏁 TV-STATE: Juego completado');
           break;
       }
     } else {
-      console.log('📺 TV-STATE: No hay sesión activa, mostrando WaitingScreen');
+//       console.log('📺 TV-STATE: No hay sesión activa, mostrando WaitingScreen');
     }
   }, [currentSession, isMounted]);
 
@@ -496,7 +496,7 @@ export default function TVScreen() {
       case 'archived':
         // [modificación] Cuando se completa, volver a waiting room después de un tiempo
         setTimeout(() => {
-          console.log('📺 TV: Juego completado, volviendo a sala de espera...');
+//           console.log('📺 TV: Juego completado, volviendo a sala de espera...');
           setCurrentSession(null);
         }, 5000);
         return <GameCompletedScreen currentSession={currentSession} />;
@@ -561,7 +561,7 @@ export default function TVScreen() {
             {/* [modificación] Botones más grandes para TV 4K */}
             <button 
               onClick={async () => {
-                console.log('📺 TV: Forzando recarga de sesión...');
+//                 console.log('📺 TV: Forzando recarga de sesión...');
                 await initializeTVView();
               }}
               className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botones más grandes
@@ -572,7 +572,7 @@ export default function TVScreen() {
             {/* [modificación] Botón para crear nueva sesión rápida */}
             <button 
               onClick={async () => {
-                console.log('📺 TV: Creando nueva sesión rápida...');
+//                 console.log('📺 TV: Creando nueva sesión rápida...');
                 try {
                   const response = await fetch('/api/admin/sessions/create', {
                     method: 'POST',
@@ -586,7 +586,7 @@ export default function TVScreen() {
                     if (sessionId) {
                       const fullUrl = `${window.location.origin}/register/${sessionId}`;
                       await navigator.clipboard.writeText(fullUrl);
-                      console.log('📺 TV: Nueva sesión creada y URL copiado:', fullUrl);
+//                       console.log('📺 TV: Nueva sesión creada y URL copiado:', fullUrl);
                       alert(`Nueva sesión creada!\nURL copiado al portapapeles:\n${fullUrl.substring(0,50)}...`);
                       // Refrescar después de crear
                       setTimeout(() => initializeTVView(), 1000);
@@ -605,7 +605,7 @@ export default function TVScreen() {
             {currentSession && (
               <button 
                 onClick={async () => {
-                  console.log('📺 TV: Reseteando sesión actual...');
+//                   console.log('📺 TV: Reseteando sesión actual...');
                   try {
                     const response = await fetch('/api/admin/sessions/reset-player', {
                       method: 'POST',
@@ -618,7 +618,8 @@ export default function TVScreen() {
                     
                     if (response.ok) {
                       const data = await response.json();
-                      console.log('📺 TV: Sesión reseteada exitosamente:', data);
+                      void data;
+//                       console.log('📺 TV: Sesión reseteada exitosamente:', data);
                       const fullUrl = `${window.location.origin}/register/${currentSession.session_id}`;
                       await navigator.clipboard.writeText(fullUrl);
                       alert(`Sesión reseteada exitosamente!\nURL copiado al portapapeles:\n${fullUrl.substring(0,50)}...`);
@@ -648,11 +649,11 @@ export default function TVScreen() {
                   return;
                 }
                 
-                console.log('🔍 TV-DIAGNOSTICO: Iniciando diagnóstico avanzado de base de datos...');
+//                 console.log('🔍 TV-DIAGNOSTICO: Iniciando diagnóstico avanzado de base de datos...');
                 
                 try {
                   // Consulta 1: Todas las sesiones sin filtros
-                  console.log('🔍 TV-DIAGNOSTICO: 1. Consultando TODAS las sesiones...');
+//                   console.log('🔍 TV-DIAGNOSTICO: 1. Consultando TODAS las sesiones...');
                   // [modificación] Corregir consulta para usar await directamente
                   try {
                     const allResult = await supabaseClient
@@ -663,18 +664,18 @@ export default function TVScreen() {
                     if (allResult.error) {
                       console.error('🔍 TV-DIAGNOSTICO: Error en consulta 1:', allResult.error);
                     } else {
-                      console.log(`🔍 TV-DIAGNOSTICO: Total de sesiones encontradas: ${allResult.data?.length || 0}`);
-                      allResult.data?.forEach((session: DatabaseRecord, index: number) => {
-                        console.log(`🔍 TV-DIAGNOSTICO: Sesión ${index + 1}:`, {
-                          id: session.id,
-                          session_id: session.session_id.substring(0, 8) + '...',
-                          status: session.status,
-                          nombre: session.nombre || 'N/A',
-                          email: session.email || 'N/A',
-                          admin_id: session.admin_id,
-                          created_at: session.created_at,
-                          updated_at: session.updated_at
-                        });
+//                       console.log(`🔍 TV-DIAGNOSTICO: Total de sesiones encontradas: ${allResult.data?.length || 0}`);
+                      allResult.data?.forEach(() => {
+//                         console.log(`🔍 TV-DIAGNOSTICO: Sesión ${index + 1}:`, {
+//                           id: session.id,
+//                           session_id: session.session_id.substring(0, 8) + '...',
+//                           status: session.status,
+//                           nombre: session.nombre || 'N/A',
+//                           email: session.email || 'N/A',
+//                           admin_id: session.admin_id,
+//                           created_at: session.created_at,
+//                           updated_at: session.updated_at
+//                         });
                       });
                     }
                   } catch (error1) {
@@ -682,7 +683,7 @@ export default function TVScreen() {
                   }
                   
                   // Consulta 2: Sesiones específicas por estado
-                  console.log('🔍 TV-DIAGNOSTICO: 2. Consultando sesiones con estados específicos...');
+//                   console.log('🔍 TV-DIAGNOSTICO: 2. Consultando sesiones con estados específicos...');
                   // [modificación] Corregir consulta para usar await directamente
                   try {
                     const activeResult = await supabaseClient
@@ -694,14 +695,14 @@ export default function TVScreen() {
                     if (activeResult.error) {
                       console.error('🔍 TV-DIAGNOSTICO: Error en consulta 2:', activeResult.error);
                     } else {
-                      console.log(`🔍 TV-DIAGNOSTICO: Sesiones activas encontradas: ${activeResult.data?.length || 0}`);
-                      activeResult.data?.forEach((session: DatabaseRecord, index: number) => {
-                        console.log(`🔍 TV-DIAGNOSTICO: Sesión activa ${index + 1}:`, {
-                          session_id: session.session_id.substring(0, 8) + '...',
-                          status: session.status,
-                          nombre: session.nombre || 'N/A',
-                          email: session.email || 'N/A'
-                        });
+//                       console.log(`🔍 TV-DIAGNOSTICO: Sesiones activas encontradas: ${activeResult.data?.length || 0}`);
+                      activeResult.data?.forEach(() => {
+//                         console.log(`🔍 TV-DIAGNOSTICO: Sesión activa ${index + 1}:`, {
+//                           session_id: session.session_id.substring(0, 8) + '...',
+//                           status: session.status,
+//                           nombre: session.nombre || 'N/A',
+//                           email: session.email || 'N/A'
+//                         });
                       });
                     }
                   } catch (error2) {
@@ -709,7 +710,7 @@ export default function TVScreen() {
                   }
                   
                   // Consulta 3: Buscar la sesión específica que detecta la tablet
-                  console.log('🔍 TV-DIAGNOSTICO: 3. Buscando sesión específica 34162bb4-7bc8-497f-add5-cbfc13dfc658...');
+//                   console.log('🔍 TV-DIAGNOSTICO: 3. Buscando sesión específica 34162bb4-7bc8-497f-add5-cbfc13dfc658...');
                   // [modificación] Corregir consulta para usar await directamente
                   try {
                     const specificResult = await supabaseClient
@@ -721,25 +722,25 @@ export default function TVScreen() {
                     if (specificResult.error) {
                       console.error('🔍 TV-DIAGNOSTICO: Error en consulta 3:', specificResult.error);
                     } else {
-                      console.log(`🔍 TV-DIAGNOSTICO: Registros para sesión específica: ${specificResult.data?.length || 0}`);
-                      specificResult.data?.forEach((session: DatabaseRecord, index: number) => {
-                        console.log(`🔍 TV-DIAGNOSTICO: Registro ${index + 1} de sesión específica:`, {
-                          id: session.id,
-                          session_id: session.session_id,
-                          status: session.status,
-                          nombre: session.nombre,
-                          email: session.email,
-                          admin_id: session.admin_id,
-                          created_at: session.created_at,
-                          updated_at: session.updated_at
-                        });
+//                       console.log(`🔍 TV-DIAGNOSTICO: Registros para sesión específica: ${specificResult.data?.length || 0}`);
+                      specificResult.data?.forEach(() => {
+//                         console.log(`🔍 TV-DIAGNOSTICO: Registro ${index + 1} de sesión específica:`, {
+//                           id: session.id,
+//                           session_id: session.session_id,
+//                           status: session.status,
+//                           nombre: session.nombre,
+//                           email: session.email,
+//                           admin_id: session.admin_id,
+//                           created_at: session.created_at,
+//                           updated_at: session.updated_at
+//                         });
                       });
                     }
                   } catch (error3) {
                     console.error('🔍 TV-DIAGNOSTICO: Error en consulta 3:', error3);
                   }
                   
-                  console.log('🔍 TV-DIAGNOSTICO: Diagnóstico completado');
+//                   console.log('🔍 TV-DIAGNOSTICO: Diagnóstico completado');
                 } catch (error) {
                   console.error('🔍 TV-DIAGNOSTICO: Error durante diagnóstico:', error);
                 }
@@ -752,7 +753,7 @@ export default function TVScreen() {
             {/* [modificación] Botón para testing: simular participante registrado */}
             <button 
               onClick={() => {
-                console.log('📺 TV-TEST: Simulando participante registrado...');
+//                 console.log('📺 TV-TEST: Simulando participante registrado...');
                 const testSession = {
                   id: 'test-' + Date.now(),
                   session_id: 'test-session-' + Date.now(),
@@ -764,7 +765,7 @@ export default function TVScreen() {
                   updated_at: new Date().toISOString(),
                 };
                 setCurrentSession(testSession);
-                console.log('📺 TV-TEST: Estado actualizado a player_registered - la TV debería mostrar ruleta');
+//                 console.log('📺 TV-TEST: Estado actualizado a player_registered - la TV debería mostrar ruleta');
               }}
               className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-base" // [modificación] Botón más grande
             >

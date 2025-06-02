@@ -39,7 +39,7 @@ export function useInactivityTimer(
     }
     
     timerRef.current = setTimeout(() => {
-      console.log("Inactivity timer expired.");
+// //       console.log("Inactivity timer expired.");
       onTimeout(); // Ejecutar el callback proporcionado
       setIsThinking(false);
     }, timeout);

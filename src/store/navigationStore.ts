@@ -62,7 +62,7 @@ export const useNavigationStore = create<NavigationStore>((set, get) => ({
   }),
   
   resetNavigation: () => {
-    console.log('Reseteando store de navegación por emergencia');
+// //     console.log('Reseteando store de navegación por emergencia');
     set({
       isNavigating: false,
       navigationTarget: null,
