@@ -60,11 +60,23 @@ Tablet (Admin) → Supabase (tabla plays) → TV (Viewer)
 ### 1. Variables de Entorno
 Crear `.env.local` en la raíz:
 ```env
-# Variables de entorno para Supabase - Proyecto: roulette-game
-NEXT_PUBLIC_SUPABASE_URL=https://yinhukkubomcyolkrahg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpbmh1a2t1Ym9tY3lvbGtyYWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTUyNzIsImV4cCI6MjA2MjI5MTI3Mn0.Bj3CAHgAjenFDoaxbLprlBAHcMyDffbtcHhGOQxu0Mc
+# Variables de entorno para Supabase - Configura con tus credenciales
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anonima-de-supabase
 SUPABASE_SERVICE_ROLE_KEY=tu-clave-de-servicio-de-supabase
+
+# Variables adicionales de configuración
+NEXT_PUBLIC_APP_ENV=production
+NEXT_PUBLIC_APP_VERSION=1.0.0
 ```
+
+> **⚠️ IMPORTANTE**: Nunca commits las credenciales reales. Copia las credenciales desde tu dashboard de Supabase.
+> 
+> **📋 Cómo obtener las credenciales:**
+> 1. Ve a tu proyecto en [Supabase Dashboard](https://supabase.com/dashboard)
+> 2. Navega a Settings → API
+> 3. Copia la URL del proyecto y la clave anónima
+> 4. Para la clave de servicio, ve a Settings → API → service_role (mantener secreta)
 
 ### 2. Base de Datos ✅ CONFIGURADA
 La base de datos ya está completamente configurada con:

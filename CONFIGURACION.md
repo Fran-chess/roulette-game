@@ -1,21 +1,53 @@
 # Configuración del Proyecto PWA - Roulette Game
 
-## Configuración de Supabase
+## ⚠️ Configuración de Seguridad
+
+### Variables de Entorno Seguras
 
 Para que la aplicación PWA funcione correctamente con sincronización en tiempo real, necesitas configurar las siguientes variables de entorno en un archivo `.env.local` en la raíz del proyecto:
 
 ```env
-# Variables de entorno para Supabase - Proyecto: roulette-game
-NEXT_PUBLIC_SUPABASE_URL=https://yinhukkubomcyolkrahg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpbmh1a2t1Ym9tY3lvbGtyYWhnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTUyNzIsImV4cCI6MjA2MjI5MTI3Mn0.Bj3CAHgAjenFDoaxbLprlBAHcMyDffbtcHhGOQxu0Mc
+# Variables de entorno para Supabase - REEMPLAZA CON TUS CREDENCIALES REALES
+NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-anonima-de-supabase
 SUPABASE_SERVICE_ROLE_KEY=tu-clave-de-servicio-de-supabase
+
+# Variables adicionales de configuración
+NEXT_PUBLIC_APP_ENV=production
+NEXT_PUBLIC_APP_VERSION=1.0.0
 ```
 
-**Información del Proyecto:**
-- **Nombre**: roulette-game
-- **ID**: yinhukkubomcyolkrahg
+### 🔒 Obtener Credenciales de Forma Segura
+
+**Paso a paso para configurar tus credenciales:**
+
+1. **Accede a tu Dashboard de Supabase:**
+   - Ve a [https://supabase.com/dashboard](https://supabase.com/dashboard)
+   - Selecciona tu proyecto
+
+2. **Obtén la URL del proyecto:**
+   - Settings → API → Project URL
+   - Copia: `https://[tu-proyecto-id].supabase.co`
+
+3. **Obtén la clave anónima:**
+   - Settings → API → Project API keys → `anon` `public`
+   - Copia el token JWT
+
+4. **Obtén la clave de servicio (OPCIONAL - solo para operaciones admin):**
+   - Settings → API → Project API keys → `service_role` `secret`
+   - ⚠️ **NUNCA expongas esta clave en código cliente**
+
+### 🛡️ Mejores Prácticas de Seguridad
+
+- ✅ **Archivo `.env.local`** está en `.gitignore` 
+- ✅ **No commits credenciales** en código fuente
+- ✅ **Variables de ejemplo** en documentación pública
+- ✅ **RLS habilitado** en todas las tablas
+- ✅ **Roles y permisos** configurados correctamente
+
+**Información del Proyecto (información general - no sensible):**
 - **Región**: sa-east-1 (South America - São Paulo)
-- **Estado**: ACTIVE_HEALTHY
+- **Estado**: ACTIVE_HEALTHY  
 - **Base de Datos**: PostgreSQL 15.8.1.085
 
 ## Configuración de la Base de Datos
@@ -198,4 +230,4 @@ npm start
 - ✅ **Sincronización**: Tiempo real entre dispositivos
 - ✅ **PWA**: Configuración lista para producción
 
-**Nota**: next-pwa está configurado para generar automáticamente el service worker solo en producción. En desarrollo está deshabilitado para mejor rendimiento de desarrollo.
+**Nota**: next-pwa está configurado para generar automáticamente el service worker solo en producción. En desarrollo está deshabilitado para mejor rendimiento de desarrollo. 
