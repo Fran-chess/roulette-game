@@ -25,24 +25,25 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    // Verificar si hay un administrador en el localStorage
-    const checkAdminStatus = () => {
-      const storedAdmin = localStorage.getItem('adminUser');
-      if (storedAdmin) {
-        try {
-          const parsedAdmin = JSON.parse(storedAdmin);
-          setAdminData(parsedAdmin);
+    const checkAdminStatus = async () => {
+      try {
+        const res = await fetch('/api/admin/profile');
+        if (res.ok) {
+          const { admin } = await res.json();
+          setAdminData(admin);
           loginWithAdmin({
-            id: parsedAdmin.id,
-            email: parsedAdmin.email,
-            name: parsedAdmin.name,
-            role: 'admin' as const
+            id: admin.id,
+            email: admin.email,
+            name: admin.name,
+            role: 'admin' as const,
           });
           setIsLoggedIn(true);
-        } catch (error) {
-          console.error('Error parsing admin data:', error);
-          localStorage.removeItem('adminUser');
+        } else {
+          setIsLoggedIn(false);
         }
+      } catch (error) {
+        console.error('Error verifying admin session:', error);
+        setIsLoggedIn(false);
       }
     };
 
@@ -58,16 +59,20 @@ export default function AdminPage() {
       role: 'admin' as const
     });
     setIsLoggedIn(true);
-    localStorage.setItem('adminUser', JSON.stringify(adminData));
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
     setAdminData(null);
     setUser(null);
-    localStorage.removeItem('adminUser');
-    
-    window.location.href = '/admin';
+
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      window.location.href = '/admin';
+    }
   };
 
   return (
