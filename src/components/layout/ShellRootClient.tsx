@@ -50,7 +50,7 @@ export default function ShellRootClient({ children }: { children: React.ReactNod
 
     // [modificación] Si el error es en la TV, intentar reinicializar
     if (pathname === '/tv' && user?.role === 'viewer') {
-      console.log('ShellRootClient: Error en TV detectado, intentando recuperación...');
+// //       console.log('ShellRootClient: Error en TV detectado, intentando recuperación...');
       setTimeout(() => {
         window.location.reload();
       }, 2000);

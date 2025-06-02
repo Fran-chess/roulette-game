@@ -14,7 +14,7 @@ async function waitForSessionCreation(
   }
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    console.log(`Verificando creación de juego ${sessionId}, intento ${attempt + 1}/${maxAttempts}`);
+// //     console.log(`Verificando creación de juego ${sessionId}, intento ${attempt + 1}/${maxAttempts}`);
 
     // [modificación] Eliminados genéricos: supabaseAdmin infiere el tipo
     const { data, error } = await supabaseAdmin
@@ -26,7 +26,7 @@ async function waitForSessionCreation(
     if (error) {
       console.error('Error al verificar juego:', error);
     } else if (data) {
-      console.log('Juego verificado correctamente:', data);
+// //       console.log('Juego verificado correctamente:', data);
       return true;
     }
 
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
       );
     }
     const sessionId: string = sessionIdRaw;
-    console.log(`Juego creado con ID de sesión: ${sessionId}`);
+// //     console.log(`Juego creado con ID de sesión: ${sessionId}`);
 
     // [modificación] Esperar a que la sesión esté realmente en la tabla
     const sessionCreated = await waitForSessionCreation(sessionId);
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       console.error('Error al obtener detalles del juego:', fetchError);
     } else {
       sessionData = data;
-      console.log('Datos del juego obtenidos:', sessionData);
+// //       console.log('Datos del juego obtenidos:', sessionData);
 
       // Asegurarnos de que el estado sea 'pending_player_registration'
       if (sessionData?.status !== 'pending_player_registration') {
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
             .maybeSingle();
           if (updatedData) {
             sessionData = updatedData;
-            console.log('Datos del juego actualizados:', sessionData);
+// //             console.log('Datos del juego actualizados:', sessionData);
           }
         }
       }
@@ -159,7 +159,7 @@ export async function POST(request: Request) {
     if (verifyError || !verifyData) {
       console.warn('El juego fue creado pero no se pudo verificar:', { verifyError });
     } else {
-      console.log('Verificación final del juego:', verifyData);
+// //       console.log('Verificación final del juego:', verifyData);
     }
 
     return NextResponse.json({

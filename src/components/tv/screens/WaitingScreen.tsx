@@ -63,19 +63,19 @@ function useCarousel() {
     if (!isMounted) return;
     
     // [modificación] Log para debugging del carrusel
-    console.log(`🎠 Carrusel iniciado con ${CAROUSEL_IMAGES.length} imágenes, intervalo: ${CAROUSEL_INTERVAL}ms`);
+// //     console.log(`🎠 Carrusel iniciado con ${CAROUSEL_IMAGES.length} imágenes, intervalo: ${CAROUSEL_INTERVAL}ms`);
     
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => {
         const nextIndex = (prevIndex + 1) % CAROUSEL_IMAGES.length;
         // [modificación] Log para seguimiento del carrusel
-        console.log(`🎠 Carrusel: ${prevIndex} → ${nextIndex} (${CAROUSEL_IMAGES[nextIndex].src})`);
+// //         console.log(`🎠 Carrusel: ${prevIndex} → ${nextIndex} (${CAROUSEL_IMAGES[nextIndex].src})`);
         return nextIndex;
       });
     }, CAROUSEL_INTERVAL);
 
     return () => {
-      console.log('🎠 Carrusel limpiado');
+// //       console.log('🎠 Carrusel limpiado');
       clearInterval(interval);
     };
   }, [isMounted]);
@@ -83,7 +83,7 @@ function useCarousel() {
   // [modificación] Log del estado actual
   useEffect(() => {
     if (isMounted) {
-      console.log(`🎠 Estado actual: imagen ${currentImageIndex + 1}/${CAROUSEL_IMAGES.length} - ${CAROUSEL_IMAGES[currentImageIndex]?.src}`);
+// //       console.log(`🎠 Estado actual: imagen ${currentImageIndex + 1}/${CAROUSEL_IMAGES.length} - ${CAROUSEL_IMAGES[currentImageIndex]?.src}`);
     }
   }, [currentImageIndex, isMounted]);
 
@@ -213,8 +213,8 @@ export default function WaitingScreen() {
   // [modificación] Log para debugging cuando se muestra la pantalla de espera
   useEffect(() => {
     if (isMounted) {
-      console.log('📺 WaitingScreen: Pantalla de espera montada - carrusel publicitario activo para TV portrait 2160x3840');
-      console.log(`📺 WaitingScreen: ${totalImages} imágenes en carrusel con intervalo de ${CAROUSEL_INTERVAL}ms`);
+// //       console.log('📺 WaitingScreen: Pantalla de espera montada - carrusel publicitario activo para TV portrait 2160x3840');
+// //       console.log(`📺 WaitingScreen: ${totalImages} imágenes en carrusel con intervalo de ${CAROUSEL_INTERVAL}ms`);
     }
   }, [isMounted, totalImages]);
 

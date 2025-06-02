@@ -87,7 +87,7 @@ export default function RegistrationForm({
     try {
       // [modificación] Si hay sessionId, usar la API de registro de jugador en sesión
       if (sessionId) {
-        console.log("Enviando registro para sesión:", sessionId);
+// //         console.log("Enviando registro para sesión:", sessionId);
 
         // Intentar primero verificar que la sesión existe
         try {
@@ -111,7 +111,7 @@ export default function RegistrationForm({
             sessionData.data.nombre &&
             sessionData.data.email
           ) {
-            console.log("El jugador ya está registrado en esta sesión");
+// //             console.log("El jugador ya está registrado en esta sesión");
 
             // [modificación] Si hay un callback de éxito de registro, llamarlo
             if (onPlayerRegistered) {
@@ -151,17 +151,17 @@ export default function RegistrationForm({
           );
         }
 
-        console.log("Registro exitoso:", data);
+// //         console.log("Registro exitoso:", data);
 
         // [modificación] Logs adicionales para debugging del flujo tablet → TV
-        console.log('📱 TABLET: Participante registrado exitosamente');
-        console.log('📱 TABLET: Datos de respuesta:', {
-          session: data.session?.session_id?.substring(0, 8) + '...',
-          status: data.session?.status,
-          participante: data.session?.nombre,
-          email: data.session?.email
-        });
-        console.log('📱 TABLET: La TV debería recibir esta actualización via realtime y cambiar a ruleta');
+// //         console.log('📱 TABLET: Participante registrado exitosamente');
+// //         console.log('📱 TABLET: Datos de respuesta:', {
+// //           session: data.session?.session_id?.substring(0, 8) + '...',
+// //           status: data.session?.status,
+// //           participante: data.session?.nombre,
+// //           email: data.session?.email
+// //         });
+// //         console.log('📱 TABLET: La TV debería recibir esta actualización via realtime y cambiar a ruleta');
 
         // [modificación] Añadir pequeño retraso para asegurar que los datos se procesan
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -183,8 +183,7 @@ export default function RegistrationForm({
             especialidad: formData.especialidad.trim() || undefined,
           },
           // Callback de éxito
-          (data) => {
-            console.log("Registro exitoso:", data.message);
+          () => {
             setGameState("roulette");
           },
           // Callback de error

@@ -408,7 +408,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           
           setTimeout(() => {
             // [modificación] Log para verificar el índice del resultado del giro
-            console.log("[RouletteWheel] spinAnimation finished. Setting lastSpinResultIndex:", winningIndex);
+// //             console.log("[RouletteWheel] spinAnimation finished. Setting lastSpinResultIndex:", winningIndex);
             setLastSpinResultIndex(winningIndex);
           }, 800);
           setIsSpinning(false);

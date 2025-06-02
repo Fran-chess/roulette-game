@@ -61,7 +61,7 @@ export const supabaseClient = (() => {
     
     // [modificación] Log para debugging en desarrollo
     if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Supabase client inicializado correctamente (instancia única)');
+// //       console.log('✅ Supabase client inicializado correctamente (instancia única)');
     }
   }
   return _supabaseClient;
@@ -93,7 +93,7 @@ export const supabaseAdmin = (() => {
     
     // [modificación] Log para debugging en desarrollo
     if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Supabase admin client inicializado correctamente');
+// //       console.log('✅ Supabase admin client inicializado correctamente');
     }
   }
   return _supabaseAdmin;
@@ -119,10 +119,10 @@ export function handleSupabaseError(error: Error | SupabaseError | unknown, cont
 // [modificación] Función para verificar el estado de la conexión
 export function checkSupabaseConnection() {
   if (process.env.NODE_ENV === 'development') {
-    console.log('🔍 Verificando conexión con Supabase...');
-    console.log('URL:', supabaseUrl ? '✅ Configurada' : '❌ No configurada');
-    console.log('Anon Key:', supabaseAnonKey ? '✅ Configurada' : '❌ No configurada');
-    console.log('Service Role Key:', supabaseServiceRoleKey ? '✅ Configurada' : '❌ No configurada');
+// //     console.log('🔍 Verificando conexión con Supabase...');
+// //     console.log('URL:', supabaseUrl ? '✅ Configurada' : '❌ No configurada');
+// //     console.log('Anon Key:', supabaseAnonKey ? '✅ Configurada' : '❌ No configurada');
+// //     console.log('Service Role Key:', supabaseServiceRoleKey ? '✅ Configurada' : '❌ No configurada');
   }
 }
 
@@ -141,7 +141,7 @@ export function verifyClientSingleton() {
     if (clientInstances > 0) {
       console.warn('⚠️ Detectada posible múltiple instanciación de Supabase client');
     } else {
-      console.log('✅ Verificación singleton: Primera y única instancia de Supabase client');
+// //       console.log('✅ Verificación singleton: Primera y única instancia de Supabase client');
     }
   }
 }

@@ -31,7 +31,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
   const handleRedirect = useCallback((path: string, message?: string) => {
-    console.log(`Iniciando navegación global a: ${path}`);
+// //     console.log(`Iniciando navegación global a: ${path}`);
     setRedirectTarget(path);
     startNavigation(path, message);
   }, [startNavigation]);
@@ -51,7 +51,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
       const verifySession = async () => {
         try {
           verificationInProgress.current = true;
-          console.log("Verificando sesión para registro:", sessionId);
+// //           console.log("Verificando sesión para registro:", sessionId);
           const response = await fetch(`/api/session/verify?sessionId=${sessionId}`);
           const data = await response.json();
 
@@ -66,11 +66,11 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
           setGameSession(data.data);
 
           if (isPlayerRegistered(data.data)) {
-            console.log("Sesión ya tiene un jugador registrado, redirigiendo al juego:", data.data);
+// //             console.log("Sesión ya tiene un jugador registrado, redirigiendo al juego:", data.data);
             handleRedirect(`/game/${sessionId}`, 'Preparando la ruleta...');
             return;
           } else if (isSessionInProgress(data.data)) {
-            console.log("Juego en progreso, redirigiendo:", data.data);
+// //             console.log("Juego en progreso, redirigiendo:", data.data);
             handleRedirect(`/game/${sessionId}`, 'Cargando juego en progreso...');
             return;
           } else if (!isSessionPendingRegistration(data.data)) {
@@ -92,7 +92,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   }, [sessionId, router, setGameSession, startNavigation, handleRedirect]);
 
   const handlePlayerRegistered = (playerName: string = 'Participante') => {
-    console.log('Tablet: Participante registrado exitosamente, mostrando mensaje de confirmación sin navegación');
+// //     console.log('Tablet: Participante registrado exitosamente, mostrando mensaje de confirmación sin navegación');
     setRegisteredPlayerName(playerName);
     setPlayerRegisteredSuccess(true);
     

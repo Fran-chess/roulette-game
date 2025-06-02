@@ -32,7 +32,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
       setWindowSize({ width, height });
       
       if (isTV65Resolution) {
-        console.log(`🎉 GameLayout: Confetti optimizado para TV65 activado - ${width}x${height}`);
+// //         console.log(`🎉 GameLayout: Confetti optimizado para TV65 activado - ${width}x${height}`);
       }
     };
 

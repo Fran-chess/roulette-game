@@ -36,7 +36,7 @@ export default function HomePage() {
     try {
       await logout();
       setCurrentView('login');
-      console.log('Sesión de administrador cerrada');
+// //       console.log('Sesión de administrador cerrada');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     }

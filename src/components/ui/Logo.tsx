@@ -44,7 +44,7 @@ const Logo = ({
 
       // [modificación] Debug SIMPLIFICADO para logo en desarrollo
       if (process.env.NODE_ENV === 'development' && isUltraHighRes) {
-        console.log('🖼️ Logo TV65 detectada:', { width, height, isGameView });
+// //         console.log('🖼️ Logo TV65 detectada:', { width, height, isGameView });
       }
 
       if (isUltraHighRes) {

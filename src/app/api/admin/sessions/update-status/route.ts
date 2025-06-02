@@ -15,10 +15,10 @@ export async function POST(request: Request) {
     const { sessionId, status } = await request.json();
 
     // [modificación] Logs detallados para debugging
-    console.log(`🔄 API Update-Status: Iniciando actualización de estado`);
-    console.log(`   Session ID: ${sessionId}`);
-    console.log(`   Nuevo estado: ${status}`);
-    console.log(`   Timestamp: ${new Date().toISOString()}`);
+// //     console.log(`🔄 API Update-Status: Iniciando actualización de estado`);
+// //     console.log(`   Session ID: ${sessionId}`);
+// //     console.log(`   Nuevo estado: ${status}`);
+// //     console.log(`   Timestamp: ${new Date().toISOString()}`);
 
     // Validar campos obligatorios
     if (!sessionId || !status) {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     // [modificación] Verificar que la sesión existe antes de actualizar
-    console.log(`🔍 API Update-Status: Verificando existencia de sesión ${sessionId}...`);
+// //     console.log(`🔍 API Update-Status: Verificando existencia de sesión ${sessionId}...`);
     const { data: existingSession, error: existingError } = await supabaseAdmin
       .from('plays')
       .select('*')
@@ -65,14 +65,14 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`✅ API Update-Status: Sesión encontrada`);
-    console.log(`   ID interno: ${existingSession.id}`);
-    console.log(`   Estado actual: ${existingSession.status}`);
-    console.log(`   Admin ID: ${existingSession.admin_id}`);
-    console.log(`   Jugador: ${existingSession.nombre || 'N/A'} (${existingSession.email || 'N/A'})`);
+// //     console.log(`✅ API Update-Status: Sesión encontrada`);
+// //     console.log(`   ID interno: ${existingSession.id}`);
+// //     console.log(`   Estado actual: ${existingSession.status}`);
+// //     console.log(`   Admin ID: ${existingSession.admin_id}`);
+// //     console.log(`   Jugador: ${existingSession.nombre || 'N/A'} (${existingSession.email || 'N/A'})`);
 
     // [modificación] Actualizar el estado de la sesión y timestamp en la tabla 'plays'
-    console.log(`🔄 API Update-Status: Ejecutando UPDATE en la base de datos...`);
+// //     console.log(`🔄 API Update-Status: Ejecutando UPDATE en la base de datos...`);
     const updateTimestamp = new Date().toISOString();
     
     const { data: updatedSession, error } = await supabaseAdmin
@@ -101,27 +101,30 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`✅ API Update-Status: UPDATE exitoso`);
-    console.log(`   Registro ID: ${updatedSession.id}`);
-    console.log(`   Nuevo estado: ${updatedSession.status}`);
-    console.log(`   Timestamp actualizado: ${updatedSession.updated_at}`);
-    console.log(`   Admin ID: ${updatedSession.admin_id}`);
+// //     console.log(`✅ API Update-Status: UPDATE exitoso`);
+// //     console.log(`   Registro ID: ${updatedSession.id}`);
+// //     console.log(`   Nuevo estado: ${updatedSession.status}`);
+// //     console.log(`   Timestamp actualizado: ${updatedSession.updated_at}`);
+// //     console.log(`   Admin ID: ${updatedSession.admin_id}`);
 
     // [modificación] Verificar que la actualización se reflejó correctamente
-    console.log(`🔍 API Update-Status: Verificando que la actualización se aplicó correctamente...`);
+// //     console.log(`🔍 API Update-Status: Verificando que la actualización se aplicó correctamente...`);
     const { data: verificationSession, error: verificationError } = await supabaseAdmin
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
       .single();
 
+    // Prevent unused variable lint error when logging is disabled
+    void verificationSession;
+
     if (verificationError) {
       console.warn(`⚠️ API Update-Status: Error en verificación post-update:`, verificationError);
     } else {
-      console.log(`✅ API Update-Status: Verificación exitosa - Estado actual en DB: ${verificationSession.status}`);
+// //       console.log(`✅ API Update-Status: Verificación exitosa - Estado actual en DB: ${verificationSession.status}`);
     }
 
-    console.log(`🎯 API Update-Status: Operación completada exitosamente para sesión ${sessionId}`);
+// //     console.log(`🎯 API Update-Status: Operación completada exitosamente para sesión ${sessionId}`);
 
     return NextResponse.json({
       message: 'Estado de sesión actualizado exitosamente',
