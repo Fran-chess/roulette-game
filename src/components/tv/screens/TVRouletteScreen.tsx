@@ -144,19 +144,23 @@ export default function TVRouletteScreen() {
   ]);
 
   // [modificación] Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
+  // PERO NO interferir con el estado 'prize' cuando hay feedback válido
   useEffect(() => {
     if (
       currentParticipant &&
       gameSession &&
       (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
       gameState !== 'roulette' &&
-      gameState !== 'question'
+      gameState !== 'question' &&
+      // [modificación] NO forzar a roulette si estamos en estado 'prize' con feedback válido
+      !(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)
     ) {
       console.log(
         `🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`
       );
-      if (gameState === 'prize') {
-        console.log(`🎮 TV: Limpiando estado residual de premio`);
+      // [modificación] Solo limpiar estado de premio si NO tiene feedback válido (estado residual)
+      if (gameState === 'prize' && prizeFeedback.answeredCorrectly === null) {
+        console.log(`🎮 TV: Limpiando estado residual de premio SIN feedback válido`);
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
@@ -167,6 +171,7 @@ export default function TVRouletteScreen() {
     currentParticipant,
     gameSession,
     gameState,
+    prizeFeedback.answeredCorrectly, // [modificación] Agregado para monitorear el feedback
     resetPrizeFeedback,
     setCurrentQuestion,
     setLastSpinResultIndex,
@@ -174,28 +179,39 @@ export default function TVRouletteScreen() {
   ]);
 
   // [modificación] Cuando cambia el participante, limpiar estados residuales
+  // PERO NO interferir si el participante actual está en estado 'prize' válido
   useEffect(() => {
     if (currentParticipant && currentParticipant.nombre !== 'Pendiente') {
       console.log(
         `🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, limpiando estados residuales...`
       );
-      resetPrizeFeedback();
-      setCurrentQuestion(null);
-      setLastSpinResultIndex(null);
-      if (gameState !== 'roulette') {
+      
+      // [modificación] Solo limpiar estados si NO estamos en un premio válido
+      if (!(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)) {
+        resetPrizeFeedback();
+        setCurrentQuestion(null);
+        setLastSpinResultIndex(null);
+        
+        if (gameState !== 'roulette' && gameState !== 'question') {
+          console.log(
+            `🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`
+          );
+          setGameState('roulette');
+        }
+      } else {
         console.log(
-          `🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`
+          `🎮 TV: Participante ${currentParticipant.nombre} está en premio válido, NO limpiando estados`
         );
-        setGameState('roulette');
       }
     }
   }, [
     currentParticipant,
+    gameState,
+    prizeFeedback.answeredCorrectly, // [modificación] Agregado para monitorear el feedback
     resetPrizeFeedback,
     setCurrentQuestion,
     setLastSpinResultIndex,
     setGameState,
-    gameState,
   ]);
 
   // [modificación] Función para manejar el giro de la ruleta
@@ -241,8 +257,16 @@ export default function TVRouletteScreen() {
   useEffect(() => {
     if (gameState === 'prize') {
       console.log('🎁 TV: Entrando en estado PRIZE con feedback:', prizeFeedback);
+      console.log('🎁 TV: showConfetti:', showConfetti);
+      console.log('🎁 TV: answeredCorrectly:', prizeFeedback.answeredCorrectly);
     }
-  }, [gameState, prizeFeedback]);
+  }, [gameState, prizeFeedback, showConfetti]);
+
+  // [modificación] Logging adicional para debugging del flujo de estados
+  useEffect(() => {
+    console.log('🔄 TV: Estado actual del juego cambiado a:', gameState);
+    console.log('🔄 TV: Datos actuales - participante:', currentParticipant?.nombre, 'sesión:', gameSession?.id);
+  }, [gameState, currentParticipant, gameSession]);
 
   if (!isMounted || loadingQuestions) {
     return <LoadingScreen />;
@@ -345,33 +369,36 @@ export default function TVRouletteScreen() {
               transition={{ duration: 0.8, delay: 0.5 }}
               className="relative flex justify-center"
             >
-              {/* Efecto de brillo detrás del botón */}
-              <div className="absolute -inset-16 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-full opacity-80 blur-3xl animate-pulse"></div>
-
-              <Button
-                variant="custom"
-                className="relative px-40 py-24 text-8xl font-black shadow-2xl rounded-2xl
-                 border-8 border-white/40 hover:border-white/70
-                 animate-pulse-subtle spin-button-glow
-                 hover:shadow-[0_0_60px_25px_rgba(90,204,193,0.8)]
-                 transform hover:scale-110 transition-all duration-300
-                 min-h-[240px] min-w-[1400px]
-                 text-white focus:outline-none focus:ring-8 focus:ring-blue-300
-                 backdrop-blur-md leading-tight
-                 active:scale-105 active:shadow-[0_0_40px_15px_rgba(90,204,193,0.6)]
-                 active:border-white/80"
-                style={{
-                  backgroundColor: 'oklch(38% 0.199 265.638)',
-                  boxShadow: '0 0 40px rgba(90, 204, 193, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.1)',
-                }}
-                onClick={handleSpin}
-                touchOptimized
-              >
-                <span className="inline-block mr-8 -mt-3 align-middle">
-                  <RouletteWheelIcon className="w-28 h-28" size={112} /> {/* [modificación] Icono más grande */}
-                </span>
-                ¡GIRAR LA RULETA!
-              </Button>
+              {/* [modificación] Contenedor del botón con overflow-hidden para que el glow cubra exactamente el 100% */}
+              <div className="relative overflow-hidden rounded-full">
+                {/* [modificación] Efecto de glow que cubre EXACTAMENTE el 100% del botón */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-full opacity-70 blur-xl animate-pulse"></div>
+                
+                <Button
+                  variant="custom"
+                  className="relative px-40 py-24 text-8xl font-black shadow-2xl rounded-full
+                   border-8 border-white/40 hover:border-white/70
+                   animate-pulse-subtle spin-button-glow
+                   hover:shadow-[0_0_60px_25px_rgba(90,204,193,0.8)]
+                   transform hover:scale-110 transition-all duration-300
+                   min-h-[240px] min-w-[1400px]
+                   text-white focus:outline-none focus:ring-8 focus:ring-blue-300
+                   backdrop-blur-md leading-tight
+                   active:scale-105 active:shadow-[0_0_40px_15px_rgba(90,204,193,0.6)]
+                   active:border-white/80 overflow-hidden"
+                  style={{
+                    backgroundColor: 'oklch(38% 0.199 265.638)',
+                    boxShadow: '0 0 40px rgba(90, 204, 193, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.1)',
+                  }}
+                  onClick={handleSpin}
+                  touchOptimized
+                >
+                  <span className="inline-block mr-8 -mt-3 align-middle">
+                    <RouletteWheelIcon className="w-28 h-28" size={112} /> {/* [modificación] Icono más grande */}
+                  </span>
+                  ¡GIRAR LA RULETA!
+                </Button>
+              </div>
             </MotionDiv>
           </MotionDiv>
         </div>

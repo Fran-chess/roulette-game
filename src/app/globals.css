@@ -412,19 +412,20 @@ body {
   animation: pulse-soft 2.5s infinite ease-in-out;
 }
 
+/* [modificación] Efecto de glow que cubre EXACTAMENTE el 100% del botón */
 .spin-button-glow {
   position: relative;
   z-index: 10;
+  overflow: hidden; /* [modificación] Asegurar que el pseudo-elemento no se desborde */
 }
 
 .spin-button-glow::before {
   content: '';
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
-  border-radius: 16px;
+  inset: 0; /* [modificación] Cambiado de top/left/right/bottom a inset: 0 para cubrir exactamente 100% */
+  width: 100%; /* [modificación] Asegurar ancho completo */
+  height: 100%; /* [modificación] Asegurar altura completa */
+  border-radius: inherit; /* [modificación] Heredar el border-radius del botón */
   background: linear-gradient(45deg, #5ACCC1, #40C0EF, #5ACCC1);
   z-index: -1;
   filter: blur(8px);
@@ -737,19 +738,44 @@ body {
     min-width: 900px;
   }
 
-  /* [modificación] Optimización de espaciado vertical para TV 65" según feedback del usuario */
+  /* [modificación] Clase específica para logo mejorado en TV65 */
+  .logo-tv65-enhanced {
+    transform: scale(1.5) !important;
+    filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.4)) 
+            contrast(125%) 
+            brightness(115%) 
+            saturate(110%) !important;
+    z-index: 100 !important;
+    position: relative !important;
+  }
+
+  .logo-tv65-enhanced img {
+    image-rendering: -webkit-optimize-contrast !important;
+    image-rendering: crisp-edges !important;
+    max-width: none !important;
+    width: 1200px !important;
+    height: 360px !important;
+  }
+
+  /* [modificación] Optimización de espaciado vertical para TV 65" - RESTAURANDO ESPACIO DEL LOGO */
   header {
-    min-height: 15vh !important; /* [modificación] Al menos 15% de altura para el header */
-    padding: 3rem !important;
+    min-height: 15vh !important; /* [modificación] RESTAURADO - El logo necesita su espacio */
+    padding: 3rem 4rem !important; /* [modificación] Padding normal restaurado */
   }
 
   main {
-    padding: 2rem !important; /* [modificación] Reducido para dejar más espacio a la ruleta */
+    padding: 0rem 2rem !important; /* [modificación] SIN padding superior para acercar cronómetro */
   }
 
   footer {
     padding: 2rem !important;
     min-height: 5vh !important; /* [modificación] Exactamente 5vh como sugiere el usuario */
+  }
+
+  /* [modificación] Espaciado específico para cronómetro en TV65 - MÁS AGRESIVO */
+  .timer-container-tv65 {
+    margin-top: -8rem !important; /* [modificación] Margen negativo MÁS GRANDE para acercarlo realmente */
+    margin-bottom: 2rem !important;
   }
 
   /* [modificación] Ruleta optimizada para 55vh según feedback del usuario */
@@ -962,6 +988,22 @@ body {
 
 /* [modificación] Efectos especiales para elementos interactivos en TV vertical - AHORA HABILITADO */
 @media (min-width: 2160px) and (min-height: 3840px) {
+  /* [modificación] Efecto de glow mejorado para TV que cubre 100% del botón */
+  .spin-button-glow::before {
+    filter: blur(12px); /* [modificación] Más blur para TV */
+    background: linear-gradient(45deg, #5ACCC1, #40C0EF, #5ACCC1, #F2BD35); /* [modificación] Más colores para TV */
+  }
+
+  .spin-button-glow:hover::before {
+    opacity: 0.9; /* [modificación] Más visible en TV */
+    filter: blur(16px); /* [modificación] Aún más blur al hover en TV */
+  }
+
+  /* [modificación] Animación ultra mejorada para TV */
+  .animate-pulse-subtle {
+    animation: pulse-ultra 2s ease-in-out infinite !important;
+  }
+
   .hover\:scale-110:hover {
     transform: scale(1.15) !important;
   }

@@ -39,15 +39,20 @@ const Logo = ({
       const height = window.innerHeight;
       const isGameView = window.location.pathname.includes("/game/");
 
-      // Detección específica para resolución 2160×3840 (portrait)
-      const isUltraHighRes = width === 2160 && height === 3840;
+      // [modificación] Detección específica corregida para resolución 2160×3840 (portrait y landscape)
+      const isUltraHighRes = (width === 2160 && height === 3840) || (width === 3840 && height === 2160);
+
+      // [modificación] Debug SIMPLIFICADO para logo en desarrollo
+      if (process.env.NODE_ENV === 'development' && isUltraHighRes) {
+        console.log('🖼️ Logo TV65 detectada:', { width, height, isGameView });
+      }
 
       if (isUltraHighRes) {
         // [modificación] En TV vertical dedicamos un logo aún más grande
         if (isGameView) {
-          setDimensions({ width: 800, height: 240 });   // Vista de juego → grande pero compacto
+          setDimensions({ width: 1000, height: 300 });   // [modificación] Vista de juego → más grande para visibilidad
         } else {
-          setDimensions({ width: 1200, height: 360 });  // Vista principal → súper grande
+          setDimensions({ width: 1400, height: 420 });  // [modificación] Vista principal → súper grande
         }
       } else if (isGameView) {
         if (width < 640) {
@@ -83,9 +88,20 @@ const Logo = ({
     };
 
     updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, [size]);
+    
+    // [modificación] Throttle mejorado
+    let timeoutId: NodeJS.Timeout | null = null;
+    const throttledUpdateSize = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(updateSize, 500);
+    };
+    
+    window.addEventListener("resize", throttledUpdateSize);
+    return () => {
+      window.removeEventListener("resize", throttledUpdateSize);
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [size]); // [modificación] Solo dependencia 'size'
 
   const logoSize = size === "auto" ? dimensions : sizesMap[size];
   const safeWidth = logoSize?.width ?? 160;

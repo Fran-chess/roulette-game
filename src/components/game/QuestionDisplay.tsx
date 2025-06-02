@@ -23,8 +23,8 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
   }, [initialSeconds]);
 
   useEffect(() => {
-    // [modificación] Estado urgente cuando quedan menos de 10 segundos
-    setIsUrgent(seconds <= 10);
+    // [modificación] Estado urgente cuando quedan 5 segundos o menos (antes 10)
+    setIsUrgent(seconds <= 5);
 
     if (seconds <= 0) {
       onTimeUp();
@@ -48,12 +48,12 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (seconds / initialSeconds) * circumference;
 
-  // [modificación] Debug info para verificar detección - SOLO EN DESARROLLO Y CON THROTTLE
+  // [modificación] Debug info para verificar detección - SOLO CUANDO CAMBIA
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('Timer Debug:', { isTV65, isTVTouch, timerSize });
+      console.log('⏱️ Timer configurado:', { isTV65, isTVTouch, timerSize });
     }
-  }, [isTV65, isTVTouch, timerSize]); // [modificación] Agregada dependencia timerSize
+  }, [isTV65, isTVTouch, timerSize]); // [modificación] Solo cuando cambian estos valores
 
   return (
     <motion.div 
@@ -133,7 +133,7 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
         </div>
       </div>
 
-      {/* [modificación] Indicador de urgencia ultra visible */}
+      {/* [modificación] Indicador de urgencia ultra visible - mejorado para 5 segundos */}
       {isUrgent && (
         <motion.div 
           className="mt-6 text-red-400 font-black text-center"
@@ -142,9 +142,9 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
             textShadow: '0 6px 12px rgba(0, 0, 0, 0.9), 0 0 30px #ef4444' 
           }}
           animate={{ opacity: [1, 0.5, 1] }}
-          transition={{ duration: 0.8, repeat: Infinity }}
+          transition={{ duration: 0.6, repeat: Infinity }} // [modificación] Más rápido para mayor urgencia
         >
-          ¡TIEMPO AGOTÁNDOSE!
+          {seconds <= 3 ? '¡ÚLTIMOS SEGUNDOS!' : '¡TIEMPO AGOTÁNDOSE!'}
         </motion.div>
       )}
     </motion.div>
@@ -171,9 +171,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   const [isAnswered, setIsAnswered] = useState(false);
   const hasTimeUpExecutedRef = useRef(false);
 
-  // [modificación] Tiempos ajustados para mejor experiencia
+  // [modificación] Tiempos ajustados - 20 segundos para TV65 según solicitud del usuario
   const timerSeconds = useMemo(() => {
-    return isTV65 ? 60 : isTVTouch ? 40 : isTablet ? 30 : 25;
+    return isTV65 ? 20 : isTVTouch ? 40 : isTablet ? 30 : 25;
   }, [isTV65, isTVTouch, isTablet]);
 
   // [modificación] Sistema de ajuste automático basado en longitud de texto
@@ -196,21 +196,26 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       const width = window.innerWidth;
       const height = window.innerHeight;
       
-      // [modificación] Detección más precisa - SOLO ACTUALIZAR SI CAMBIAN LOS FLAGS
-      const isTV65Resolution = width >= 2160 && height >= 3840;
-      const isTVTouchResolution = width >= 1025 && width < 2160;
-      const isTabletResolution = width >= 601 && width <= 1024;
+      // [modificación] Detección corregida para TV65 2160x3840 (portrait y landscape)
+      const isTV65Resolution = (width === 2160 && height === 3840) || (width === 3840 && height === 2160);
+      const isTVTouchResolution = (width >= 1025 && width < 2160) && !isTV65Resolution;
+      const isTabletResolution = (width >= 601 && width <= 1024) && !isTV65Resolution;
       
-      // [modificación] Solo actualizar estado si realmente cambió
-      setIsTV65(prev => prev !== isTV65Resolution ? isTV65Resolution : prev);
-      setIsTVTouch(prev => prev !== isTVTouchResolution ? isTVTouchResolution : prev);
-      setIsTablet(prev => prev !== isTabletResolution ? isTabletResolution : prev);
+      // [modificación] Solo actualizar estado si realmente cambió - CONDICIÓN MEJORADA
+      if (isTV65 !== isTV65Resolution) setIsTV65(isTV65Resolution);
+      if (isTVTouch !== isTVTouchResolution) setIsTVTouch(isTVTouchResolution);
+      if (isTablet !== isTabletResolution) setIsTablet(isTabletResolution);
       
-      // [modificación] Debug info solo si hay cambios significativos
+      // [modificación] Debug SIMPLIFICADO y con throttle mejorado
       if (process.env.NODE_ENV === 'development') {
-        const hasSignificantChange = Math.abs(debugInfo.width - width) > 50 || Math.abs(debugInfo.height - height) > 50;
-        if (hasSignificantChange) {
-          console.log('Detección de dispositivo:', { width, height, isTV65Resolution, isTVTouchResolution, isTabletResolution });
+        const hasSignificantChange = Math.abs(debugInfo.width - width) > 100 || Math.abs(debugInfo.height - height) > 100;
+        if (hasSignificantChange || debugInfo.width === 0) {
+          console.log('🖥️ Dispositivo actualizado:', { 
+            width, 
+            height, 
+            isTV65Resolution, 
+            ratio: (width/height).toFixed(2)
+          });
           setDebugInfo({ width, height });
         }
       }
@@ -219,19 +224,19 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     // [modificación] Ejecutar una vez al inicio
     handleResize();
     
-    // [modificación] Throttle para evitar demasiadas ejecuciones
-    let timeoutId: NodeJS.Timeout;
+    // [modificación] Throttle mejorado para evitar loops
+    let timeoutId: NodeJS.Timeout | null = null;
     const throttledResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleResize, 250); // [modificación] Throttle de 250ms
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleResize, 500); // [modificación] Throttle aumentado a 500ms
     };
     
     window.addEventListener("resize", throttledResize);
     return () => {
       window.removeEventListener("resize", throttledResize);
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [debugInfo.width, debugInfo.height]); // [modificación] Agregadas dependencias debugInfo
+  }, []); // [modificación] DEPENDENCIAS VACÍAS para evitar loop infinito
 
   useEffect(() => {
     setSelectedAnswer(null);
@@ -432,22 +437,58 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         animate="visible"
         className="relative z-10 min-h-screen flex flex-col"
       >
-        {/* [modificación] Header con logo optimizado para TV65 */}
+        {/* [modificación] Header con logo restaurado a tamaño completo */}
         <header 
-          className="flex justify-center items-center"
+          className="flex justify-center items-center relative"
           style={{
-            padding: isTV65 ? '48px 32px' : '32px 16px',
-            minHeight: isTV65 ? '15vh' : 'auto'
+            padding: isTV65 ? '48px 64px' : isTVTouch ? '32px 48px' : '24px 32px', // [modificación] Padding completo restaurado
+            minHeight: isTV65 ? '15vh' : isTVTouch ? '12vh' : 'auto', // [modificación] RESTAURADO a 15vh para dar espacio al logo
+            background: isTV65 ? 'rgba(0, 0, 0, 0.1)' : 'transparent', // [modificación] Fondo sutil para TV65
+            borderBottom: isTV65 ? '2px solid rgba(255, 255, 255, 0.1)' : 'none'
           }}
         >
-          <Logo size={isTV65 ? "lg" : isTVTouch ? "lg" : "md"} animated={true} withShadow={true} />
+          {/* [modificación] Debug específico para logo en TV65 - SOLO EN DESARROLLO */}
+          {process.env.NODE_ENV === 'development' && isTV65 && (
+            <div className="absolute top-2 left-2 bg-green-500 text-white px-4 py-2 text-xl font-bold rounded z-20">
+              📺 TV65 ACTIVA - Logo: {isTV65 ? 'LG' : 'MD'}
+            </div>
+          )}
+          
+          {/* [modificación] Logo con tamaño completo restaurado */}
+          <div 
+            className="relative z-10"
+            style={{
+              transform: isTV65 ? 'scale(1.2)' : 'scale(1)', // [modificación] Escala mantenida
+              filter: isTV65 
+                ? 'drop-shadow(0 20px 40px rgba(0, 0, 0, 0.3)) contrast(120%) brightness(110%)' 
+                : 'drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2))',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            <Logo 
+              size={isTV65 ? "lg" : isTVTouch ? "lg" : "md"} 
+              animated={true} 
+              withShadow={true}
+              className={isTV65 ? "logo-tv65-enhanced" : ""} 
+            />
+          </div>
+          
+          {/* [modificación] Indicador visual adicional para TV65 */}
+          {isTV65 && (
+            <div 
+              className="absolute bottom-2 right-2 text-white/50 text-sm"
+              style={{ fontSize: '20px' }}
+            >
+              TV65 Mode Active
+            </div>
+          )}
         </header>
 
-        {/* [modificación] Contenido principal centrado con espaciado optimizado para TV65 */}
+        {/* [modificación] Contenido principal SIN padding superior para acercar cronómetro */}
         <main 
           className="flex-1 flex flex-col justify-center items-center"
           style={{
-            padding: isTV65 ? '32px 64px' : '24px 32px'
+            padding: isTV65 ? '0px 64px 32px 64px' : '24px 32px' // [modificación] Sin padding superior en TV65
           }}
         >
           <div 
@@ -457,8 +498,15 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             }}
           >
             
-            {/* [modificación] Cronómetro vistoso */}
-            <motion.div variants={itemVariants} className="flex justify-center mb-8">
+            {/* [modificación] Cronómetro MUY cerca del header con margen negativo agresivo */}
+            <motion.div 
+              variants={itemVariants} 
+              className={`flex justify-center ${isTV65 ? 'timer-container-tv65' : ''}`}
+              style={{
+                marginBottom: isTV65 ? '32px' : '32px', // [modificación] Margen inferior normal
+                marginTop: isTV65 ? '-80px' : '0px' // [modificación] Margen negativo MUY GRANDE para TV65
+              }}
+            >
               <Timer
                 key={`timer-${question.id}-${currentParticipant?.id || 'anonymous'}`}
                 initialSeconds={timerSeconds}

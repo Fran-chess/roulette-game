@@ -257,23 +257,27 @@ export default function GamePage() {
               <RouletteWheel questions={questions} ref={rouletteRef} />
             </div>
             <div className="relative">
-              {/* Botón Girar */}
-              <div className="absolute -inset-2 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-2xl opacity-70 blur-xl animate-pulse"></div>
-              <Button
-                variant="gradient"
-                className="relative px-10 py-5 text-xl font-extrabold shadow-xl rounded-xl
-                 bg-gradient-to-r from-teal-400 via-green-400 to-emerald-500
-                 border-2 border-white/30 hover:border-white/60
-                 animate-pulse-subtle spin-button-glow
-                 hover:shadow-[0_0_15px_5px_rgba(16,185,129,0.6)]"
-                onClick={handleSpin}
-                touchOptimized
-              >
-                <span className="inline-block mr-3 -mt-1 align-middle">
-                  <RouletteWheelIcon className="w-7 h-7" />
-                </span>
-                ¡Girar la Ruleta!
-              </Button>
+              {/* [modificación] Contenedor del botón con overflow-hidden para que el glow cubra exactamente el 100% */}
+              <div className="relative overflow-hidden rounded-full">
+                {/* [modificación] Efecto de glow que cubre EXACTAMENTE el 100% del botón */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-full opacity-70 blur-xl animate-pulse"></div>
+                
+                <Button
+                  variant="gradient"
+                  className="relative px-10 py-5 text-xl font-extrabold shadow-xl rounded-full
+                   bg-gradient-to-r from-teal-400 via-green-400 to-emerald-500
+                   border-2 border-white/30 hover:border-white/60
+                   animate-pulse-subtle spin-button-glow
+                   hover:shadow-[0_0_15px_5px_rgba(16,185,129,0.6)] overflow-hidden"
+                  onClick={handleSpin}
+                  touchOptimized
+                >
+                  <span className="inline-block mr-3 -mt-1 align-middle">
+                    <RouletteWheelIcon className="w-7 h-7" />
+                  </span>
+                  ¡Girar la Ruleta!
+                </Button>
+              </div>
             </div>
           </>
         )}
