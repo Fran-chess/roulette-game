@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
 // Endpoint para actualizar el estado de una sesión de juego
 export async function POST(request: Request) {
@@ -11,7 +12,16 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-    
+
+    const adminId = await getAuthenticatedAdminId();
+    if (!adminId) {
+      return NextResponse.json(
+        { message: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+    void adminId;
+
     const { sessionId, status } = await request.json();
 
     // [modificación] Logs detallados para debugging

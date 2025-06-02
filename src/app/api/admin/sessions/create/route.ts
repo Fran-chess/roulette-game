@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
 /**
  * Función de utilidad para esperar hasta que la sesión exista
@@ -48,12 +49,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { adminId } = await request.json();
+    void request;
+    const adminId = await getAuthenticatedAdminId();
 
     if (!adminId) {
       return NextResponse.json(
-        { message: 'ID de administrador es obligatorio' },
-        { status: 400 }
+        { message: 'No autorizado' },
+        { status: 401 }
       );
     }
 

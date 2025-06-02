@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,15 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    const adminId = getAuthenticatedAdminId();
+    if (!adminId) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+    void adminId;
 
     // [modificación] Parsear el cuerpo de la solicitud
     const { sessionId } = await request.json();

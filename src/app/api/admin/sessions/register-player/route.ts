@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
 // Endpoint para registrar un jugador en una sesión
 export async function POST(request: Request) {
@@ -9,6 +10,13 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: 'Error en la conexión con la base de datos' },
         { status: 500 }
+      );
+    }
+
+    if (!(await getAuthenticatedAdminId())) {
+      return NextResponse.json(
+        { message: 'No autorizado' },
+        { status: 401 }
       );
     }
     
@@ -49,14 +57,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Determinar el admin_id correcto
-    let adminId = 'auto_created'; // valor por defecto como fallback
+    // [modificación] Determinar el admin_id correcto para la sesión
+    let sessionAdminId = 'auto_created'; // valor por defecto como fallback
     let sessionExists = false;
 
     if (existingSession) {
       sessionExists = true;
       // [modificación] Usar type assertion segura para admin_id
-      adminId = (existingSession.admin_id as string) || 'auto_created';
+      sessionAdminId = (existingSession.admin_id as string) || 'auto_created';
 // //       console.log(`Sesión existente encontrada con admin_id: ${adminId}`);
       
       // Verificar si ya hay un jugador registrado con el mismo email
@@ -77,10 +85,10 @@ export async function POST(request: Request) {
 // //     console.log(`Admin ID final que se usará: ${adminId}`);
     
     // [modificación] Advertir si se está usando 'auto_created' ya que puede afectar las notificaciones
-    if (adminId === 'auto_created') {
+    if (sessionAdminId === 'auto_created') {
       console.warn(`⚠️ ADVERTENCIA: Se está usando admin_id='auto_created' para la sesión ${sessionId}.`);
       console.warn(`   Esto puede causar que los administradores no reciban notificaciones en tiempo real.`);
-      console.warn(`   Las notificaciones solo funcionarán si el admin está suscrito con filtro admin_id=eq.${adminId}`);
+      console.warn(`   Las notificaciones solo funcionarán si el admin está suscrito con filtro admin_id=eq.${sessionAdminId}`);
     } else {
 // //       console.log(`✅ Admin ID válido detectado (${adminId}). Las notificaciones en tiempo real deberían funcionar correctamente.`);
     }
@@ -97,7 +105,7 @@ export async function POST(request: Request) {
       especialidad: especialidad || null,
       participant_id: participantId,
       status: 'player_registered',
-      admin_id: adminId,
+      admin_id: sessionAdminId,
       updated_at: new Date().toISOString()
     };
 
