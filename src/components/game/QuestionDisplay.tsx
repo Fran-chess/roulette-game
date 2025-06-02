@@ -48,8 +48,12 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (seconds / initialSeconds) * circumference;
 
-  // [modificación] Debug info para verificar detección
-  console.log('Timer Debug:', { isTV65, isTVTouch, timerSize, window: { width: typeof window !== 'undefined' ? window.innerWidth : 'SSR', height: typeof window !== 'undefined' ? window.innerHeight : 'SSR' } });
+  // [modificación] Debug info para verificar detección - SOLO EN DESARROLLO Y CON THROTTLE
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Timer Debug:', { isTV65, isTVTouch, timerSize });
+    }
+  }, [isTV65, isTVTouch, timerSize]); // [modificación] Agregada dependencia timerSize
 
   return (
     <motion.div 
@@ -57,8 +61,8 @@ function Timer({ initialSeconds, onTimeUp, isTV65, isTVTouch }: TimerProps & { i
       animate={isUrgent ? { scale: [1, 1.05, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isUrgent ? Infinity : 0 }}
     >
-      {/* [modificación] Debug visual */}
-      {isTV65 && (
+      {/* [modificación] Debug visual - SOLO EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && isTV65 && (
         <div className="bg-red-500 text-white p-4 mb-4 text-2xl font-bold rounded">
           DEBUG: TV65 DETECTADA - Timer: {timerSize}px
         </div>
@@ -192,26 +196,42 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       const width = window.innerWidth;
       const height = window.innerHeight;
       
-      // [modificación] Debug más detallado
-      console.log('Detección de dispositivo:', { width, height });
-      setDebugInfo({ width, height });
-      
-      // [modificación] Detección más precisa
+      // [modificación] Detección más precisa - SOLO ACTUALIZAR SI CAMBIAN LOS FLAGS
       const isTV65Resolution = width >= 2160 && height >= 3840;
       const isTVTouchResolution = width >= 1025 && width < 2160;
       const isTabletResolution = width >= 601 && width <= 1024;
       
-      console.log('Flags:', { isTV65Resolution, isTVTouchResolution, isTabletResolution });
+      // [modificación] Solo actualizar estado si realmente cambió
+      setIsTV65(prev => prev !== isTV65Resolution ? isTV65Resolution : prev);
+      setIsTVTouch(prev => prev !== isTVTouchResolution ? isTVTouchResolution : prev);
+      setIsTablet(prev => prev !== isTabletResolution ? isTabletResolution : prev);
       
-      setIsTV65(isTV65Resolution);
-      setIsTVTouch(isTVTouchResolution);
-      setIsTablet(isTabletResolution);
+      // [modificación] Debug info solo si hay cambios significativos
+      if (process.env.NODE_ENV === 'development') {
+        const hasSignificantChange = Math.abs(debugInfo.width - width) > 50 || Math.abs(debugInfo.height - height) > 50;
+        if (hasSignificantChange) {
+          console.log('Detección de dispositivo:', { width, height, isTV65Resolution, isTVTouchResolution, isTabletResolution });
+          setDebugInfo({ width, height });
+        }
+      }
     };
     
+    // [modificación] Ejecutar una vez al inicio
     handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    
+    // [modificación] Throttle para evitar demasiadas ejecuciones
+    let timeoutId: NodeJS.Timeout;
+    const throttledResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleResize, 250); // [modificación] Throttle de 250ms
+    };
+    
+    window.addEventListener("resize", throttledResize);
+    return () => {
+      window.removeEventListener("resize", throttledResize);
+      clearTimeout(timeoutId);
+    };
+  }, [debugInfo.width, debugInfo.height]); // [modificación] Agregadas dependencias debugInfo
 
   useEffect(() => {
     setSelectedAnswer(null);
@@ -293,7 +313,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   );
 
   // [modificación] Función para obtener clases de estilo por opción - FORZANDO ESTILOS INLINE
-  const getOptionClasses = useCallback((option: AnswerOption, index: number) => {
+  const getOptionClasses = useCallback((option: AnswerOption) => {
     const baseClasses = "group relative w-full text-left transition-all duration-500 transform overflow-hidden";
     
     // [modificación] Estados visuales según respuesta
@@ -316,7 +336,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   }, [isAnswered, selectedAnswer]);
 
   // [modificación] Función para obtener estilos inline según dispositivo
-  const getOptionStyles = useCallback((option: AnswerOption) => {
+  const getOptionStyles = useCallback(() => {
     if (isTV65) {
       const fontSize = textMetrics.isVeryLong ? '48px' : textMetrics.isLong ? '56px' : '68px';
       return {
@@ -380,12 +400,14 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   // [modificación] Layout principal con DEBUG VISUAL - OPTIMIZADO PARA TV65
   return (
     <div className="min-h-screen bg-main-gradient relative overflow-hidden">
-      {/* [modificación] DEBUG INFO VISUAL */}
-      <div className="fixed top-0 left-0 bg-black/80 text-white p-4 text-lg font-bold z-50 rounded-br-lg">
-        <div>Resolución: {debugInfo.width}x{debugInfo.height}</div>
-        <div>TV65: {isTV65 ? 'SÍ' : 'NO'} | TVTouch: {isTVTouch ? 'SÍ' : 'NO'}</div>
-        <div>Tablet: {isTablet ? 'SÍ' : 'NO'}</div>
-      </div>
+      {/* [modificación] DEBUG INFO VISUAL - SOLO EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && debugInfo.width > 0 && (
+        <div className="fixed top-0 left-0 bg-black/80 text-white p-4 text-lg font-bold z-50 rounded-br-lg">
+          <div>Resolución: {debugInfo.width}x{debugInfo.height}</div>
+          <div>TV65: {isTV65 ? 'SÍ' : 'NO'} | TVTouch: {isTVTouch ? 'SÍ' : 'NO'}</div>
+          <div>Tablet: {isTablet ? 'SÍ' : 'NO'}</div>
+        </div>
+      )}
 
       {/* [modificación] Partículas de fondo decorativas */}
       <div className="particles-bg">
@@ -489,8 +511,8 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   <Button
                     variant="custom"
                     onClick={() => handleAnswer(option)}
-                    className={getOptionClasses(option, index)}
-                    style={getOptionStyles(option)}
+                    className={getOptionClasses(option)}
+                    style={getOptionStyles()}
                     disabled={isAnswered}
                   >
                     <div className="flex items-center justify-between w-full h-full">

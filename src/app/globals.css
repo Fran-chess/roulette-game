@@ -723,8 +723,8 @@ body {
   }
 }
 
-/* [modificación] TV TOUCH SCREEN PORTRAIT - 2160x3840 - TEMPORALMENTE DESHABILITADO */
-/*
+/* [modificación] TV TOUCH SCREEN PORTRAIT - 2160x3840 - AHORA HABILITADO */
+
 @media (min-width: 2160px) and (min-height: 3840px) {
   /* [modificación] Logo ultra grande y prominente para TV vertical */
   .logo-header {
@@ -918,8 +918,33 @@ body {
     overflow: hidden !important;
     padding: 1.5rem 2rem !important;
   }
+
+  /* [modificación] Optimizaciones para texto ultra largo en TV65 - AHORA HABILITADO */
+  .text-ultra-compact {
+    font-size: 2.5vh !important;
+    line-height: 1.1 !important;
+    padding: 0.5rem 1rem !important;
+  }
+  
+  .text-extra-compact {
+    font-size: 2.8vh !important;
+    line-height: 1.1 !important;
+    padding: 0.75rem 1.25rem !important;
+  }
+  
+  .option-height-adaptive {
+    min-height: 8vh !important;
+    max-height: 15vh !important;
+    overflow-y: auto !important;
+  }
+  
+  .text-responsive-break {
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    white-space: normal !important;
+  }
 }
-*/
 
 /* [modificación] Animación de pulso ultra para TV vertical con paleta coherente */
 @keyframes pulse-ultra {
@@ -935,8 +960,7 @@ body {
   }
 }
 
-/* [modificación] Efectos especiales para elementos interactivos en TV vertical - TEMPORALMENTE DESHABILITADO */
-/*
+/* [modificación] Efectos especiales para elementos interactivos en TV vertical - AHORA HABILITADO */
 @media (min-width: 2160px) and (min-height: 3840px) {
   .hover\:scale-110:hover {
     transform: scale(1.15) !important;
@@ -974,7 +998,6 @@ body {
     animation: gradient-flow 3s ease infinite !important;
   }
 }
-*/
 
 /* [modificación] Animación de flujo de gradiente para TV vertical */
 @keyframes gradient-flow {
@@ -1002,36 +1025,6 @@ body {
 .dynamic-padding-normal {
   padding: 2rem 3rem !important;
 }
-
-/* [modificación] Optimizaciones para texto ultra largo en TV65 - TEMPORALMENTE DESHABILITADO */
-/*
-@media (min-width: 2160px) and (min-height: 3840px) {
-  .text-ultra-compact {
-    font-size: 2.5vh !important;
-    line-height: 1.1 !important;
-    padding: 0.5rem 1rem !important;
-  }
-  
-  .text-extra-compact {
-    font-size: 2.8vh !important;
-    line-height: 1.1 !important;
-    padding: 0.75rem 1.25rem !important;
-  }
-  
-  .option-height-adaptive {
-    min-height: 8vh !important;
-    max-height: 15vh !important;
-    overflow-y: auto !important;
-  }
-  
-  .text-responsive-break {
-    word-break: break-word !important;
-    overflow-wrap: break-word !important;
-    hyphens: auto !important;
-    white-space: normal !important;
-  }
-}
-*/
 
 /* [modificación] Corrección de text-shadow problemático */
 .text-shadow-fixed {
