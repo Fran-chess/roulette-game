@@ -202,35 +202,36 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           ctx.arc(0, 0, radius, startAngle, endAngle);
           ctx.closePath();
 
+          // [modificación] Renderizado mejorado para segmento destacado
           if (highlightedSegment === i) {
-            const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, radius);
-            gradient.addColorStop(0, "#FFD700"); // oro brillante
-            gradient.addColorStop(0.7, segment.color);
-            gradient.addColorStop(1, "#8B7355"); // oro más oscuro
-            ctx.fillStyle = gradient;
-          } else {
+            // [modificación] Glow exterior dorado brillante
+            ctx.save();
+            ctx.shadowColor = "#FFD700";
+            ctx.shadowBlur = 25;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
             ctx.fillStyle = segment.color;
+            ctx.fill();
+            
+            // [modificación] Borde exterior grueso y blanco como aureola
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = "#FFFFFF";
+            ctx.shadowColor = "#FFD700";
+            ctx.shadowBlur = 15;
+            ctx.stroke();
+            ctx.restore();
+          } else {
+            // [modificación] Segmento normal sin efectos especiales
+            ctx.fillStyle = segment.color;
+            ctx.fill();
           }
-
-          ctx.fill();
-          // [modificación] Borde blanco de segmentos REMOVIDO según solicitud del usuario
-          // ctx.strokeStyle = "#ffffff";
-          // ctx.lineWidth = 3;
-          // ctx.stroke();
 
           // [modificación] Renderizado de texto profesional y adaptativo
           ctx.save();
-          ctx.fillStyle = getContrastYIQ(segment.color);
           const textAngle = startAngle + anglePerSegment / 2;
           ctx.rotate(textAngle);
 
           const textX = radius * (isMobile ? 0.52 : 0.62);
-
-          // [modificación] Sombra elegante más pronunciada para TV 4K
-          ctx.shadowColor = "rgba(0,0,0,0.5)";
-          ctx.shadowBlur = 8;
-          ctx.shadowOffsetX = 2;
-          ctx.shadowOffsetY = 2;
 
           // [modificación] Capitaliza cada palabra
           const displayText = segment.text
@@ -252,12 +253,26 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           }
 
-          // [modificación] Borde blanco del texto REMOVIDO según solicitud del usuario
-          // ctx.strokeStyle = "rgba(255,255,255,0.9)";
-          // ctx.lineWidth = 3;
-          // ctx.strokeText(displayText, textX, 0);
-
-          ctx.fillText(displayText, textX, 0);
+          // [modificación] Texto destacado para segmento ganador
+          if (highlightedSegment === i) {
+            // [modificación] Texto ganador con color fuerte y sombra dorada (sin fondo pill)
+            ctx.fillStyle = "#192A6E";
+            ctx.shadowColor = "#FFD700";
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.font = `600 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`; // [modificación] Font weight más grueso
+            ctx.fillText(displayText, textX, 0);
+          } else {
+            // [modificación] Texto normal con sombra elegante
+            ctx.fillStyle = getContrastYIQ(segment.color);
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillText(displayText, textX, 0);
+          }
+          
           ctx.restore();
         });
         ctx.restore();

@@ -12,10 +12,7 @@ import { Question, GameState } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
-import dynamic from 'next/dynamic';
-
-// [modificación] - Cargar confetti dinámicamente como en GameLayout
-const Confetti = dynamic(() => import("react-confetti"), { ssr: false });
+import MassiveConfetti from '@/components/ui/MassiveConfetti';
 
 /**
  * Pantalla que muestra la ruleta en la TV cuando se registra un participante
@@ -76,34 +73,6 @@ export default function TVRouletteScreen() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // [modificación] - Configuración dinámica del confetti para TV (igual que GameLayout pero optimizada para TV)
-  const confettiConfig = {
-    width: windowSize.width,
-    height: windowSize.height,
-    // [modificación] - Muchísimas más partículas para TV65 para efecto espectacular
-    numberOfPieces: isTV65 ? 3000 : 800, // Más partículas que GameLayout para TV
-    // [modificación] - Gravedad más lenta para TV65 para que caiga más elegante
-    gravity: isTV65 ? 0.08 : 0.15, // Gravedad aún más lenta para TV
-    // [modificación] - Velocidad inicial más alta para TV65
-    initialVelocityY: isTV65 ? 30 : 20,
-    initialVelocityX: isTV65 ? 18 : 12,
-    // [modificación] - Confetti NO se recicla para que haya una explosión inicial espectacular
-    recycle: false,
-    // [modificación] - Tamaño de partículas más grande para TV65
-    scalar: isTV65 ? 2.5 : 1.8, // Partículas mucho más grandes para TV
-    // [modificación] - Colores vibrantes y festivos
-    colors: [
-      '#ff0040', '#ff8c00', '#ffd700', '#00ff80', '#00bfff', 
-      '#8a2be2', '#ff1493', '#32cd32', '#ff6347', '#1e90ff',
-      '#ffa500', '#9370db', '#00ced1', '#ff69b4', '#00ff00'
-    ],
-    // [modificación] - Más tiempo de vida para partículas en TV65
-    ...(isTV65 && {
-      opacity: 0.95,
-      wind: 0.03,
-    })
-  };
 
   // [modificación] Log de montaje del componente para debugging con ID único
   useEffect(() => {
@@ -287,14 +256,12 @@ export default function TVRouletteScreen() {
   ) {
     return (
       <div className="min-h-screen relative">
-        {/* [modificación] - Confetti para TV cuando se gana un premio */}
-        {showConfetti && (
-          <Confetti
-            {...confettiConfig}
-            className="pointer-events-none fixed inset-0 z-50"
-            style={{ zIndex: 9999 }} // [modificación] - Z-index máximo para que esté encima de todo
-          />
-        )}
+        {/* [modificación] - Sistema de confetti masivo usando componente reutilizable */}
+        <MassiveConfetti 
+          show={showConfetti} 
+          windowSize={windowSize} 
+          isTV65={isTV65}
+        />
         <PrizeModal />
       </div>
     );
@@ -304,14 +271,12 @@ export default function TVRouletteScreen() {
   if (gameState === 'question' && currentQuestion) {
     return (
       <div className="min-h-screen relative">
-        {/* [modificación] - Confetti también disponible durante preguntas si es necesario */}
-        {showConfetti && (
-          <Confetti
-            {...confettiConfig}
-            className="pointer-events-none fixed inset-0 z-50"
-            style={{ zIndex: 9999 }}
-          />
-        )}
+        {/* [modificación] - Sistema de confetti masivo usando componente reutilizable */}
+        <MassiveConfetti 
+          show={showConfetti} 
+          windowSize={windowSize} 
+          isTV65={isTV65}
+        />
         <QuestionDisplay question={currentQuestion} />
       </div>
     );

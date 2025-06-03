@@ -6,6 +6,7 @@ import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
+import MassiveConfetti from "@/components/ui/MassiveConfetti";
 
 export default function PrizeModal() {
   const router = useRouter();
@@ -14,6 +15,7 @@ export default function PrizeModal() {
   const [isTablet, setIsTablet] = useState(false);
   const [isTVTouch, setIsTVTouch] = useState(false);
   const [isTV65, setIsTV65] = useState(false);
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   
   // [modificación] ID único para tracking de logs
   const componentId = useRef(`PrizeModal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
@@ -28,11 +30,12 @@ export default function PrizeModal() {
   const setShowConfetti = useGameStore((state) => state.setShowConfetti);
   const gameSession = useGameStore((state) => state.gameSession);
   const gameState = useGameStore((state) => state.gameState);
+  const showConfetti = useGameStore((state) => state.showConfetti);
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
 
-  // [modificación] useEffect para detección de tipo de pantalla
+  // [modificación] useEffect para detección de tipo de pantalla y windowSize
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -45,6 +48,7 @@ export default function PrizeModal() {
       setIsTV65(isTV65Resolution);
       setIsTablet(width >= 601 && width <= 1024 && !isTV65Resolution);
       setIsTVTouch(width >= 1025 && !isTV65Resolution);
+      setWindowSize({ width, height });
 
 // //       console.log(`📱 PrizeModal: Resolución detectada: ${width}x${height}, TV65: ${isTV65Resolution}`);
     };
@@ -571,6 +575,13 @@ export default function PrizeModal() {
           </motion.div>
         )}
       </motion.div>
+      
+      {/* [modificación] - Sistema de confetti masivo desde todos los bordes usando componente reutilizable */}
+      <MassiveConfetti 
+        show={showConfetti} 
+        windowSize={windowSize} 
+        isTV65={isTV65}
+      />
       
       {/* [modificación] Agregar estilos CSS para sombras de texto */}
       <style jsx global>{`
