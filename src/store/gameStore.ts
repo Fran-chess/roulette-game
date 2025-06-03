@@ -5,6 +5,7 @@ import type {
   Question, 
   PlaySession,
   GameStore,
+  GameState,
   ParticipantsStats
 } from '@/types';
 import { useSessionStore } from './sessionStore';
@@ -12,7 +13,7 @@ import { useSessionStore } from './sessionStore';
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
 export const useGameStore = create<GameStore>((set, get) => ({
   // Estados principales del juego
-  gameState: 'roulette',
+  gameState: 'roulette' as GameState,
   participants: [], // Lista de participantes (podría no ser necesaria si solo gestionas uno a la vez)
   currentParticipant: null,
   currentQuestion: null,
@@ -47,7 +48,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   // --- ACCIONES PRINCIPALES DEL JUEGO ---
-  setGameState: (newState) => set({ gameState: newState }),
+  setGameState: (newState: GameState) => set({ gameState: newState }),
 
   // [modificación] Actualizar setGameSession para evitar actualizaciones innecesarias
   setGameSession: (sessionData: PlaySession | null) => {
@@ -143,7 +144,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resetCurrentGameData: () => set({
     currentQuestion: null,
     lastSpinResultIndex: null,
-    gameState: 'roulette',
+    gameState: 'roulette' as GameState,
   }),
 
   // [modificación] Funciones para gestionar el feedback del premio
@@ -162,7 +163,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // [modificación] Actualizar clearCurrentGame para resetear completamente el juego
   resetCurrentGame: () => set({
-    gameState: 'roulette',
+    gameState: 'roulette' as GameState,
     currentParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
@@ -179,7 +180,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Función de reseteo completo (incluido para compatibilidad)
   resetAllData: () => set({
-    gameState: 'roulette',
+    gameState: 'roulette' as GameState,
     participants: [],
     currentParticipant: null,
     currentQuestion: null,

@@ -45,6 +45,27 @@ type SupabaseClient = {
 };
 
 // [modificación] Tipos para los datos de la base de datos
+type GameSessionData = {
+  id: string;
+  session_id: string;
+  admin_id: string;
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived'; // [modificación] Cambio de string a union type específico
+  nombre?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  email?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  apellido?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  especialidad?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  participant_id?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  created_at: string;
+  updated_at: string;
+  admin_updated_at?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  game_data?: Record<string, unknown>; // [modificación] Agregado para compatibilidad con PlaySession
+  lastquestionid?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  answeredcorrectly?: boolean; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  score?: number; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  premio_ganado?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  detalles_juego?: Record<string, unknown>; // [modificación] Eliminado | null para compatibilidad con PlaySession
+};
+
 type DatabaseRecord = {
   id: string;
   session_id: string;
@@ -183,25 +204,25 @@ export default function TVScreen() {
             table: 'plays',
           },
           (payload) => {
-//             console.log('📺 TV-UPDATE: 🔄 Evento UPDATE detectado en realtime');
-//             console.log('📺 TV-UPDATE: Payload completo:', JSON.stringify(payload, null, 2));
-//             console.log('📺 TV-UPDATE: Timestamp del evento:', payload.commit_timestamp);
+            console.log('📺 TV-UPDATE: 🔄 Evento UPDATE detectado en realtime');
+            console.log('📺 TV-UPDATE: Payload completo:', JSON.stringify(payload, null, 2));
+            console.log('📺 TV-UPDATE: Timestamp del evento:', payload.commit_timestamp);
             
             const { new: newRecord, old: oldRecord } = payload;
 
             if (newRecord) {
-//               console.log('📺 TV-UPDATE: ✅ Datos nuevos del registro:', newRecord);
-//               console.log('📺 TV-UPDATE: Session ID:', newRecord.session_id);
-//               console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
-//               console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
-//               console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
-//               console.log('📺 TV-UPDATE: Jugador:', newRecord.nombre || 'N/A');
-//               console.log('📺 TV-UPDATE: Email:', newRecord.email || 'N/A');
+              console.log('📺 TV-UPDATE: ✅ Datos nuevos del registro:', newRecord);
+              console.log('📺 TV-UPDATE: Session ID:', newRecord.session_id);
+              console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
+              console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
+              console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
+              console.log('📺 TV-UPDATE: Jugador:', newRecord.nombre || 'N/A');
+              console.log('📺 TV-UPDATE: Email:', newRecord.email || 'N/A');
               
               // [modificación] CRUCIAL: Limpiar gameState residual INMEDIATAMENTE cuando se registra participante
               if (oldRecord?.status === 'pending_player_registration' && newRecord.status === 'player_registered') {
-//                 console.log('🎉 TV-UPDATE: ¡PARTICIPANTE REGISTRADO! Cambiando a ruleta automáticamente');
-//                 console.log('🎮 TV-UPDATE: Limpiando estados residuales del gameStore ANTES de mostrar ruleta...');
+                console.log('🎉 TV-UPDATE: ¡PARTICIPANTE REGISTRADO! Cambiando a ruleta automáticamente');
+                console.log('🎮 TV-UPDATE: Limpiando estados residuales del gameStore ANTES de mostrar ruleta...');
                 
                 // [modificación] Importar y usar las funciones del gameStore directamente
                 const gameStore = useGameStore.getState();
@@ -212,22 +233,67 @@ export default function TVScreen() {
                 gameStore.setLastSpinResultIndex(null);
                 gameStore.setGameState('roulette'); // [modificación] CRUCIAL: Forzar estado a roulette
                 
-//                 console.log('🎮 TV-UPDATE: Estados del gameStore limpiados - gameState forzado a \'roulette\'');
+                console.log('🎮 TV-UPDATE: Estados del gameStore limpiados - gameState forzado a \'roulette\'');
+              }
+
+              // [modificación] NUEVO: Detectar cuando se prepara para siguiente participante
+              if ((oldRecord?.status === 'player_registered' || oldRecord?.status === 'playing' || oldRecord?.status === 'completed') && 
+                  newRecord.status === 'pending_player_registration') {
+                console.log('🔄 TV-UPDATE: ¡SESIÓN PREPARADA PARA SIGUIENTE PARTICIPANTE! Volviendo a WaitingScreen');
+                console.log('🔄 TV-UPDATE: Estado anterior:', oldRecord?.status, '→ pending_player_registration');
+                console.log('🔄 TV-UPDATE: Participante anterior:', oldRecord?.nombre, '→', newRecord.nombre);
+                
+                // [modificación] Limpiar gameStore para volver a estado inicial
+                const gameStore = useGameStore.getState();
+                gameStore.resetPrizeFeedback();
+                gameStore.setCurrentQuestion(null);
+                gameStore.setLastSpinResultIndex(null);
+                gameStore.setGameState('screensaver'); // [modificación] Volver a waiting screen
+                
+                console.log('🔄 TV-UPDATE: Estados del gameStore limpiados - gameState establecido a \'screensaver\' para waiting');
               }
               
               try {
                 const validatedSession = validateGameSession(newRecord);
-//                 console.log('📺 TV-UPDATE: ✅ Sesión validada exitosamente');
-//                 console.log('📺 TV-UPDATE: Actualizando estado de la TV a:', validatedSession.status);
+                console.log('📺 TV-UPDATE: ✅ Sesión validada exitosamente');
+                console.log('📺 TV-UPDATE: Actualizando estado de la TV a:', validatedSession.status);
                 setCurrentSession(validatedSession);
                 
+                // [modificación] CRUCIAL: Sincronizar sessionStore con gameStore
+                const gameStore = useGameStore.getState();
+                console.log('📺 TV-UPDATE: Sincronizando gameStore con sessionStore...');
+                gameStore.setGameSession({
+                  id: validatedSession.session_id,
+                  session_id: validatedSession.session_id,
+                  admin_id: validatedSession.admin_id,
+                  status: validatedSession.status,
+                  nombre: validatedSession.nombre || 'Pendiente',
+                  email: validatedSession.email || 'pendiente@registro.com',
+                  apellido: validatedSession.apellido || undefined,
+                  especialidad: validatedSession.especialidad || undefined,
+                  participant_id: validatedSession.participant_id || undefined,
+                  created_at: validatedSession.created_at,
+                  updated_at: validatedSession.updated_at,
+                  score: validatedSession.score || undefined,
+                  premio_ganado: validatedSession.premio_ganado || undefined,
+                  answeredcorrectly: validatedSession.answeredcorrectly || undefined,
+                  lastquestionid: validatedSession.lastquestionid || undefined,
+                  detalles_juego: validatedSession.detalles_juego || undefined,
+                  admin_updated_at: validatedSession.admin_updated_at || undefined
+                });
+                console.log('📺 TV-UPDATE: gameSession sincronizado exitosamente');
+                
                 if (validatedSession.status === 'player_registered' || validatedSession.status === 'playing') {
-//                   console.log('🎮 TV-UPDATE: ¡Estado de juego detectado! La TV debería cambiar a ruleta automáticamente');
+                  console.log('🎮 TV-UPDATE: ¡Estado de juego detectado! La TV debería cambiar a ruleta automáticamente');
                 }
               } catch (validationError) {
                 console.error('📺 TV-UPDATE: ❌ Error validando sesión:', validationError);
-//                 console.log('📺 TV-UPDATE: 🔄 Usando datos directamente como fallback');
+                console.log('📺 TV-UPDATE: 🔄 Usando datos directamente como fallback');
                 setCurrentSession(newRecord as unknown as GameSession);
+                
+                // [modificación] También sincronizar en caso de fallback
+                const gameStore = useGameStore.getState();
+                gameStore.setGameSession(newRecord as unknown as GameSessionData);
               }
             } else {
               console.warn('📺 TV-UPDATE: ⚠️ Evento UPDATE sin datos nuevos');
@@ -341,12 +407,40 @@ export default function TVScreen() {
           setCurrentSession(validatedSession);
 //           console.log('📺 TV: Estado inicial configurado exitosamente:', validatedSession.status);
           
+          // [modificación] CRUCIAL: Sincronizar gameStore con sessionStore en inicialización
+          const gameStore = useGameStore.getState();
+          console.log('📺 TV-INIT: Sincronizando gameStore con sesión inicial...');
+          gameStore.setGameSession({
+            id: validatedSession.session_id,
+            session_id: validatedSession.session_id,
+            admin_id: validatedSession.admin_id,
+            status: validatedSession.status,
+            nombre: validatedSession.nombre || 'Pendiente',
+            email: validatedSession.email || 'pendiente@registro.com',
+            apellido: validatedSession.apellido || undefined,
+            especialidad: validatedSession.especialidad || undefined,
+            participant_id: validatedSession.participant_id || undefined,
+            created_at: validatedSession.created_at,
+            updated_at: validatedSession.updated_at,
+            score: validatedSession.score || undefined,
+            premio_ganado: validatedSession.premio_ganado || undefined,
+            answeredcorrectly: validatedSession.answeredcorrectly || undefined,
+            lastquestionid: validatedSession.lastquestionid || undefined,
+            detalles_juego: validatedSession.detalles_juego || undefined,
+            admin_updated_at: validatedSession.admin_updated_at || undefined
+          });
+          console.log('📺 TV-INIT: gameSession sincronizado exitosamente en inicialización');
+          
           // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
         } catch (validationError) {
           console.error('📺 TV: Error validando sesión:', validationError);
           // [modificación] Fallback: usar datos directamente si la validación falla
           setCurrentSession(result.data as unknown as GameSession);
 //           console.log('📺 TV: Usando datos directamente como fallback');
+          
+          // [modificación] También sincronizar en caso de fallback
+          const gameStore = useGameStore.getState();
+          gameStore.setGameSession(result.data as unknown as GameSessionData);
         }
       } else {
 //         console.log('📺 TV: No hay sesión activa en este momento (data es null/undefined)');
@@ -448,25 +542,31 @@ export default function TVScreen() {
     
     // Solo hacer log cuando hay cambios reales en el estado de la sesión
     if (currentSession) {
-//       console.log('📺 TV-STATE: Sesión activa detectada');
-//       console.log('   Session ID:', currentSession.session_id.substring(0, 8) + '...');
-//       console.log('   Estado:', currentSession.status);
-//       console.log('   Participante:', currentSession.nombre || 'N/A');
-//       console.log('   Email:', currentSession.email || 'N/A');
+      console.log('📺 TV-STATE: Sesión activa detectada');
+      console.log('   Session ID:', currentSession.session_id.substring(0, 8) + '...');
+      console.log('   Estado:', currentSession.status);
+      console.log('   Participante:', currentSession.nombre || 'N/A');
+      console.log('   Email:', currentSession.email || 'N/A');
       
       switch (currentSession.status) {
         case 'player_registered':
-//           console.log('🎮 TV-STATE: ¡Participante registrado! Mostrando ruleta');
+          console.log('🎮 TV-STATE: ¡Participante registrado! Mostrando ruleta');
           break;
         case 'playing':
-//           console.log('🎮 TV-STATE: Juego en progreso, mostrando ruleta');
+          console.log('🎮 TV-STATE: Juego en progreso, mostrando ruleta');
           break;
         case 'completed':
-//           console.log('🏁 TV-STATE: Juego completado');
+          console.log('🏁 TV-STATE: Juego completado');
+          break;
+        case 'pending_player_registration':
+          console.log('⏳ TV-STATE: Esperando registro de participante, mostrando WaitingScreen');
+          break;
+        default:
+          console.log('❓ TV-STATE: Estado desconocido:', currentSession.status);
           break;
       }
     } else {
-//       console.log('📺 TV-STATE: No hay sesión activa, mostrando WaitingScreen');
+      console.log('📺 TV-STATE: No hay sesión activa, mostrando WaitingScreen');
     }
   }, [currentSession, isMounted]);
 
@@ -475,6 +575,14 @@ export default function TVScreen() {
     if (!isMounted) {
       // [modificación] Renderizar pantalla de carga mientras no esté montado
       return <LoadingScreen />;
+    }
+
+    // [modificación] Obtener gameState del gameStore para manejar "volver al inicio"
+    const gameState = useGameStore.getState().gameState;
+    
+    // [modificación] Si gameState es 'screensaver', mostrar WaitingScreen independientemente de la sesión
+    if (gameState === 'screensaver') {
+      return <WaitingScreen />;
     }
 
     if (!currentSession) {

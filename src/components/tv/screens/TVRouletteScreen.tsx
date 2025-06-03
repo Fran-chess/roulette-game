@@ -8,7 +8,7 @@ import RouletteWheel from '@/components/game/RouletteWheel';
 import Logo from '@/components/ui/Logo';
 import Button from '@/components/ui/Button';
 import RouletteWheelIcon from '@/components/ui/RouletteWheelIcon';
-import { Question } from '@/types';
+import { Question, GameState } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
@@ -45,7 +45,7 @@ export default function TVRouletteScreen() {
   const currentQuestion = useGameStore((state) => state.currentQuestion);
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
   const setQuestionsInStore = useGameStore((state) => state.setQuestions);
-  const gameState = useGameStore((state) => state.gameState);
+  const gameState: GameState = useGameStore((state) => state.gameState);
   const setGameState = useGameStore((state) => state.setGameState);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
@@ -129,8 +129,9 @@ export default function TVRouletteScreen() {
     ) {
       const selectedQuestion = questions[lastSpinResultIndex % questions.length];
       if (selectedQuestion) {
-// //         console.log('🎯 TV: Ruleta se detuvo en índice:', lastSpinResultIndex);
-// //         console.log('🎯 TV: Pregunta seleccionada:', selectedQuestion.category);
+        console.log('🎯 TV: Ruleta se detuvo en índice:', lastSpinResultIndex);
+        console.log('🎯 TV: Pregunta seleccionada:', selectedQuestion.category);
+        console.log('🎯 TV: Cambiando gameState de "roulette" a "question"');
         setCurrentQuestion(selectedQuestion);
         setGameState('question');
       }
@@ -147,26 +148,34 @@ export default function TVRouletteScreen() {
   // [modificación] Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
   // PERO NO interferir con el estado 'prize' cuando hay feedback válido
   useEffect(() => {
+    console.log('🔍 TV: Evaluando segundo useEffect con condiciones:'); // [modificación] Agregado para debugging
+    console.log('  - currentParticipant:', !!currentParticipant); // [modificación] Agregado para debugging
+    console.log('  - gameSession:', !!gameSession); // [modificación] Agregado para debugging
+    console.log('  - gameSession.status:', gameSession?.status); // [modificación] Agregado para debugging
+    console.log('  - gameState:', gameState); // [modificación] Agregado para debugging
+    console.log('  - prizeFeedback.answeredCorrectly:', prizeFeedback.answeredCorrectly); // [modificación] Agregado para debugging
+    
     if (
       currentParticipant &&
       gameSession &&
       (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
       gameState !== 'roulette' &&
       gameState !== 'question' &&
+      gameState !== 'screensaver' && // [modificación] NO forzar a roulette si está en screensaver (volver al inicio)
       // [modificación] NO forzar a roulette si estamos en estado 'prize' con feedback válido
       !(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)
     ) {
-// //       console.log(
-// //         `🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`
-// //       );
+      console.log(`🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`); // [modificación] Descomentado para debugging
       // [modificación] Solo limpiar estado de premio si NO tiene feedback válido (estado residual)
       if (gameState === 'prize' && prizeFeedback.answeredCorrectly === null) {
-// //         console.log(`🎮 TV: Limpiando estado residual de premio SIN feedback válido`);
+        console.log(`🎮 TV: Limpiando estado residual de premio SIN feedback válido`); // [modificación] Descomentado para debugging
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
       }
       setGameState('roulette');
+    } else {
+      console.log('🔍 TV: Segundo useEffect NO ejecutará cambio de estado'); // [modificación] Agregado para debugging
     }
   }, [
     currentParticipant,
@@ -183,26 +192,22 @@ export default function TVRouletteScreen() {
   // PERO NO interferir si el participante actual está en estado 'prize' válido
   useEffect(() => {
     if (currentParticipant && currentParticipant.nombre !== 'Pendiente') {
-// //       console.log(
-// //         `🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, limpiando estados residuales...`
-// //       );
+      console.log(`🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, limpiando estados residuales...`); // [modificación] Descomentado para debugging
       
-      // [modificación] Solo limpiar estados si NO estamos en un premio válido
-      if (!(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)) {
+      // [modificación] Solo limpiar estados si NO estamos en un premio válido Y NO estamos en pregunta activa
+      if (!(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null) &&
+          gameState !== 'question') { // [modificación] AGREGADO: No limpiar cuando estamos en estado "question"
+        console.log(`🎮 TV: Limpiando estados residuales para participante: ${currentParticipant.nombre}`); // [modificación] Agregado para debugging
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
-        
-        if (gameState !== 'roulette' && gameState !== 'question') {
-// //           console.log(
-// //             `🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`
-// //           );
+
+        if (gameState !== 'roulette') {
+          console.log(`🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`); // [modificación] Descomentado para debugging
           setGameState('roulette');
         }
       } else {
-// //         console.log(
-// //           `🎮 TV: Participante ${currentParticipant.nombre} está en premio válido, NO limpiando estados`
-// //         );
+        console.log(`🎮 TV: Participante ${currentParticipant.nombre} está en estado válido (${gameState}), NO limpiando estados`); // [modificación] Mejorado para debugging
       }
     }
   }, [
@@ -218,7 +223,7 @@ export default function TVRouletteScreen() {
   // [modificación] Función para manejar el giro de la ruleta
   const handleSpin = () => {
     if (rouletteRef.current) {
-// //       console.log('📺 TV: Iniciando giro de ruleta desde TV...');
+      console.log('📺 TV: Iniciando giro de ruleta desde TV...');
       setGameState('roulette');
       rouletteRef.current.spin();
     } else {
@@ -265,9 +270,10 @@ export default function TVRouletteScreen() {
 
   // [modificación] Logging adicional para debugging del flujo de estados
   useEffect(() => {
-// //     console.log('🔄 TV: Estado actual del juego cambiado a:', gameState);
-// //     console.log('🔄 TV: Datos actuales - participante:', currentParticipant?.nombre, 'sesión:', gameSession?.id);
-  }, [gameState, currentParticipant, gameSession]);
+    console.log('🔄 TV: Estado actual del juego cambiado a:', gameState);
+    console.log('🔄 TV: Datos actuales - participante:', currentParticipant?.nombre, 'sesión:', gameSession?.id);
+    console.log('🔄 TV: lastSpinResultIndex:', lastSpinResultIndex, 'currentQuestion:', currentQuestion?.category);
+  }, [gameState, currentParticipant, gameSession, lastSpinResultIndex, currentQuestion]);
 
   if (!isMounted || loadingQuestions) {
     return <LoadingScreen />;

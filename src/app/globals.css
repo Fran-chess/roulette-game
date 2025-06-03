@@ -420,13 +420,13 @@ body {
 }
 
 .spin-button-glow::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0; /* [modificación] Cambiado de top/left/right/bottom a inset: 0 para cubrir exactamente 100% */
   width: 100%; /* [modificación] Asegurar ancho completo */
   height: 100%; /* [modificación] Asegurar altura completa */
   border-radius: inherit; /* [modificación] Heredar el border-radius del botón */
-  background: linear-gradient(45deg, #5ACCC1, #40C0EF, #5ACCC1);
+  background: linear-gradient(45deg, #5accc1, #40c0ef, #5accc1);
   z-index: -1;
   filter: blur(8px);
   opacity: 0;
@@ -740,11 +740,9 @@ body {
 
   /* [modificación] Clase específica para logo mejorado en TV65 */
   .logo-tv65-enhanced {
-    transform: scale(1.5) !important;
-    filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.4)) 
-            contrast(125%) 
-            brightness(115%) 
-            saturate(110%) !important;
+    transform: scale(1.425) !important;
+    filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.4)) contrast(125%)
+      brightness(115%) saturate(110%) !important;
     z-index: 100 !important;
     position: relative !important;
   }
@@ -753,50 +751,50 @@ body {
     image-rendering: -webkit-optimize-contrast !important;
     image-rendering: crisp-edges !important;
     max-width: none !important;
-    width: 1200px !important;
-    height: 360px !important;
+    width: 1140px !important;
+    height: 342px !important;
   }
 
-  /* [modificación] Optimización de espaciado vertical para TV 65" - RESTAURANDO ESPACIO DEL LOGO */
+  /* [modificación] Optimización de espaciado vertical para TV 65" - MINIMALISTA EXTREMO */
   header {
-    min-height: 15vh !important; /* [modificación] RESTAURADO - El logo necesita su espacio */
-    padding: 3rem 4rem !important; /* [modificación] Padding normal restaurado */
+    min-height: 4vh !important;
+    padding: 0.75rem 4rem 0rem 4rem !important;
   }
 
   main {
-    padding: 0rem 2rem !important; /* [modificación] SIN padding superior para acercar cronómetro */
+    padding: 0rem 2rem !important;
   }
 
   footer {
     padding: 2rem !important;
-    min-height: 5vh !important; /* [modificación] Exactamente 5vh como sugiere el usuario */
+    min-height: 5vh !important;
   }
 
-  /* [modificación] Espaciado específico para cronómetro en TV65 - MÁS AGRESIVO */
+  /* [modificación] Espaciado específico para cronómetro en TV65 - ULTRA EXTREMO */
   .timer-container-tv65 {
-    margin-top: -8rem !important; /* [modificación] Margen negativo MÁS GRANDE para acercarlo realmente */
-    margin-bottom: 2rem !important;
+    margin-top: -20rem !important;
+    margin-bottom: 0.375rem !important;
   }
 
   /* [modificación] Ruleta optimizada para 55vh según feedback del usuario */
   .wheel-container {
     width: auto !important;
     height: auto !important;
-    max-width: 55vh !important; /* [modificación] 55% de altura como sugiere el usuario */
+    max-width: 55vh !important;
     max-height: 55vh !important;
   }
 
   .wheel-canvas {
     filter: drop-shadow(0 25px 50px rgba(0, 0, 0, 0.25)) !important;
     border: 8px solid rgba(255, 255, 255, 0.2) !important;
-    max-width: 55vh !important; /* [modificación] Respetar el 55vh */
+    max-width: 55vh !important;
     max-height: 55vh !important;
   }
 
   /* [modificación] Container centrado de 1800px máximo según feedback del usuario */
   .container-tv {
     max-width: 1800px !important;
-    padding: 2rem !important; /* [modificación] Reducido para más espacio central */
+    padding: 2rem !important;
     margin: 0 auto;
   }
 
@@ -836,7 +834,9 @@ body {
   }
 
   /* [modificación] Texto base más legible para TV vertical */
-  p, label, span {
+  p,
+  label,
+  span {
     font-size: 2.5rem !important;
     line-height: 1.4;
     font-weight: 500;
@@ -848,20 +848,22 @@ body {
     padding: 2rem 4rem !important;
     font-size: 3rem !important;
     font-weight: 900 !important;
-    border-radius: 1.5rem !important; /* [modificación] Menos redondeado para forma más rectangular */
+    border-radius: 1.5rem !important;
     min-height: 240px !important;
-    min-width: 1400px !important; /* [modificación] Aumentado de 800px a 1400px */
+    min-width: 1400px !important;
     border-width: 8px !important;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 
-                inset 0 0 20px rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+      inset 0 0 20px rgba(255, 255, 255, 0.1) !important;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     transition: all 0.3s ease !important;
-    line-height: 1.1 !important; /* [modificación] Mejor line-height como sugiere el usuario */
+    line-height: 1.1 !important;
   }
 
   /* [modificación] Inputs más grandes para TV vertical */
-  input, select, textarea {
+  input,
+  select,
+  textarea {
     font-size: 2.5rem !important;
     padding: 1.5rem 2rem !important;
     border-radius: 1rem !important;
@@ -871,19 +873,19 @@ body {
 
   /* [modificación] Espaciado ajustado para mejor distribución vertical */
   .space-y-4 > * + * {
-    margin-top: 2rem !important; /* [modificación] Reducido de 3rem para acercar elementos */
+    margin-top: 2rem !important;
   }
 
   .space-y-6 > * + * {
-    margin-top: 3rem !important; /* [modificación] Reducido de 4rem */
+    margin-top: 3rem !important;
   }
 
   .space-y-12 > * + * {
-    margin-top: 3rem !important; /* [modificación] Espaciado entre ruleta y botón optimizado */
+    margin-top: 3rem !important;
   }
 
   .space-y-16 > * + * {
-    margin-top: 4rem !important; /* [modificación] Espaciado general optimizado */
+    margin-top: 4rem !important;
   }
 
   /* [modificación] Partículas más grandes para TV vertical */
@@ -907,7 +909,7 @@ body {
     animation: pulse-ultra 2s ease-in-out infinite !important;
   }
 
-  /* [modificación] - Optimizaciones específicas para TV65 - VERSIÓN LIMPIA */
+  /* [modificación] - Optimizaciones específicas para TV65 - VERSIÓN LIMPIA CON SCROLL */
   .tv65-option-text {
     display: flex !important;
     align-items: center !important;
@@ -928,13 +930,80 @@ body {
     text-shadow: 0 4px 8px rgba(0, 0, 0, 1) !important;
   }
 
-  /* [modificación] - Contenedores de botones optimizados */
-  .tv-65-layout button {
-    min-height: 14vh !important;
-    max-height: 18vh !important;
+  /* [modificación] NUEVO: Estilos para scroll interno de opciones en TV65 */
+  .tv65-option-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+  }
+
+  .tv65-option-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .tv65-option-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .tv65-option-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+  }
+
+  .tv65-option-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.6);
+  }
+
+  /* [modificación] NUEVO: Layout flex robusto para opciones TV65 */
+  .tv65-option-layout {
     display: flex !important;
     align-items: center !important;
-    justify-content: flex-start !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .tv65-option-text-container {
+    flex: 1 !important;
+    display: block !important;
+    overflow-y: auto !important;
+    max-height: 280px !important;
+    padding-right: 40px !important;
+    font-weight: 900 !important;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 1) !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+  }
+
+  .tv65-option-icon {
+    min-width: 112px !important;
+    min-height: 112px !important;
+    max-width: 112px !important;
+    max-height: 112px !important;
+    border-radius: 9999px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    font-weight: 900 !important;
+    font-size: 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-left: 48px !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7) !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* [modificación] - Contenedores de botones optimizados AMPLIADOS */
+  .tv-65-layout button {
+    min-height: 260px !important;
+    max-height: 380px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
   }
@@ -942,61 +1011,45 @@ body {
   .tv-65-layout .btn-option {
     box-sizing: border-box !important;
     overflow: hidden !important;
-    padding: 1.5rem 2rem !important;
+    padding: 56px 80px !important;
   }
 
-  /* [modificación] Optimizaciones para texto ultra largo en TV65 - AHORA HABILITADO */
-  .text-ultra-compact {
-    font-size: 2.5vh !important;
-    line-height: 1.1 !important;
-    padding: 0.5rem 1rem !important;
-  }
-  
-  .text-extra-compact {
-    font-size: 2.8vh !important;
-    line-height: 1.1 !important;
-    padding: 0.75rem 1.25rem !important;
-  }
-  
-  .option-height-adaptive {
-    min-height: 8vh !important;
-    max-height: 15vh !important;
-    overflow-y: auto !important;
-  }
-  
-  .text-responsive-break {
+  /* [modificación] NUEVO: Clases para clamp font-size AMPLIADO en TV65 */
+  .tv65-clamp-text {
+    font-size: clamp(60px, 3vw, 80px) !important;
+    line-height: 1.18 !important;
+    font-weight: 900 !important;
+    color: #fff !important;
+    text-shadow: 0 6px 16px rgba(0, 0, 0, 1), 0 10px 32px rgba(0, 0, 0, 0.7) !important;
     word-break: break-word !important;
-    overflow-wrap: break-word !important;
-    hyphens: auto !important;
     white-space: normal !important;
+    hyphens: auto !important;
   }
-}
 
-/* [modificación] Animación de pulso ultra para TV vertical con paleta coherente */
-@keyframes pulse-ultra {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-    box-shadow: 0 0 40px rgba(90, 204, 193, 0.6); /* [modificación] Cambio de verde a teal */
+  /* [modificación] Animación de pulso ultra para TV vertical con paleta coherente */
+  @keyframes pulse-ultra {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+      box-shadow: 0 0 40px rgba(90, 204, 193, 0.6);
+    }
+    50% {
+      opacity: 0.9;
+      transform: scale(1.02);
+      box-shadow: 0 0 60px rgba(90, 204, 193, 0.8);
+    }
   }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.02);
-    box-shadow: 0 0 60px rgba(90, 204, 193, 0.8); /* [modificación] Cambio de verde a teal */
-  }
-}
 
-/* [modificación] Efectos especiales para elementos interactivos en TV vertical - AHORA HABILITADO */
-@media (min-width: 2160px) and (min-height: 3840px) {
-  /* [modificación] Efecto de glow mejorado para TV que cubre 100% del botón */
+  /* [modificación] Efectos especiales para elementos interactivos en TV vertical - AHORA HABILITADO */
   .spin-button-glow::before {
-    filter: blur(12px); /* [modificación] Más blur para TV */
-    background: linear-gradient(45deg, #5ACCC1, #40C0EF, #5ACCC1, #F2BD35); /* [modificación] Más colores para TV */
+    filter: blur(12px);
+    background: linear-gradient(45deg, #5accc1, #40c0ef, #5accc1, #f2bd35);
   }
 
   .spin-button-glow:hover::before {
-    opacity: 0.9; /* [modificación] Más visible en TV */
-    filter: blur(16px); /* [modificación] Aún más blur al hover en TV */
+    opacity: 0.9;
+    filter: blur(16px);
   }
 
   /* [modificación] Animación ultra mejorada para TV */
@@ -1043,7 +1096,8 @@ body {
 
 /* [modificación] Animación de flujo de gradiente para TV vertical */
 @keyframes gradient-flow {
-  0%, 100% {
+  0%,
+  100% {
     background-position: 0% 50%;
   }
   50% {
@@ -1070,10 +1124,6 @@ body {
 
 /* [modificación] Corrección de text-shadow problemático */
 .text-shadow-fixed {
-  text-shadow: 
-    0 4px 8px rgba(0, 0, 0, 1),
-    0 8px 16px rgba(0, 0, 0, 0.9),
-    2px 2px 0 rgba(0, 0, 0, 0.9),
-    -2px -2px 0 rgba(0, 0, 0, 0.9);
+  text-shadow: 0 4px 8px rgba(0, 0, 0, 1), 0 8px 16px rgba(0, 0, 0, 0.9),
+    2px 2px 0 rgba(0, 0, 0, 0.9), -2px -2px 0 rgba(0, 0, 0, 0.9);
 }
-

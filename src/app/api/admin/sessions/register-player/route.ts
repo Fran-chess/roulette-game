@@ -63,14 +63,14 @@ export async function POST(request: Request) {
 
     if (existingSession) {
       sessionExists = true;
-      // [modificación] Usar type assertion segura para admin_id
+      // [modificación] CRÍTICO: Preservar SIEMPRE el admin_id original de la sesión existente
       sessionAdminId = (existingSession.admin_id as string) || 'auto_created';
-// //       console.log(`Sesión existente encontrada con admin_id: ${adminId}`);
+      console.log(`📱 REGISTER: Sesión existente encontrada con admin_id: ${sessionAdminId}`);
       
       // Verificar si ya hay un jugador registrado con el mismo email
       if (existingSession.status === 'player_registered' && 
           existingSession.email === email) {
-// //         console.log('Participante ya registrado con el mismo email en esta sesión');
+        console.log('📱 REGISTER: Participante ya registrado con el mismo email en esta sesión');
         return NextResponse.json({
           message: 'Participante ya registrado en esta sesión',
           session: existingSession,
@@ -78,19 +78,18 @@ export async function POST(request: Request) {
         });
       }
     } else {
-// //       console.log(`Sesión ${sessionId} no encontrada, se creará un nuevo registro`);
+      console.log(`📱 REGISTER: Sesión ${sessionId} no encontrada, se creará un nuevo registro`);
     }
 
     // [modificación] Log del admin_id final que se usará
-// //     console.log(`Admin ID final que se usará: ${adminId}`);
+    console.log(`📱 REGISTER: Admin ID final que se usará: ${sessionAdminId}`);
     
-    // [modificación] Advertir si se está usando 'auto_created' ya que puede afectar las notificaciones
-    if (sessionAdminId === 'auto_created') {
-      console.warn(`⚠️ ADVERTENCIA: Se está usando admin_id='auto_created' para la sesión ${sessionId}.`);
+    // [modificación] CRÍTICO: Advertir solo si realmente se está usando 'auto_created' para nueva sesión
+    if (sessionAdminId === 'auto_created' && !sessionExists) {
+      console.warn(`⚠️ REGISTER: Se está usando admin_id='auto_created' para la NUEVA sesión ${sessionId}.`);
       console.warn(`   Esto puede causar que los administradores no reciban notificaciones en tiempo real.`);
-      console.warn(`   Las notificaciones solo funcionarán si el admin está suscrito con filtro admin_id=eq.${sessionAdminId}`);
-    } else {
-// //       console.log(`✅ Admin ID válido detectado (${adminId}). Las notificaciones en tiempo real deberían funcionar correctamente.`);
+    } else if (sessionAdminId !== 'auto_created') {
+      console.log(`✅ REGISTER: Admin ID válido detectado (${sessionAdminId}). Las notificaciones en tiempo real deberían funcionar correctamente.`);
     }
 
     // Crear un ID único para el participante
@@ -113,7 +112,9 @@ export async function POST(request: Request) {
 
     if (sessionExists) {
       // [modificación] Si la sesión existe, hacer UPDATE en lugar de DELETE + INSERT
-// //       console.log(`Actualizando sesión existente ${sessionId} con datos del jugador`);
+      console.log(`📱 REGISTER: Actualizando sesión existente ${sessionId} con datos del jugador`);
+      console.log(`📱 REGISTER: Estado anterior: ${existingSession?.status || 'N/A'} → player_registered`);
+      console.log(`📱 REGISTER: Admin ID mantenido: ${sessionAdminId}`);
       
       const { data: updatedSession, error: updateError } = await supabaseAdmin
         .from('plays')
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
         .single();
 
       if (updateError) {
-        console.error('Error al actualizar sesión con datos del jugador:', updateError);
+        console.error('❌ REGISTER: Error al actualizar sesión con datos del jugador:', updateError);
         return NextResponse.json(
           { message: 'Error al registrar jugador en la sesión', error: updateError.message },
           { status: 500 }
@@ -131,10 +132,11 @@ export async function POST(request: Request) {
       }
 
       result = updatedSession;
-// //       console.log(`Sesión ${sessionId} actualizada exitosamente con jugador: ${nombre}`);
+      console.log(`✅ REGISTER: Sesión ${sessionId} actualizada exitosamente con jugador: ${nombre}`);
+      console.log(`✅ REGISTER: Esto debería enviar evento UPDATE a la TV con estado: player_registered`);
     } else {
       // [modificación] Si no existe la sesión, crear una nueva con INSERT
-// //       console.log(`Creando nueva sesión ${sessionId} con datos del jugador`);
+      console.log(`📱 REGISTER: Creando nueva sesión ${sessionId} con datos del jugador`);
       
       const newSessionData = {
         ...participantData,
@@ -148,7 +150,7 @@ export async function POST(request: Request) {
         .single();
 
       if (insertError) {
-        console.error('Error al crear nueva sesión con jugador:', insertError);
+        console.error('❌ REGISTER: Error al crear nueva sesión con jugador:', insertError);
         return NextResponse.json(
           { message: 'Error al crear sesión con jugador', error: insertError.message },
           { status: 500 }
@@ -156,13 +158,14 @@ export async function POST(request: Request) {
       }
 
       result = newSession;
-// //       console.log(`Nueva sesión ${sessionId} creada exitosamente con jugador: ${nombre}`);
+      console.log(`✅ REGISTER: Nueva sesión ${sessionId} creada exitosamente con jugador: ${nombre}`);
+      console.log(`✅ REGISTER: Esto debería enviar evento INSERT a la TV con estado: player_registered`);
     }
 
-// //     console.log(`Participante ${nombre} registrado exitosamente en la sesión ${sessionId} con estado: player_registered`);
+    console.log(`✅ REGISTER: Participante ${nombre} registrado exitosamente en la sesión ${sessionId} con estado: player_registered`);
 
     // [modificación] Verificación adicional para asegurar que el cambio se propagó
-// //     console.log('🔍 REGISTER: Verificando que el cambio se aplicó correctamente en la base de datos...');
+    console.log('🔍 REGISTER: Verificando que el cambio se aplicó correctamente en la base de datos...');
     const { data: verificationData, error: verificationError } = await supabaseAdmin
       .from('plays')
       .select('*')
@@ -172,14 +175,15 @@ export async function POST(request: Request) {
     if (verificationError) {
       console.warn('⚠️ REGISTER: Error en verificación post-registro:', verificationError);
     } else {
-// //       console.log('✅ REGISTER: Verificación exitosa - Estado actual en DB:', verificationData.status);
-// //       console.log('✅ REGISTER: Participante en DB:', verificationData.nombre, '(' + verificationData.email + ')');
-// //       console.log('✅ REGISTER: Admin ID:', verificationData.admin_id);
-// //       console.log('✅ REGISTER: Timestamp updated_at:', verificationData.updated_at);
+      console.log('✅ REGISTER: Verificación exitosa - Estado actual en DB:', verificationData.status);
+      console.log('✅ REGISTER: Participante en DB:', verificationData.nombre, '(' + verificationData.email + ')');
+      console.log('✅ REGISTER: Admin ID en DB:', verificationData.admin_id);
+      console.log('✅ REGISTER: Timestamp updated_at:', verificationData.updated_at);
       
       // [modificación] Notificación específica para la TV
       if (verificationData.status === 'player_registered') {
-// //         console.log('🎯 REGISTER: ¡Participante registrado exitosamente! La TV debería cambiar a ruleta automáticamente via realtime');
+        console.log('🎯 REGISTER: ¡Participante registrado exitosamente! La TV debería cambiar a ruleta automáticamente via realtime');
+        console.log('🎯 REGISTER: Evento realtime enviado con admin_id:', verificationData.admin_id);
       }
     }
 

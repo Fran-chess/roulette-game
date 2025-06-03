@@ -172,8 +172,8 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
         ctx.clearRect(0, 0, size, size);
 
-        // [modificación] Fuente base optimizada para TV 4K - mucho más grande y mejor escalado
-        const baseFontSize = Math.max(24, radius * (isMobile ? 0.12 : 0.18));
+        // [modificación] Fuente base optimizada para TV 4K - reducido para letras más pequeñas
+        const baseFontSize = Math.max(20, radius * (isMobile ? 0.08 : 0.12));
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
 
@@ -241,12 +241,12 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             )
             .join(" ");
 
-          // [modificación] Disminuye tamaño de fuente hasta que quepa el texto (mínimo 10px)
+          // [modificación] Disminuye tamaño de fuente hasta que quepa el texto (mínimo 8px para permitir texto más pequeño)
           let fontSizeLocal = baseFontSize;
           ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           while (
             ctx.measureText(displayText).width > radius * 0.75 &&
-            fontSizeLocal > 10
+            fontSizeLocal > 8
           ) {
             fontSizeLocal -= 1;
             ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
@@ -408,7 +408,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           
           setTimeout(() => {
             // [modificación] Log para verificar el índice del resultado del giro
-// //             console.log("[RouletteWheel] spinAnimation finished. Setting lastSpinResultIndex:", winningIndex);
+            console.log("[RouletteWheel] spinAnimation finished. Setting lastSpinResultIndex:", winningIndex);
             setLastSpinResultIndex(winningIndex);
           }, 800);
           setIsSpinning(false);
