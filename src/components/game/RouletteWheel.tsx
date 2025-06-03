@@ -255,13 +255,31 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
           // [modificación] Texto destacado para segmento ganador
           if (highlightedSegment === i) {
-            // [modificación] Texto ganador con color fuerte y sombra dorada (sin fondo pill)
-            ctx.fillStyle = "#192A6E";
+            // [modificación] Texto ganador con efecto de brillo intenso
+            ctx.fillStyle = "#FFFFFF"; // [modificación] Texto blanco brillante
+            
+            // [modificación] Múltiples capas de glow para efecto de brillo
+            // Capa 1: Glow dorado exterior intenso
             ctx.shadowColor = "#FFD700";
-            ctx.shadowBlur = 6;
-            ctx.shadowOffsetX = 1;
-            ctx.shadowOffsetY = 1;
-            ctx.font = `600 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`; // [modificación] Font weight más grueso
+            ctx.shadowBlur = 20;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.font = `600 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
+            ctx.fillText(displayText, textX, 0);
+            
+            // [modificación] Capa 2: Glow blanco interior para brillo
+            ctx.shadowColor = "#FFFFFF";
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillText(displayText, textX, 0);
+            
+            // [modificación] Capa 3: Texto final con brillo amarillo-blanco
+            ctx.shadowColor = "#FFFF99";
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.fillStyle = "#FFFFFF";
             ctx.fillText(displayText, textX, 0);
           } else {
             // [modificación] Texto normal con sombra elegante

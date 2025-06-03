@@ -13,8 +13,8 @@ interface MassiveConfettiProps {
 }
 
 /**
- * [modificación] - Componente reutilizable para confetti masivo desde todos los bordes
- * Implementa el sistema de disparo masivo optimizado para TV65 y otros dispositivos
+ * [modificación] - Componente reutilizable para confetti masivo desde arriba y abajo
+ * Optimizado para rendimiento eliminando disparos laterales que causaban lag
  */
 export default function MassiveConfetti({ 
   show, 
@@ -46,42 +46,25 @@ export default function MassiveConfetti({
 
   return (
     <>
-      {/* Arriba */}
+      {/* [modificación] Arriba - Cantidad aumentada para compensar eliminación de lados */}
       <Confetti
         {...confettiConfig}
-        numberOfPieces={isTV65 ? 500 : 180}
+        numberOfPieces={isTV65 ? 600 : 220}
         confettiSource={{ x: 0, y: 0, w: windowSize.width, h: 40 }}
         recycle={false}
         className={className}
         style={{ zIndex: 9999 }}
       />
-      {/* Abajo */}
+      {/* [modificación] Abajo - Cantidad aumentada para compensar eliminación de lados */}
       <Confetti
         {...confettiConfig}
-        numberOfPieces={isTV65 ? 380 : 130}
+        numberOfPieces={isTV65 ? 450 : 170}
         confettiSource={{ x: 0, y: windowSize.height - 40, w: windowSize.width, h: 40 }}
         recycle={false}
         className={className}
         style={{ zIndex: 9999 }}
       />
-      {/* Izquierda */}
-      <Confetti
-        {...confettiConfig}
-        numberOfPieces={isTV65 ? 250 : 80}
-        confettiSource={{ x: 0, y: 0, w: 40, h: windowSize.height }}
-        recycle={false}
-        className={className}
-        style={{ zIndex: 9999 }}
-      />
-      {/* Derecha */}
-      <Confetti
-        {...confettiConfig}
-        numberOfPieces={isTV65 ? 250 : 80}
-        confettiSource={{ x: windowSize.width - 40, y: 0, w: 40, h: windowSize.height }}
-        recycle={false}
-        className={className}
-        style={{ zIndex: 9999 }}
-      />
+      {/* [modificación] ELIMINADOS: Confetti de izquierda y derecha para optimizar rendimiento */}
     </>
   );
 } 

@@ -2,7 +2,8 @@
 import { useGameStore } from "@/store/gameStore";
 import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
-import Image from "next/image";
+// [modificación] Eliminación del import de Image ya que no mostraremos imágenes de premios
+// import Image from "next/image";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
@@ -222,16 +223,17 @@ export default function PrizeModal() {
     return `${baseClasses} text-xl py-3`;
   }, [isTV65, isTVTouch, isTablet]);
 
-  const prizeImageClasses = useMemo(() => {
-    if (isTV65) {
-      return "w-96 h-96 object-contain rounded-2xl shadow-md bg-black/15 p-8 border-4 border-white/40";
-    } else if (isTVTouch) {
-      return "w-60 h-60 object-contain rounded-xl shadow-md bg-black/15 p-6 border-2 border-white/35";
-    } else if (isTablet) {
-      return "w-48 h-48 object-contain rounded-lg shadow-md bg-black/15 p-4 border-2 border-white/30";
-    }
-    return "w-[120px] h-[120px] object-contain rounded-lg shadow-md bg-black/15 p-2 border border-white/30";
-  }, [isTV65, isTVTouch, isTablet]);
+  // [modificación] Eliminación de prizeImageClasses ya que no mostraremos imágenes de premios
+  // const prizeImageClasses = useMemo(() => {
+  //   if (isTV65) {
+  //     return "w-96 h-96 object-contain rounded-2xl shadow-md bg-black/15 p-8 border-4 border-white/40";
+  //   } else if (isTVTouch) {
+  //     return "w-60 h-60 object-contain rounded-xl shadow-md bg-black/15 p-6 border-2 border-white/35";
+  //   } else if (isTablet) {
+  //     return "w-48 h-48 object-contain rounded-lg shadow-md bg-black/15 p-4 border-2 border-white/30";
+  //   }
+  //   return "w-[120px] h-[120px] object-contain rounded-lg shadow-md bg-black/15 p-2 border border-white/30";
+  // }, [isTV65, isTVTouch, isTablet]);
     
   // [modificación] useEffect para tracking de montaje/desmontaje - más eficiente
   useEffect(() => {
@@ -255,11 +257,6 @@ export default function PrizeModal() {
       console.log(`🎁 PrizeModal [${componentId.current}]: gameSession en estado prize:`, gameSession);
     }
   }, [gameState, answeredCorrectly, gameSession]);
-
-  // Normalización del nombre de la imagen (igual que antes)
-  const prizeImage = prizeName
-    ? `/images/premios/${prizeName.replace(/\s+/g, "-")}.png`
-    : null;
 
   // [modificación] Función para volver a jugar - mantiene el mismo participante y va a la ruleta
   const handlePlayAgain = async () => {
@@ -504,28 +501,6 @@ export default function PrizeModal() {
 
             {prizeName && (
               <>
-                {prizeImage && (
-                  <motion.div
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{
-                      scale: 1,
-                      opacity: 1,
-                      transition: { delay: 0.4, duration: 0.5 },
-                    }}
-                    // [modificación] Corregir contenedor de imagen de premio
-                    className="my-5 flex justify-center"
-                  >
-                    <Image
-                      src={prizeImage}
-                      alt={prizeName}
-                      // [modificación] Usar tamaños dinámicos basados en tipo de pantalla
-                      width={isTV65 ? 384 : isTVTouch ? 240 : isTablet ? 192 : 120}
-                      height={isTV65 ? 384 : isTVTouch ? 240 : isTablet ? 192 : 120}
-                      className={prizeImageClasses}
-                      onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
-                  </motion.div>
-                )}
                 <p className={explanationTextClasses}>
                   Has ganado:
                 </p>
@@ -542,7 +517,6 @@ export default function PrizeModal() {
                   className={prizeInstructionsClasses}
                 >
                   Por favor, acércate al mostrador principal para retirar tu
-                  {/* [modificación] Usar clase correcta para el texto destacado del premio */}
                   premio: <span className="font-marineBold">{prizeName}</span>.
                   ¡Gracias por participar!
                 </motion.div>
