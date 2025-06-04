@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const adminId = getAuthenticatedAdminId();
+    const adminId = await getAuthenticatedAdminId();
     if (!adminId) {
       return NextResponse.json(
         { error: 'No autorizado' },
