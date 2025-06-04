@@ -134,26 +134,28 @@ export async function POST(request: Request) {
     
 // //     console.log(`reset-player: Datos para reset (adminId normalizado):`, resetData);
     
-    // [modificación] Hacer UPDATE en lugar de DELETE + INSERT
-    const { data: updatedSession, error: updateError } = await supabaseAdmin
+    // Insertar nueva fila para iniciar un nuevo registro de jugador
+    const { data: newPlay, error: insertError } = await supabaseAdmin
       .from('plays')
-      .update(resetData)
-      .eq('session_id', sessionId)
+      .insert({
+        ...resetData,
+        session_id: sessionId,
+        created_at: new Date().toISOString()
+      })
       .select()
       .single();
-      
-    if (updateError) {
-      console.error('reset-player: Error al resetear la sesión:', updateError);
-      console.error('reset-player: Error details:', JSON.stringify(updateError, null, 2));
+    if (insertError) {
+      console.error('reset-player: Error al preparar nueva fila:', insertError);
+      console.error('reset-player: Error details:', JSON.stringify(insertError, null, 2));
       return NextResponse.json(
-        { message: 'Error al resetear la sesión', error: updateError.message, details: updateError },
+        { message: 'Error al resetear la sesión', error: insertError.message, details: insertError },
         { status: 500 }
       );
     }
-    
-    // Verificar que la actualización fue exitosa
-    if (!updatedSession) {
-      console.error('reset-player: No se recibieron datos después del update');
+
+    // Verificar que la inserción fue exitosa
+    if (!newPlay) {
+      console.error('reset-player: No se recibieron datos después de la inserción');
       return NextResponse.json(
         { message: 'No se pudo resetear la sesión.' },
         { status: 500 }
@@ -161,13 +163,13 @@ export async function POST(request: Request) {
     }
     
 // //     console.log(`reset-player: Sesión ${sessionId} reseteada exitosamente: estado cambiado a pending_player_registration`);
-// //     console.log(`reset-player: Sesión actualizada:`, updatedSession);
+// //     console.log(`reset-player: Nuevo registro creado:`, newPlay);
     
     return NextResponse.json({
       message: 'Sesión reseteada exitosamente para nuevo participante',
-      session: updatedSession,
-      resetType: 'update_only', // [modificación] Indicar que fue solo UPDATE
-      adminIdUsed: finalAdminId // [modificación] Indicar qué adminId se usó finalmente
+      session: newPlay,
+      resetType: 'insert', // indica que se creó un nuevo registro
+      adminIdUsed: finalAdminId
     });
   } catch (err: Error | unknown) {
     console.error('reset-player: Error al resetear los datos del jugador:', err);

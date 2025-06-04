@@ -157,9 +157,11 @@ export async function POST(request: Request) {
         .select('*')
         .eq('session_id', sessionId)
         .eq('status', 'player_registered')
-        .single();
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (verificationError) {
+      if (verificationError || !verificationData) {
         console.warn('⚠️ REGISTER: No se pudo verificar el registro, pero puede haber sido exitoso:', verificationError);
       } else {
         console.log(`✅ REGISTER: Verificación exitosa - Participante: ${verificationData.nombre} está registrado`);

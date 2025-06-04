@@ -131,35 +131,36 @@ export async function upsertSessionParticipant(
     // Generar participant_id único
     const participantId = generateUUID();
 
-    // [modificación] UPDATE en lugar de RPC para control directo de tipos
-    const { data: updatedSession, error: updateError } = await supabaseAdmin
+    // Inserta una nueva fila en la tabla plays para conservar el historial
+    const { data: insertedPlay, error: insertError } = await supabaseAdmin
       .from('plays')
-      .update({
+      .insert({
+        session_id: sessionId,
         nombre: nombre,
         apellido: apellido,
         email: email || `${nombre.toLowerCase().replace(/\s+/g, '')}@participante.com`,
         especialidad: especialidad,
         participant_id: participantId,
         status: 'player_registered',
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
-      .eq('session_id', sessionId) // sessionId ya validado como UUID
       .select()
       .single();
 
-    if (updateError) {
-      console.error('❌ SQL_HELPER: Error al actualizar participante:', updateError);
-      throw updateError;
+    if (insertError) {
+      console.error('❌ SQL_HELPER: Error al insertar participante:', insertError);
+      throw insertError;
     }
 
-    if (!updatedSession) {
-      throw new Error('No se pudo actualizar la sesión con el participante');
+    if (!insertedPlay) {
+      throw new Error('No se pudo crear el registro del participante');
     }
 
-    console.log(`✅ SQL_HELPER: Participante registrado exitosamente:`, updatedSession);
-    
+    console.log(`✅ SQL_HELPER: Participante registrado exitosamente:`, insertedPlay);
+
     // Retornar en formato array para compatibilidad con RPC
-    return [updatedSession];
+    return [insertedPlay];
 
   } catch (error) {
     console.error('❌ SQL_HELPER: Error general en upsertSessionParticipant:', error);

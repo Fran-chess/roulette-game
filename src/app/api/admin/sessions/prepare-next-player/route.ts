@@ -89,24 +89,26 @@ export async function POST(request: Request) {
     console.log('🔄 PREPARE-NEXT: Participante anterior:', existingSession.nombre, '→ Pendiente');
     console.log('🔄 PREPARE-NEXT: Admin ID preservado:', existingSession.admin_id);
 
-    // [modificación] Hacer UPDATE para resetear participante
-    const { data: updatedSession, error: updateError } = await supabaseAdmin
+    // Insertar un nuevo registro para dejar intactos los anteriores
+    const { data: newPlay, error: insertError } = await supabaseAdmin
       .from('plays')
-      .update(resetData)
-      .eq('session_id', sessionId)
+      .insert({
+        ...resetData,
+        session_id: sessionId,
+        created_at: new Date().toISOString()
+      })
       .select()
       .single();
-
-    if (updateError) {
-      console.error('❌ PREPARE-NEXT: Error al resetear sesión para siguiente participante:', updateError);
+    if (insertError) {
+      console.error('❌ PREPARE-NEXT: Error al preparar siguiente participante:', insertError);
       return NextResponse.json(
-        { message: 'Error al preparar sesión para siguiente participante', error: updateError.message },
+        { message: 'Error al preparar sesión para siguiente participante', error: insertError.message },
         { status: 500 }
       );
     }
 
     console.log('✅ PREPARE-NEXT: Sesión preparada exitosamente para siguiente participante');
-    console.log('✅ PREPARE-NEXT: Estado actualizado a:', updatedSession.status);
+    console.log('✅ PREPARE-NEXT: Estado actualizado a:', newPlay.status);
     console.log('✅ PREPARE-NEXT: Esto debería enviar evento UPDATE a la TV con estado: pending_player_registration');
 
     // [modificación] Verificación adicional para asegurar que el cambio se propagó
@@ -115,9 +117,11 @@ export async function POST(request: Request) {
       .from('plays')
       .select('*')
       .eq('session_id', sessionId)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (verificationError) {
+    if (verificationError || !verificationData) {
       console.warn('⚠️ PREPARE-NEXT: Error en verificación post-reset:', verificationError);
     } else {
       console.log('✅ PREPARE-NEXT: Verificación exitosa - Estado actual en DB:', verificationData.status);
@@ -135,7 +139,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: 'Sesión preparada exitosamente para siguiente participante',
-      session: updatedSession,
+      session: newPlay,
       ready_for_next: true
     });
 
