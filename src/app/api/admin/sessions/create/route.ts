@@ -1,44 +1,11 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedAdminId } from '@/lib/adminAuth';
+// [modificación] Importar funciones helper que manejan UUID correctamente
+import { validateUUID, createGameSession } from '@/lib/supabaseHelpers';
 
 /**
- * Función de utilidad para esperar hasta que la sesión exista
- */
-async function waitForSessionCreation(
-  sessionId: string,
-  maxAttempts = 5
-): Promise<boolean> {
-  if (!supabaseAdmin) {
-    console.error('Error: supabaseAdmin no está disponible');
-    return false;
-  }
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-// //     console.log(`Verificando creación de juego ${sessionId}, intento ${attempt + 1}/${maxAttempts}`);
-
-    // [modificación] Eliminados genéricos: supabaseAdmin infiere el tipo
-    const { data, error } = await supabaseAdmin
-      .from('plays')       // línea original con .from<Play>('plays')
-      .select('*')
-      .eq('session_id', sessionId)
-      .maybeSingle();      // evita 406 si no hay filas
-
-    if (error) {
-      console.error('Error al verificar juego:', error);
-    } else if (data) {
-// //       console.log('Juego verificado correctamente:', data);
-      return true;
-    }
-
-    await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
-  }
-
-  return false;
-}
-
-/**
- * Endpoint para crear un nuevo juego
+ * Endpoint para crear un nuevo juego usando estructura sessions + plays
  */
 export async function POST(request: Request) {
   try {
@@ -56,6 +23,17 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: 'No autorizado' },
         { status: 401 }
+      );
+    }
+
+    // [modificación] Validar que adminId sea un UUID válido
+    try {
+      validateUUID(adminId);
+    } catch (error) {
+      console.error('Error: adminId no es un UUID válido:', adminId, error);
+      return NextResponse.json(
+        { message: 'ID de administrador inválido' },
+        { status: 400 }
       );
     }
 
@@ -80,101 +58,78 @@ export async function POST(request: Request) {
       );
     }
 
-    // Crear nueva sesión de juego
-    const { data: sessionIdRaw, error: createError } = await supabaseAdmin.rpc(
-      'create_game_session',
-      { p_admin_id: adminId }
-    );
+    console.log(`🎮 CREATE: Creando nueva sesión para admin: ${adminId}`);
 
-    if (createError) {
-      console.error('Error al crear juego:', createError);
-      return NextResponse.json(
-        { message: 'Error al crear juego' },
-        { status: 500 }
+    // [modificación] Usar función helper simplificada que maneja sessions + plays
+    try {
+      const sessionUUID = await createGameSession(
+        adminId,
+        `Sesión creada el ${new Date().toLocaleString('es-ES')}`
       );
-    }
-    if (!sessionIdRaw || typeof sessionIdRaw !== 'string') {
-      console.error('Error: sessionId no es válido:', sessionIdRaw);
-      return NextResponse.json(
-        { message: 'Error al generar ID de sesión' },
-        { status: 500 }
-      );
-    }
-    const sessionId: string = sessionIdRaw;
-// //     console.log(`Juego creado con ID de sesión: ${sessionId}`);
 
-    // [modificación] Esperar a que la sesión esté realmente en la tabla
-    const sessionCreated = await waitForSessionCreation(sessionId);
-    if (!sessionCreated) {
-      console.error(
-        'No se pudo verificar la creación del juego después de múltiples intentos'
-      );
-    }
-
-    // [modificación] Quitar tipo any: dejamos que infiera
-    let sessionData = null;
-
-    // Obtener los detalles completos del juego creado
-    const { data, error: fetchError } = await supabaseAdmin
-      .from('plays')       // línea original con .from<Play>('plays')
-      .select('*')
-      .eq('session_id', sessionId)
-      .maybeSingle();
-
-    if (fetchError) {
-      console.error('Error al obtener detalles del juego:', fetchError);
-    } else {
-      sessionData = data;
-// //       console.log('Datos del juego obtenidos:', sessionData);
-
-      // Asegurarnos de que el estado sea 'pending_player_registration'
-      if (sessionData?.status !== 'pending_player_registration') {
-        const { error: updateError } = await supabaseAdmin
-          .from('plays')     // línea original con .from<Play>('plays')
-          .update({ status: 'pending_player_registration' })
-          .eq('session_id', sessionId);
-
-        if (updateError) {
-          console.error('Error al actualizar estado del juego:', updateError);
-        } else {
-          await new Promise((r) => setTimeout(r, 300));
-          const { data: updatedData } = await supabaseAdmin
-            .from('plays')   // línea original con .from<Play>('plays')
-            .select('*')
-            .eq('session_id', sessionId)
-            .maybeSingle();
-          if (updatedData) {
-            sessionData = updatedData;
-// //             console.log('Datos del juego actualizados:', sessionData);
-          }
-        }
+      if (!sessionUUID) {
+        console.error('Error: sessionUUID no devuelto por createGameSession');
+        return NextResponse.json(
+          { message: 'Error al generar sesión' },
+          { status: 500 }
+        );
       }
+
+      console.log(`✅ CREATE: Sesión creada con UUID: ${sessionUUID}`);
+
+      // [modificación] Obtener datos completos de la sesión y play creados
+      const { data: sessionData, error: sessionError } = await supabaseAdmin
+        .from('sessions')
+        .select('*')
+        .eq('id', sessionUUID)
+        .single();
+
+      const { data: playData, error: playError } = await supabaseAdmin
+        .from('plays')
+        .select('*')
+        .eq('session_id', sessionUUID)
+        .single();
+
+      if (sessionError || playError || !sessionData || !playData) {
+        console.error('Error al obtener datos completos:', { sessionError, playError });
+        return NextResponse.json(
+          { message: 'Error al obtener detalles de la sesión creada' },
+          { status: 500 }
+        );
+      }
+
+      console.log(`✅ CREATE: Sesión ${sessionUUID} creada exitosamente`);
+      console.log(`📊 CREATE: Session: ${sessionData.status}, Play: ${playData.status}`);
+
+      // [modificación] Respuesta con datos completos simplificada
+      return NextResponse.json({
+        message: 'Sesión creada exitosamente',
+        sessionId: sessionUUID,
+        session: {
+          ...playData, // Datos del play para compatibilidad con frontend
+          session_id: sessionUUID, // Asegurar que session_id esté presente
+        },
+        sessionDetails: sessionData, // Datos de la session
+        success: true
+      });
+
+    } catch (createError) {
+      console.error('Error al crear juego con helper:', createError);
+      return NextResponse.json(
+        { message: 'Error al crear juego', details: createError instanceof Error ? createError.message : 'Error desconocido' },
+        { status: 500 }
+      );
     }
 
-    // Verificación final
-    const { data: verifyData, error: verifyError } = await supabaseAdmin
-      .from('plays')       // línea original con .from<Play>('plays')
-      .select('*')
-      .eq('session_id', sessionId)
-      .maybeSingle();
-
-    if (verifyError || !verifyData) {
-      console.warn('El juego fue creado pero no se pudo verificar:', { verifyError });
-    } else {
-// //       console.log('Verificación final del juego:', verifyData);
-    }
-
-    return NextResponse.json({
-      message: 'Juego creado exitosamente',
-      sessionId,
-      session: sessionData,
-      sessionDbId: sessionData?.id ?? null,
-      verified: sessionCreated,
-    });
-  } catch (err: unknown) {
-    console.error('Error en la creación del juego:', err);
+  } catch (error: unknown) {
+    console.error('Error general en creación de sesión:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    
     return NextResponse.json(
-      { message: 'Error interno del servidor' },
+      { 
+        message: 'Error interno del servidor',
+        details: errorMessage 
+      },
       { status: 500 }
     );
   }

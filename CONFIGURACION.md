@@ -77,7 +77,7 @@ ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ```sql
 CREATE TABLE plays (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  session_id TEXT NOT NULL,                      
+  session_id UUID NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   admin_updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL, 
