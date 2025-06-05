@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedAdminId } from '@/lib/adminAuth';
+import { v4 as uuidv4 } from 'uuid';
+import { Participant } from '@/types';
 
-// Endpoint para registrar un jugador en una sesión
+/**
+ * Endpoint para registrar un jugador en una sesión
+ * CORREGIDO: Usa game_sessions para sesiones y participants para participantes
+ */
 export async function POST(request: Request) {
   try {
     // Verificar que supabaseAdmin esté disponible
@@ -22,8 +27,7 @@ export async function POST(request: Request) {
     
     const { sessionId, nombre, apellido, email, especialidad } = await request.json();
     
-    // Información de depuración
-// //     console.log('Recibida solicitud de registro:', { sessionId, nombre, email });
+    console.log('📱 REGISTER: Recibida solicitud de registro:', { sessionId, nombre, email });
 
     // Validar campos obligatorios
     if (!sessionId) {
@@ -40,9 +44,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Buscar la sesión existente para obtener el admin_id correcto
+    // CORREGIDO: Buscar la sesión en game_sessions
     const { data: existingSession, error: sessionError } = await supabaseAdmin
-      .from('plays')
+      .from('game_sessions')
       .select('*')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: false })
@@ -50,153 +54,203 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (sessionError) {
-      console.error('Error al buscar sesión existente:', sessionError);
+      console.error('❌ REGISTER: Error al buscar sesión existente:', sessionError);
       return NextResponse.json(
         { message: 'Error al verificar la sesión', error: sessionError.message },
         { status: 500 }
       );
     }
 
-    // [modificación] Determinar el admin_id correcto para la sesión
-    let sessionAdminId = 'auto_created'; // valor por defecto como fallback
-    let sessionExists = false;
+    if (!existingSession) {
+      console.error('❌ REGISTER: Sesión no encontrada en game_sessions');
+      return NextResponse.json(
+        { message: 'Sesión no encontrada' },
+        { status: 404 }
+      );
+    }
 
-    if (existingSession) {
-      sessionExists = true;
-      // [modificación] CRÍTICO: Preservar SIEMPRE el admin_id original de la sesión existente
-      sessionAdminId = (existingSession.admin_id as string) || 'auto_created';
-      console.log(`📱 REGISTER: Sesión existente encontrada con admin_id: ${sessionAdminId}`);
+    console.log(`📱 REGISTER: Sesión encontrada con admin_id: ${existingSession.admin_id}`);
+
+    // Verificar si ya hay un participante ACTIVO registrado en esta sesión
+    // MODIFICADO: Solo rechazar si hay un participante con status 'registered' o 'playing'
+    // Permitir nuevos registros cuando la sesión esté en 'pending_player_registration'
+    const { data: activeParticipant, error: participantCheckError } = await supabaseAdmin
+      .from('participants')
+      .select('*')
+      .eq('session_id', sessionId)
+      .in('status', ['registered', 'playing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (participantCheckError) {
+      console.error('❌ REGISTER: Error al verificar participante activo:', participantCheckError);
+      return NextResponse.json(
+        { message: 'Error al verificar participante activo', error: participantCheckError.message },
+        { status: 500 }
+      );
+    }
+
+    // Solo rechazar si hay un participante activo (registered o playing)
+    if (activeParticipant) {
+      console.log('📱 REGISTER: Ya hay un participante activo en esta sesión');
       
-      // Verificar si ya hay un jugador registrado con el mismo email
-      if (existingSession.status === 'player_registered' && 
-          existingSession.email === email) {
+      if ((activeParticipant as unknown as Participant).email === email.trim().toLowerCase()) {
         console.log('📱 REGISTER: Participante ya registrado con el mismo email en esta sesión');
         return NextResponse.json({
           message: 'Participante ya registrado en esta sesión',
           session: existingSession,
+          participant: activeParticipant,
           isExisting: true
         });
-      }
-    } else {
-      console.log(`📱 REGISTER: Sesión ${sessionId} no encontrada, se creará un nuevo registro`);
-    }
-
-    // [modificación] Log del admin_id final que se usará
-    console.log(`📱 REGISTER: Admin ID final que se usará: ${sessionAdminId}`);
-    
-    // [modificación] CRÍTICO: Advertir solo si realmente se está usando 'auto_created' para nueva sesión
-    if (sessionAdminId === 'auto_created' && !sessionExists) {
-      console.warn(`⚠️ REGISTER: Se está usando admin_id='auto_created' para la NUEVA sesión ${sessionId}.`);
-      console.warn(`   Esto puede causar que los administradores no reciban notificaciones en tiempo real.`);
-    } else if (sessionAdminId !== 'auto_created') {
-      console.log(`✅ REGISTER: Admin ID válido detectado (${sessionAdminId}). Las notificaciones en tiempo real deberían funcionar correctamente.`);
-    }
-
-    // Crear un ID único para el participante
-    const participantId = `p_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    // [modificación] Datos del participante para actualizar/insertar
-    const participantData = {
-      session_id: sessionId,
-      nombre,
-      apellido: apellido || null,
-      email,
-      especialidad: especialidad || null,
-      participant_id: participantId,
-      status: 'player_registered',
-      admin_id: sessionAdminId,
-      updated_at: new Date().toISOString()
-    };
-
-    let result;
-
-    if (sessionExists) {
-      // [modificación] Si la sesión existe, hacer UPDATE en lugar de DELETE + INSERT
-      console.log(`📱 REGISTER: Actualizando sesión existente ${sessionId} con datos del jugador`);
-      console.log(`📱 REGISTER: Estado anterior: ${existingSession?.status || 'N/A'} → player_registered`);
-      console.log(`📱 REGISTER: Admin ID mantenido: ${sessionAdminId}`);
-      
-      const { data: updatedSession, error: updateError } = await supabaseAdmin
-        .from('plays')
-        .update(participantData)
-        .eq('session_id', sessionId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('❌ REGISTER: Error al actualizar sesión con datos del jugador:', updateError);
+      } else {
+        console.log('📱 REGISTER: Ya hay un participante activo diferente en esta sesión');
         return NextResponse.json(
-          { message: 'Error al registrar jugador en la sesión', error: updateError.message },
-          { status: 500 }
+          { message: 'Ya hay otro participante actualmente registrado en esta sesión. Use "Preparar Siguiente" para continuar.' },
+          { status: 409 }
         );
       }
-
-      result = updatedSession;
-      console.log(`✅ REGISTER: Sesión ${sessionId} actualizada exitosamente con jugador: ${nombre}`);
-      console.log(`✅ REGISTER: Esto debería enviar evento UPDATE a la TV con estado: player_registered`);
-    } else {
-      // [modificación] Si no existe la sesión, crear una nueva con INSERT
-      console.log(`📱 REGISTER: Creando nueva sesión ${sessionId} con datos del jugador`);
-      
-      const newSessionData = {
-        ...participantData,
-        created_at: new Date().toISOString()
-      };
-
-      const { data: newSession, error: insertError } = await supabaseAdmin
-        .from('plays')
-        .insert(newSessionData)
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('❌ REGISTER: Error al crear nueva sesión con jugador:', insertError);
-        return NextResponse.json(
-          { message: 'Error al crear sesión con jugador', error: insertError.message },
-          { status: 500 }
-        );
-      }
-
-      result = newSession;
-      console.log(`✅ REGISTER: Nueva sesión ${sessionId} creada exitosamente con jugador: ${nombre}`);
-      console.log(`✅ REGISTER: Esto debería enviar evento INSERT a la TV con estado: player_registered`);
     }
 
-    console.log(`✅ REGISTER: Participante ${nombre} registrado exitosamente en la sesión ${sessionId} con estado: player_registered`);
+    // Verificar que la sesión esté en estado correcto para recibir nuevos participantes
+    if (existingSession.status !== 'pending_player_registration') {
+      console.log('📱 REGISTER: Sesión no está en estado pending_player_registration, estado actual:', existingSession.status);
+      return NextResponse.json(
+        { message: `La sesión debe estar en estado 'pending_player_registration' para registrar participantes. Estado actual: '${existingSession.status}'` },
+        { status: 400 }
+      );
+    }
 
-    // [modificación] Verificación adicional para asegurar que el cambio se propagó
-    console.log('🔍 REGISTER: Verificando que el cambio se aplicó correctamente en la base de datos...');
-    const { data: verificationData, error: verificationError } = await supabaseAdmin
-      .from('plays')
+    console.log('📱 REGISTER: ✅ Sesión disponible para nuevo participante - procediendo con registro');
+
+    // Verificar si ya existe un participante con el mismo email en esta sesión (independientemente del estado)
+    const { data: existingParticipant, error: existingParticipantError } = await supabaseAdmin
+      .from('participants')
       .select('*')
       .eq('session_id', sessionId)
-      .single();
+      .eq('email', email.trim().toLowerCase())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (verificationError) {
-      console.warn('⚠️ REGISTER: Error en verificación post-registro:', verificationError);
-    } else {
-      console.log('✅ REGISTER: Verificación exitosa - Estado actual en DB:', verificationData.status);
-      console.log('✅ REGISTER: Participante en DB:', verificationData.nombre, '(' + verificationData.email + ')');
-      console.log('✅ REGISTER: Admin ID en DB:', verificationData.admin_id);
-      console.log('✅ REGISTER: Timestamp updated_at:', verificationData.updated_at);
-      
-      // [modificación] Notificación específica para la TV
-      if (verificationData.status === 'player_registered') {
-        console.log('🎯 REGISTER: ¡Participante registrado exitosamente! La TV debería cambiar a ruleta automáticamente via realtime');
-        console.log('🎯 REGISTER: Evento realtime enviado con admin_id:', verificationData.admin_id);
-      }
+    if (existingParticipantError) {
+      console.error('❌ REGISTER: Error al verificar participante existente:', existingParticipantError);
+      return NextResponse.json(
+        { message: 'Error al verificar participante existente', error: existingParticipantError.message },
+        { status: 500 }
+      );
     }
 
+    let finalParticipant;
+
+    if (existingParticipant) {
+      // Participante existente encontrado - reactivarlo para una nueva partida
+      const participant = existingParticipant as unknown as Participant;
+      console.log(`📱 REGISTER: Participante existente encontrado (${participant.id}), reactivando para nueva partida`);
+      
+      const { data: reactivatedParticipant, error: reactivateError } = await supabaseAdmin
+        .from('participants')
+        .update({
+          nombre: nombre.trim(), // Actualizar nombre por si cambió
+          apellido: apellido?.trim() || '',
+          especialidad: especialidad?.trim() || null,
+          status: 'registered', // Reactivar como registrado
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', participant.id)
+        .select()
+        .single();
+
+      if (reactivateError) {
+        console.error('❌ REGISTER: Error al reactivar participante:', reactivateError);
+        return NextResponse.json(
+          { message: 'Error al reactivar participante', error: reactivateError.message },
+          { status: 500 }
+        );
+      }
+
+      finalParticipant = reactivatedParticipant;
+      console.log(`✅ REGISTER: Participante reactivado exitosamente: ${(finalParticipant as unknown as Participant).id}`);
+      console.log(`🎮 REGISTER: ${(finalParticipant as unknown as Participant).nombre} ha vuelto para jugar de nuevo!`);
+    } else {
+      // No existe participante con este email - crear uno nuevo
+      const participantId = uuidv4();
+      
+      console.log(`📱 REGISTER: Creando nuevo participante con ID: ${participantId}`);
+      
+      const { data: newParticipant, error: participantError } = await supabaseAdmin
+        .from('participants')
+        .insert({
+          id: participantId,
+          session_id: sessionId,
+          nombre: nombre.trim(),
+          apellido: apellido?.trim() || '',
+          email: email.trim().toLowerCase(),
+          especialidad: especialidad?.trim() || null,
+          status: 'registered',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (participantError) {
+        console.error('❌ REGISTER: Error al crear participante:', participantError);
+        return NextResponse.json(
+          { message: 'Error al crear participante', error: participantError.message },
+          { status: 500 }
+        );
+      }
+
+      finalParticipant = newParticipant;
+      console.log(`✅ REGISTER: Participante creado exitosamente: ${(finalParticipant as unknown as Participant).id}`);
+    }
+
+    // CORREGIDO: Solo actualizar el status en game_sessions, NO participant_id
+    // La relación se maneja a través de participants.session_id
+    const { data: updatedSession, error: updateError } = await supabaseAdmin
+      .from('game_sessions')
+      .update({
+        status: 'player_registered',
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', sessionId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('❌ REGISTER: Error al actualizar sesión:', updateError);
+      return NextResponse.json(
+        { message: 'Error al actualizar sesión', error: updateError.message },
+        { status: 500 }
+      );
+    }
+
+    console.log(`✅ REGISTER: Sesión ${sessionId} actualizada exitosamente`);
+    console.log(`✅ REGISTER: Estado actualizado a: player_registered`);
+
+    const participantData = finalParticipant as unknown as Participant;
+    
     return NextResponse.json({
-      message: 'Participante registrado exitosamente',
-      session: result,
-      isNew: !sessionExists
+      message: existingParticipant 
+        ? `¡Bienvenido de vuelta, ${participantData.nombre}! Listo para una nueva partida` 
+        : 'Participante registrado exitosamente',
+      session: updatedSession,
+      participant: finalParticipant,
+      participantId: participantData.id,
+      registered: true,
+      sessionStatus: 'player_registered',
+      isReturningPlayer: !!existingParticipant, // Indicar si es un jugador que regresa
+      action: existingParticipant ? 'reactivated' : 'created' // Acción realizada
     });
 
-  } catch (err: Error | unknown) {
-    console.error('Error en el registro de participante:', err);
+  } catch (err: unknown) {
+    console.error('❌ REGISTER: Error general:', err);
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
+      { 
+        message: 'Error interno del servidor',
+        error: err instanceof Error ? err.message : 'Error desconocido'
+      },
       { status: 500 }
     );
   }

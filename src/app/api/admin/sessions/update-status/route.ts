@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
-// Endpoint para actualizar el estado de una sesión de juego
+/**
+ * Endpoint para actualizar el estado de una sesión de juego
+ * CORREGIDO: Ahora usa game_sessions en lugar de plays
+ */
 export async function POST(request: Request) {
   try {
     // Verificar que supabaseAdmin esté disponible
@@ -24,11 +27,10 @@ export async function POST(request: Request) {
 
     const { sessionId, status } = await request.json();
 
-    // [modificación] Logs detallados para debugging
-// //     console.log(`🔄 API Update-Status: Iniciando actualización de estado`);
-// //     console.log(`   Session ID: ${sessionId}`);
-// //     console.log(`   Nuevo estado: ${status}`);
-// //     console.log(`   Timestamp: ${new Date().toISOString()}`);
+    console.log(`🔄 API Update-Status: Iniciando actualización de estado`);
+    console.log(`   Session ID: ${sessionId}`);
+    console.log(`   Nuevo estado: ${status}`);
+    console.log(`   Timestamp: ${new Date().toISOString()}`);
 
     // Validar campos obligatorios
     if (!sessionId || !status) {
@@ -49,10 +51,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Verificar que la sesión existe antes de actualizar
-// //     console.log(`🔍 API Update-Status: Verificando existencia de sesión ${sessionId}...`);
+    // CORREGIDO: Verificar que la sesión existe en game_sessions
+    console.log(`🔍 API Update-Status: Verificando existencia de sesión ${sessionId}...`);
     const { data: existingSession, error: existingError } = await supabaseAdmin
-      .from('plays')
+      .from('game_sessions')
       .select('*')
       .eq('session_id', sessionId)
       .order('updated_at', { ascending: false })
@@ -75,18 +77,17 @@ export async function POST(request: Request) {
       );
     }
 
-// //     console.log(`✅ API Update-Status: Sesión encontrada`);
-// //     console.log(`   ID interno: ${existingSession.id}`);
-// //     console.log(`   Estado actual: ${existingSession.status}`);
-// //     console.log(`   Admin ID: ${existingSession.admin_id}`);
-// //     console.log(`   Jugador: ${existingSession.nombre || 'N/A'} (${existingSession.email || 'N/A'})`);
+    console.log(`✅ API Update-Status: Sesión encontrada`);
+    console.log(`   ID interno: ${existingSession.id}`);
+    console.log(`   Estado actual: ${existingSession.status}`);
+    console.log(`   Admin ID: ${existingSession.admin_id}`);
 
-    // [modificación] Actualizar el estado de la sesión y timestamp en la tabla 'plays'
-// //     console.log(`🔄 API Update-Status: Ejecutando UPDATE en la base de datos...`);
+    // CORREGIDO: Actualizar el estado en game_sessions
+    console.log(`🔄 API Update-Status: Ejecutando UPDATE en la base de datos...`);
     const updateTimestamp = new Date().toISOString();
     
     const { data: updatedSession, error } = await supabaseAdmin
-      .from('plays')
+      .from('game_sessions')
       .update({ 
         status, 
         updated_at: updateTimestamp 
@@ -96,57 +97,27 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error(`❌ API Update-Status: Error en UPDATE:`, error);
+      console.error(`❌ API Update-Status: Error actualizando sesión:`, error);
       return NextResponse.json(
-        { message: 'Error al actualizar estado de sesión', error: error.message },
+        { message: 'Error al actualizar la sesión', error: error.message },
         { status: 500 }
       );
     }
 
-    if (!updatedSession) {
-      console.error(`❌ API Update-Status: UPDATE ejecutado pero no se retornó ningún registro`);
-      return NextResponse.json(
-        { message: 'No se encontró la sesión o no se pudo actualizar' },
-        { status: 404 }
-      );
-    }
-
-// //     console.log(`✅ API Update-Status: UPDATE exitoso`);
-// //     console.log(`   Registro ID: ${updatedSession.id}`);
-// //     console.log(`   Nuevo estado: ${updatedSession.status}`);
-// //     console.log(`   Timestamp actualizado: ${updatedSession.updated_at}`);
-// //     console.log(`   Admin ID: ${updatedSession.admin_id}`);
-
-    // [modificación] Verificar que la actualización se reflejó correctamente
-// //     console.log(`🔍 API Update-Status: Verificando que la actualización se aplicó correctamente...`);
-    const { data: verificationSession, error: verificationError } = await supabaseAdmin
-      .from('plays')
-      .select('*')
-      .eq('session_id', sessionId)
-      .single();
-
-    // Prevent unused variable lint error when logging is disabled
-    void verificationSession;
-
-    if (verificationError) {
-      console.warn(`⚠️ API Update-Status: Error en verificación post-update:`, verificationError);
-    } else {
-// //       console.log(`✅ API Update-Status: Verificación exitosa - Estado actual en DB: ${verificationSession.status}`);
-    }
-
-// //     console.log(`🎯 API Update-Status: Operación completada exitosamente para sesión ${sessionId}`);
+    console.log(`✅ API Update-Status: Sesión actualizada exitosamente`);
+    console.log(`   Nuevo estado: ${updatedSession.status}`);
+    console.log(`   Timestamp actualizado: ${updatedSession.updated_at}`);
 
     return NextResponse.json({
       message: 'Estado de sesión actualizado exitosamente',
       session: updatedSession,
       previousStatus: existingSession.status,
       newStatus: status,
-      updateTimestamp
     });
-  } catch (err: Error | unknown) {
-    console.error('❌ API Update-Status: Error interno del servidor:', err);
+  } catch (err: unknown) {
+    console.error(`❌ API Update-Status: Error general:`, err);
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: err instanceof Error ? err.message : 'Error desconocido' },
+      { message: 'Error interno del servidor' },
       { status: 500 }
     );
   }

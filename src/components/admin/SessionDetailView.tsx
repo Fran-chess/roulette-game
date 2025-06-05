@@ -5,7 +5,8 @@ import Button from '@/components/ui/Button';
 import AdminPlayerForm from './AdminPlayerForm'; // Asume que este es tu componente
 import { useRouter } from 'next/navigation';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
-import { PlaySession } from '@/types';
+import { PlaySession, Participant } from '@/types';
+import { useState, useEffect, useCallback } from 'react';
 
 interface SessionDetailViewProps {
   session: PlaySession;
@@ -24,6 +25,46 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
   onPlayerRegistered,
 }) => {
   const router = useRouter(); // Si necesitas navegar desde aquí
+  
+  // [modificación] Estado para manejar los datos del participante
+  const [participant, setParticipant] = useState<Participant | null>(null);
+  const [participantLoading, setParticipantLoading] = useState(false);
+
+  // [modificación] Función para obtener los datos del participante
+  const fetchParticipant = useCallback(async () => {
+    if (!session?.session_id) {
+      setParticipant(null);
+      return;
+    }
+
+    try {
+      setParticipantLoading(true);
+      const response = await fetch(`/api/admin/sessions/participants?sessionId=${session.session_id}`);
+      const data = await response.json();
+      
+      if (response.ok && data.participants && data.participants.length > 0) {
+        // Buscar el participante más reciente o activo
+        const activeParticipant = data.participants
+          .sort((a: Participant, b: Participant) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          )[0];
+        
+        setParticipant(activeParticipant);
+      } else {
+        setParticipant(null);
+      }
+    } catch (error) {
+      console.error('Error al obtener información del participante:', error);
+      setParticipant(null);
+    } finally {
+      setParticipantLoading(false);
+    }
+  }, [session?.session_id]);
+
+  // [modificación] useEffect para cargar los datos del participante
+  useEffect(() => {
+    fetchParticipant();
+  }, [fetchParticipant]);
 
   return (
     // No necesita role="tabpanel" si no es una pestaña principal
@@ -81,7 +122,7 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
           </div>
           <div>
             <p className="text-xs text-slate-300 mb-0.5 font-marineBold">Últ. Actualización:</p>
-            <p className="text-slate-200 text-sm font-sans">{new Date(session.admin_updated_at || session.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+            <p className="text-slate-200 text-sm font-sans">{new Date(session.updated_at || session.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
           </div>
         </div>
       </motion.div>
@@ -108,7 +149,8 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
                 onPlayerRegistered={() => {
                     // Lógica para cuando el jugador es registrado.
                     // Supabase real-time debería actualizar el estado de la sesión.
-                    // Si necesitas forzar un refresh o cambiar UI inmediatamente:
+                    // Si necesitas forzar un refresh o cambiar estado inmediatamente:
+                    fetchParticipant(); // [modificación] Refrescar datos del participante
                     if(onPlayerRegistered) onPlayerRegistered();
                 }}
             />
@@ -120,23 +162,34 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
         <motion.div variants={fadeInUp} className="mb-8">
           <h4 className="text-lg font-marineBold mb-3 text-white">Datos del Jugador Registrado</h4>
           <div className="bg-white/10 backdrop-blur-sm p-5 md:p-6 rounded-xl shadow-lg border border-white/20">
-            {/* ... (mostrar info del jugador: Nombre, Email, Especialidad) ... */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            {/* [modificación] Mostrar loading o datos del participante */}
+            {participantLoading ? (
+              <div className="text-center py-4">
+                <p className="text-slate-300 text-sm">Cargando información del participante...</p>
+              </div>
+            ) : participant ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                 <div>
-                <p className="text-xs text-slate-300 mb-0.5 font-marineBold">Nombre Completo:</p>
-                <p className="font-marineBold text-lg text-white">{session.nombre} {session.apellido || ''}</p>
+                  <p className="text-xs text-slate-300 mb-0.5 font-marineBold">Nombre Completo:</p>
+                  <p className="font-marineBold text-lg text-white">{participant.nombre} {participant.apellido || ''}</p> {/* [modificación] Usando participant en lugar de session */}
                 </div>
                 <div>
-                <p className="text-xs text-slate-300 mb-0.5 font-marineBold">Email:</p>
-                <p className="text-slate-200 break-all text-sm font-sans">{session.email}</p>
+                  <p className="text-xs text-slate-300 mb-0.5 font-marineBold">Email:</p>
+                  <p className="text-slate-200 break-all text-sm font-sans">{participant.email}</p> {/* [modificación] Usando participant en lugar de session */}
                 </div>
-                {session.especialidad && (
-                <div>
+                {/* [modificación] Usando participant en lugar de session */}
+                {participant.especialidad && (
+                  <div>
                     <p className="text-xs text-slate-300 mb-0.5 font-marineBold">Especialidad:</p>
-                    <p className="text-slate-200 text-sm font-sans">{session.especialidad}</p>
-                </div>
+                    <p className="text-slate-200 text-sm font-sans">{participant.especialidad}</p>
+                  </div>
                 )}
-            </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-slate-300 text-sm">No se encontraron datos del participante</p>
+              </div>
+            )}
             <div className="mt-8 flex flex-wrap gap-3 md:gap-4">
               <Button
                 onClick={() => {
@@ -174,8 +227,17 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
             <motion.div variants={fadeInUp} className="bg-white/10 backdrop-blur-sm p-5 md:p-6 rounded-xl shadow-lg text-center border border-white/20">
                 <FiCheckCircle className="text-green-400 mx-auto mb-3" size={48} />
                 <h4 className="text-lg font-marineBold text-white mb-2">Este juego ha sido completado.</h4>
-                {session.nombre && <p className="text-slate-200 text-sm mb-1 font-sans">Jugador: {session.nombre} {session.apellido || ''}</p>}
-                {session.email && <p className="text-slate-300 text-xs font-sans">Email: {session.email}</p>}
+                {/* [modificación] Mostrar datos del participante si están disponibles */}
+                {participantLoading ? (
+                  <p className="text-slate-300 text-xs">Cargando información del participante...</p>
+                ) : participant ? (
+                  <>
+                    <p className="text-slate-200 text-sm mb-1 font-sans">Jugador: {participant.nombre} {participant.apellido || ''}</p> {/* [modificación] Usando participant en lugar de session */}
+                    <p className="text-slate-300 text-xs font-sans">Email: {participant.email}</p> {/* [modificación] Usando participant en lugar de session */}
+                  </>
+                ) : (
+                  <p className="text-slate-300 text-xs">No se encontraron datos del participante</p>
+                )}
             </motion.div>
         )}
     </motion.div>

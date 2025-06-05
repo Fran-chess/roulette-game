@@ -68,15 +68,15 @@ export async function POST(request: Request) {
       );
     }
     
-// //     console.log(`reset-player: Sesión encontrada - estado actual: ${existingSession.status}, participante: ${existingSession.nombre}`);
+// //     console.log(`reset-player: Sesión encontrada - estado actual: ${existingSession.status}, participant_id: ${existingSession.participant_id}`);
     
     // [modificación] Cast seguro para TypeScript
     const session = existingSession as unknown as PlaySession;
     
-    // [modificación] Log de información del jugador actual (si existe)
+    // [CORRECCIÓN] Log de información del jugador actual (si existe)
     if (session && typeof session === 'object' && 'status' in session) {
       if (isPlayerRegistered(session)) {
-// //         console.log(`reset-player: Reseteando jugador: ${session.nombre} (${session.email})`);
+// //         console.log(`reset-player: Reseteando jugador con participant_id: ${session.participant_id}`);
       } else {
 // //         console.log(`reset-player: La sesión no tenía un jugador registrado (estado: ${session.status})`);
       }
@@ -114,11 +114,8 @@ export async function POST(request: Request) {
     const finalAdminId = normalizeAdminId(adminId);
 // //     console.log(`reset-player: AdminId normalizado de "${adminId}" a "${finalAdminId}"`);
     
+    // [CORRECCIÓN] Solo resetear campos que existen en la tabla plays
     const resetData = {
-      nombre: 'Pendiente',
-      apellido: null,
-      email: 'pendiente@registro.com',
-      especialidad: null,
       participant_id: null,
       lastquestionid: null,
       answeredcorrectly: null,
@@ -129,7 +126,7 @@ export async function POST(request: Request) {
       // [modificación] Usar adminId normalizado
       admin_id: finalAdminId,
       updated_at: new Date().toISOString(),
-      // [modificación] NO modificar created_at ni admin_updated_at para preservar historial
+      // [CORRECCIÓN] NO incluir campos que no existen: nombre, apellido, email, especialidad
     };
     
 // //     console.log(`reset-player: Datos para reset (adminId normalizado):`, resetData);

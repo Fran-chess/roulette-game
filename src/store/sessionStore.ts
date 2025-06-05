@@ -1,14 +1,14 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { type RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabaseClient } from '@/lib/supabase';
 
 // [modificación] Tipos para la gestión de sesiones y roles
 export interface User {
   id: string;
   email: string;
-  role: 'admin' | 'viewer';
   name?: string;
+  role?: 'admin' | 'viewer';
 }
 
 // [modificación] Actualizar GameSession para usar los estados correctos del backend
@@ -17,19 +17,10 @@ export interface GameSession {
   session_id: string;
   status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
   admin_id: string;
-  participant_id?: string;
-  nombre?: string;
-  apellido?: string;
-  email?: string;
-  especialidad?: string; // [modificación] Campo para especialidad médica
   created_at: string;
   updated_at: string;
-  admin_updated_at?: string;
-  lastquestionid?: string;
-  answeredcorrectly?: boolean;
-  score?: number;
-  premio_ganado?: string;
-  detalles_juego?: Record<string, unknown>;
+  game_data?: Record<string, unknown>;
+  // NOTA: participant_id ya no se maneja aquí, la relación es a través de participants.session_id
 }
 
 // [modificación] Función para validar y convertir datos de Supabase a GameSession
@@ -116,7 +107,7 @@ export const useSessionStore = create<SessionState>()(
     setLoading: (isLoading) => set({ isLoading }),
     setError: (error) => set({ error }),
 
-    // [modificación] Gestión de sesiones usando la tabla 'plays' en lugar de 'game_sessions'
+    // [modificación] Gestión de sesiones usando la tabla 'game_sessions' en lugar de 'plays'
     createSession: async () => {
       const { user } = get();
       if (!user) throw new Error('Usuario no autenticado');
@@ -128,16 +119,13 @@ export const useSessionStore = create<SessionState>()(
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         
         const { data, error } = await supabaseClient
-          .from('plays')
+          .from('game_sessions')
           .insert({
             session_id: sessionId,
             admin_id: user.id,
             status: 'pending_player_registration',
-            nombre: 'Pendiente',
-            email: 'pendiente@registro.com',
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            admin_updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString()
           })
           .select()
           .single();
@@ -165,7 +153,7 @@ export const useSessionStore = create<SessionState>()(
       
       try {
         const { data, error } = await supabaseClient
-          .from('plays')
+          .from('game_sessions')
           .update({
             ...updates,
             updated_at: new Date().toISOString(),
@@ -199,7 +187,7 @@ export const useSessionStore = create<SessionState>()(
       
       try {
         const { error } = await supabaseClient
-          .from('plays')
+          .from('game_sessions')
           .delete()
           .eq('session_id', sessionId);
 
@@ -277,7 +265,7 @@ export const useSessionStore = create<SessionState>()(
       }
     },
 
-    // [modificación] Realtime y sincronización usando tabla 'plays'
+    // [modificación] Realtime y sincronización usando tabla 'game_sessions'
     initializeRealtime: () => {
       const { realtimeChannel } = get();
       
@@ -287,16 +275,16 @@ export const useSessionStore = create<SessionState>()(
         return;
       }
 
-// //       console.log('Inicializando nueva suscripción de realtime para tabla plays');
+// //       console.log('Inicializando nueva suscripción de realtime para tabla game_sessions');
       
       const channel = supabaseClient
-        .channel('plays_realtime')
+        .channel('game_sessions_channel')
         .on(
           'postgres_changes',
           {
             event: '*',
             schema: 'public',
-            table: 'plays',
+            table: 'game_sessions',
           },
           (payload) => {
 // //             console.log('Evento realtime recibido:', payload.eventType, payload);
@@ -340,7 +328,7 @@ export const useSessionStore = create<SessionState>()(
         .subscribe((status) => {
 // //           console.log('Estado de suscripción realtime:', status);
           if (status === 'SUBSCRIBED') {
-// //             console.log('✅ Suscripción realtime activa para tabla plays');
+// //             console.log('✅ Suscripción realtime activa para tabla game_sessions');
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ Error en canal realtime');
           }
@@ -356,7 +344,7 @@ export const useSessionStore = create<SessionState>()(
     cleanup: () => {
       const { realtimeChannel } = get();
       if (realtimeChannel) {
-        realtimeChannel.unsubscribe();
+        supabaseClient.removeChannel(realtimeChannel);
         set({ realtimeChannel: null });
       }
     },

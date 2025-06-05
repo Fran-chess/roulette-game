@@ -71,8 +71,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (currentSession && 
         currentSession.id === sessionData.id && 
         currentSession.status === sessionData.status &&
-        currentSession.nombre === sessionData.nombre &&
-        currentSession.email === sessionData.email &&
         currentSession.updated_at === sessionData.updated_at) {
 // //       console.log('GameStore: Sesión ya establecida con mismo estado, evitando actualización redundante');
       return;
@@ -85,24 +83,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
 // //       console.log('GameStore: Estableciendo sesión de juego:', sessionData);
     }
     
-    let participantForSession: Participant | null = null;
+    // [modificación] IMPORTANTE: Ya no extraemos datos del participante desde sessionData
+    // porque estos datos ahora están en la tabla participants separada.
+    // Los componentes que necesiten datos del participante deberán obtenerlos por separado.
     
-    // [modificación] Extraer datos del participante si existen
-    if (sessionData.nombre && sessionData.email) {
-      participantForSession = {
-        id: sessionData.participant_id || sessionData.email, 
-        timestamp: new Date(sessionData.updated_at || sessionData.created_at),
-        nombre: sessionData.nombre,
-        apellido: sessionData.apellido || '',
-        email: sessionData.email,
-        especialidad: sessionData.especialidad || '',
-      };
-    }
-    
-    // [modificación] Solo actualizar si hay cambios reales
+    // [modificación] Solo actualizar la sesión, sin intentar crear participante desde sessionData
     set({
       gameSession: sessionData,
-      currentParticipant: participantForSession,
+      // currentParticipant se manejará por separado cuando se necesite
       // No modificamos gameState aquí, esto lo hará el componente según necesite
     });
   },
@@ -386,7 +374,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   addParticipant: (participantData) => {
     const newParticipant: Participant = {
       id: Date.now().toString(),
-      timestamp: new Date(),
       ...participantData,
     };
     set((state) => ({

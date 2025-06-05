@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedAdminId } from '@/lib/adminAuth';
 
+/**
+ * Endpoint para cerrar una sesión de juego
+ * CORREGIDO: Usa game_sessions en lugar de plays
+ */
 export async function POST(request: Request) {
   try {
-    // [modificación] Verificar que supabaseAdmin esté disponible
+    // Verificar que supabaseAdmin esté disponible
     if (!supabaseAdmin) {
       console.error('API /admin/sessions/close: supabaseAdmin no está disponible');
       return NextResponse.json(
@@ -22,10 +26,10 @@ export async function POST(request: Request) {
     }
     void adminId;
 
-    // [modificación] Parsear el cuerpo de la solicitud
+    // Parsear el cuerpo de la solicitud
     const { sessionId } = await request.json();
 
-    // [modificación] Validar que se proporcione el sessionId
+    // Validar que se proporcione el sessionId
     if (!sessionId) {
       return NextResponse.json(
         { error: 'ID de sesión requerido' },
@@ -33,13 +37,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Verificar que la sesión existe antes de cerrarla (obteniendo todos los registros)
-    const { data: existingSessions, error: checkError } = await supabaseAdmin
-      .from('plays')
+    // CORREGIDO: Verificar que la sesión existe en game_sessions
+    const { data: existingSession, error: checkError } = await supabaseAdmin
+      .from('game_sessions')
       .select('id, session_id, status')
-      .eq('session_id', sessionId);
+      .eq('session_id', sessionId)
+      .single();
 
-    if (checkError || !existingSessions || existingSessions.length === 0) {
+    if (checkError || !existingSession) {
       console.error('Error al verificar sesión:', checkError);
       return NextResponse.json(
         { error: 'Sesión no encontrada' },
@@ -47,24 +52,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Verificar que la sesión no esté ya cerrada (revisar el primer registro como referencia)
-    const firstSession = existingSessions[0];
-    if (firstSession.status === 'completed' || firstSession.status === 'archived') {
+    // Verificar que la sesión no esté ya cerrada
+    if (existingSession.status === 'completed' || existingSession.status === 'archived') {
       return NextResponse.json(
         { error: 'La sesión ya está cerrada' },
         { status: 400 }
       );
     }
 
-    // [modificación] Actualizar el estado de TODOS los registros de la sesión a 'completed'
-    const { data: updatedSessions, error: updateError } = await supabaseAdmin
-      .from('plays')
+    // CORREGIDO: Actualizar el estado en game_sessions
+    const { data: updatedSession, error: updateError } = await supabaseAdmin
+      .from('game_sessions')
       .update({
         status: 'completed',
         updated_at: new Date().toISOString()
       })
       .eq('session_id', sessionId)
-      .select();
+      .select()
+      .single();
 
     if (updateError) {
       console.error('Error al cerrar sesión:', updateError);
@@ -74,12 +79,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Respuesta exitosa con información de la sesión cerrada
+    // También marcar como completadas las jugadas relacionadas (si existen)
+    const { error: playsUpdateError } = await supabaseAdmin
+      .from('plays')
+      .update({
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('session_id', sessionId);
+
+    if (playsUpdateError) {
+      console.warn('Advertencia: Error al actualizar jugadas relacionadas:', playsUpdateError);
+      // No fallar por esto, ya que las jugadas son opcionales
+    }
+
+    // Respuesta exitosa
     return NextResponse.json({
       success: true,
       message: 'Sesión cerrada exitosamente',
-      session: updatedSessions?.[0] || null,
-      affectedRecords: updatedSessions?.length || 0
+      session: updatedSession
     });
 
   } catch (error) {

@@ -15,10 +15,18 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const detail = searchParams.get('detail'); // Si se pasa 'detail=true', devuelve lista completa
 
-    // [modificación] Obtener participantes únicos basados en email desde plays
-    const { data: uniqueParticipants, error: participantsError } = await supabaseAdmin
-      .from('plays')
-      .select('nombre, apellido, email, especialidad, created_at')
+    // [modificación] Obtener participantes únicos que han jugado usando join entre participants y plays
+    const { data: participantsWithPlays, error: participantsError } = await supabaseAdmin
+      .from('participants')
+      .select(`
+        id,
+        nombre,
+        apellido,
+        email,
+        especialidad,
+        created_at,
+        plays!inner(participant_id)
+      `)
       .not('email', 'is', null)
       .order('created_at');
 
@@ -30,11 +38,11 @@ export async function GET(request: Request) {
       );
     }
 
-    // [modificación] Filtrar participantes únicos por email
+    // [modificación] Filtrar participantes únicos por email (eliminando duplicados)
     const uniqueEmailMap = new Map();
     const participantsList = [];
     
-    for (const participant of uniqueParticipants || []) {
+    for (const participant of participantsWithPlays || []) {
       if (participant.email && !uniqueEmailMap.has(participant.email)) {
         uniqueEmailMap.set(participant.email, true);
         participantsList.push({

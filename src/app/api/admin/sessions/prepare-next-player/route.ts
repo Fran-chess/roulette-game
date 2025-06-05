@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { getAuthenticatedAdminId } from '@/lib/adminAuth';
+import { Participant } from '@/types';
 
-// Endpoint para preparar la sesión para el siguiente participante
-// Resetea los datos del participante actual pero mantiene la sesión activa
+/**
+ * Endpoint para preparar la sesión para el siguiente participante
+ * Marca el participante actual como completado y resetea la sesión para el próximo registro
+ */
 export async function POST(request: Request) {
   try {
     // Verificar que supabaseAdmin esté disponible
@@ -13,13 +17,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Comentar temporalmente la verificación de admin para permitir llamadas desde TV/juego
-    // if (!(await getAuthenticatedAdminId())) {
-    //   return NextResponse.json(
-    //     { message: 'No autorizado' },
-    //     { status: 401 }
-    //   );
-    // }
+    // Verificar autenticación del admin
+    if (!(await getAuthenticatedAdminId())) {
+      return NextResponse.json(
+        { message: 'No autorizado' },
+        { status: 401 }
+      );
+    }
     
     const { sessionId, adminId } = await request.json();
     
@@ -33,9 +37,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // [modificación] Buscar la sesión existente
+    // Buscar la sesión en game_sessions
     const { data: existingSession, error: sessionError } = await supabaseAdmin
-      .from('plays')
+      .from('game_sessions')
       .select('*')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: false })
@@ -61,38 +65,60 @@ export async function POST(request: Request) {
     console.log('📱 PREPARE-NEXT: Sesión encontrada:', {
       sessionId: existingSession.session_id,
       status: existingSession.status,
-      participante: existingSession.nombre || 'N/A',
       adminId: existingSession.admin_id
     });
 
-    // [modificación] Datos para resetear participante pero mantener sesión
-    const resetData = {
-      nombre: 'Pendiente',
-      apellido: null,
-      email: 'pendiente@registro.com',
-      especialidad: null,
-      participant_id: null,
-      status: 'pending_player_registration',
-      // [modificación] CRUCIAL: Mantener el admin_id original de la sesión
-      admin_id: existingSession.admin_id,
-      // [modificación] Limpiar datos de juego pero mantener estructura de sesión
-      answeredcorrectly: null,
-      lastquestionid: null,
-      score: null,
-      premio_ganado: null,
-      detalles_juego: null,
-      updated_at: new Date().toISOString()
-    };
+    // Buscar el participante activo actual (registered o playing)
+    const { data: currentParticipant, error: participantError } = await supabaseAdmin
+      .from('participants')
+      .select('*')
+      .eq('session_id', sessionId)
+      .in('status', ['registered', 'playing'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    console.log('🔄 PREPARE-NEXT: Reseteando participante actual y preparando para siguiente jugador...');
+    if (participantError) {
+      console.error('❌ PREPARE-NEXT: Error al buscar participante actual:', participantError);
+      return NextResponse.json(
+        { message: 'Error al buscar participante actual', error: participantError.message },
+        { status: 500 }
+      );
+    }
+
+    // Si hay un participante activo, marcarlo como completado
+    if (currentParticipant) {
+      console.log('🔄 PREPARE-NEXT: Marcando participante actual como completado:', currentParticipant.id);
+      
+      const { error: updateParticipantError } = await supabaseAdmin
+        .from('participants')
+        .update({
+          status: 'completed',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', (currentParticipant as unknown as Participant).id);
+
+      if (updateParticipantError) {
+        console.error('❌ PREPARE-NEXT: Error al marcar participante como completado:', updateParticipantError);
+        return NextResponse.json(
+          { message: 'Error al completar participante actual', error: updateParticipantError.message },
+          { status: 500 }
+        );
+      }
+
+      console.log('✅ PREPARE-NEXT: Participante marcado como completado:', (currentParticipant as unknown as Participant).nombre);
+    }
+
+    // Resetear la sesión a estado pending_player_registration
+    console.log('🔄 PREPARE-NEXT: Reseteando sesión para siguiente participante...');
     console.log('🔄 PREPARE-NEXT: Estado anterior:', existingSession.status, '→ pending_player_registration');
-    console.log('🔄 PREPARE-NEXT: Participante anterior:', existingSession.nombre, '→ Pendiente');
-    console.log('🔄 PREPARE-NEXT: Admin ID preservado:', existingSession.admin_id);
 
-    // [modificación] Hacer UPDATE para resetear participante
     const { data: updatedSession, error: updateError } = await supabaseAdmin
-      .from('plays')
-      .update(resetData)
+      .from('game_sessions')
+      .update({
+        status: 'pending_player_registration',
+        updated_at: new Date().toISOString()
+      })
       .eq('session_id', sessionId)
       .select()
       .single();
@@ -107,12 +133,11 @@ export async function POST(request: Request) {
 
     console.log('✅ PREPARE-NEXT: Sesión preparada exitosamente para siguiente participante');
     console.log('✅ PREPARE-NEXT: Estado actualizado a:', updatedSession.status);
-    console.log('✅ PREPARE-NEXT: Esto debería enviar evento UPDATE a la TV con estado: pending_player_registration');
 
-    // [modificación] Verificación adicional para asegurar que el cambio se propagó
+    // Verificación adicional para asegurar que el cambio se propagó
     console.log('🔍 PREPARE-NEXT: Verificando que el cambio se aplicó correctamente en la base de datos...');
     const { data: verificationData, error: verificationError } = await supabaseAdmin
-      .from('plays')
+      .from('game_sessions')
       .select('*')
       .eq('session_id', sessionId)
       .single();
@@ -121,14 +146,11 @@ export async function POST(request: Request) {
       console.warn('⚠️ PREPARE-NEXT: Error en verificación post-reset:', verificationError);
     } else {
       console.log('✅ PREPARE-NEXT: Verificación exitosa - Estado actual en DB:', verificationData.status);
-      console.log('✅ PREPARE-NEXT: Participante en DB:', verificationData.nombre);
       console.log('✅ PREPARE-NEXT: Admin ID en DB:', verificationData.admin_id);
       console.log('✅ PREPARE-NEXT: Timestamp updated_at:', verificationData.updated_at);
       
-      // [modificación] Notificación específica para la TV
       if (verificationData.status === 'pending_player_registration') {
         console.log('🎯 PREPARE-NEXT: ¡Sesión preparada! La TV debería volver a WaitingScreen automáticamente via realtime');
-        console.log('🎯 PREPARE-NEXT: Evento realtime enviado con admin_id:', verificationData.admin_id);
         console.log('🎯 PREPARE-NEXT: Listo para registrar próximo participante');
       }
     }
@@ -136,6 +158,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: 'Sesión preparada exitosamente para siguiente participante',
       session: updatedSession,
+      completed_participant: currentParticipant,
       ready_for_next: true
     });
 

@@ -52,6 +52,13 @@ export default function TVRouletteScreen() {
   // [modificación] - Agregar showConfetti del store
   const showConfetti = useGameStore((state) => state.showConfetti);
 
+  // [modificación] Log detallado para debugging del estado actual
+  useEffect(() => {
+    console.log('🔄 TV: Estado actual del juego cambiado a:', gameState);
+    console.log('🔄 TV: Datos actuales - participante:', currentParticipant ? currentParticipant.nombre : 'undefined', 'sesión:', gameSession?.session_id);
+    console.log('🔄 TV: lastSpinResultIndex:', lastSpinResultIndex, 'currentQuestion:', currentQuestion ? currentQuestion.category : 'undefined');
+  }, [gameState, currentParticipant, gameSession, lastSpinResultIndex, currentQuestion]);
+
   // [modificación] - useEffect para detectar TV65 y configurar ventana para confetti
   useEffect(() => {
     const handleResize = () => {
@@ -118,7 +125,7 @@ export default function TVRouletteScreen() {
   // PERO NO interferir con el estado 'prize' cuando hay feedback válido
   useEffect(() => {
     console.log('🔍 TV: Evaluando segundo useEffect con condiciones:'); // [modificación] Agregado para debugging
-    console.log('  - currentParticipant:', !!currentParticipant); // [modificación] Agregado para debugging
+    console.log('  - currentParticipant:', !!currentParticipant, currentParticipant ? `(${currentParticipant.nombre})` : ''); // [modificación] Agregado para debugging
     console.log('  - gameSession:', !!gameSession); // [modificación] Agregado para debugging
     console.log('  - gameSession.status:', gameSession?.status); // [modificación] Agregado para debugging
     console.log('  - gameState:', gameState); // [modificación] Agregado para debugging

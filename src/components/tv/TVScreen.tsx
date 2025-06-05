@@ -10,6 +10,9 @@ import { useGameStore } from '@/store/gameStore'; // [modificación] Agregar imp
 import { useIsMounted } from '@/hooks/useIsMounted';
 import { useClock } from '@/hooks/useClock';
 
+// [modificación] Importar tipos necesarios
+import type { Participant } from '@/types';
+
 // [modificación] Importar función de validación desde sessionStore
 import { validateGameSession } from '@/store/sessionStore';
 
@@ -50,20 +53,10 @@ type GameSessionData = {
   session_id: string;
   admin_id: string;
   status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived'; // [modificación] Cambio de string a union type específico
-  nombre?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  email?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  apellido?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  especialidad?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  participant_id?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
   created_at: string;
   updated_at: string;
-  admin_updated_at?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
   game_data?: Record<string, unknown>; // [modificación] Agregado para compatibilidad con PlaySession
-  lastquestionid?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  answeredcorrectly?: boolean; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  score?: number; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  premio_ganado?: string; // [modificación] Eliminado | null para compatibilidad con PlaySession
-  detalles_juego?: Record<string, unknown>; // [modificación] Eliminado | null para compatibilidad con PlaySession
+  // NOTA: participant_id ya no se maneja aquí, la relación es a través de participants.session_id
 };
 
 type DatabaseRecord = {
@@ -71,12 +64,14 @@ type DatabaseRecord = {
   session_id: string;
   status: string;
   admin_id: string;
-  nombre?: string;
-  email?: string;
   created_at: string;
   updated_at: string;
   score?: number;
   premio_ganado?: string;
+  lastquestionid?: string;
+  answeredcorrectly?: boolean;
+  game_data?: Record<string, unknown>; // [corrección] Usar game_data para tabla game_sessions
+  // NOTA: participant_id ya no se maneja aquí, la relación es a través de participants.session_id
   [key: string]: unknown;
 };
 
@@ -158,15 +153,15 @@ export default function TVScreen() {
 //       console.log('Configurando realtime específico para TV...');
       setIsRealtimeConnecting(true); // [modificación] Marcar como conectando
       
-      // [modificación] Crear canal específico para la TV y configurar suscripción
+      // CORREGIDO: Crear canal específico para la TV y configurar suscripción a game_sessions
       const channel = supabaseClient
-        .channel('tv_plays_realtime')
+        .channel('tv_game_sessions_realtime')
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'plays',
+            table: 'game_sessions',
           },
           (payload) => {
 //             console.log('📺 TV-INSERT: 🔄 Evento INSERT detectado:', payload);
@@ -201,7 +196,7 @@ export default function TVScreen() {
           {
             event: 'UPDATE',
             schema: 'public',
-            table: 'plays',
+            table: 'game_sessions',
           },
           (payload) => {
             console.log('📺 TV-UPDATE: 🔄 Evento UPDATE detectado en realtime');
@@ -216,12 +211,13 @@ export default function TVScreen() {
               console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
               console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
               console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
-              console.log('📺 TV-UPDATE: Jugador:', newRecord.nombre || 'N/A');
-              console.log('📺 TV-UPDATE: Email:', newRecord.email || 'N/A');
+              // NOTA: participant_id ya no se maneja en game_sessions
               
               // [modificación] CRUCIAL: Limpiar gameState residual INMEDIATAMENTE cuando se registra participante
-              if (oldRecord?.status === 'pending_player_registration' && newRecord.status === 'player_registered') {
+              // Detectar cuando la sesión cambia a 'player_registered' (independientemente del estado anterior)
+              if (newRecord.status === 'player_registered') {
                 console.log('🎉 TV-UPDATE: ¡PARTICIPANTE REGISTRADO! Cambiando a ruleta automáticamente');
+                console.log(`🎉 TV-UPDATE: Transición detectada: ${oldRecord?.status || 'N/A'} → ${newRecord.status}`);
                 console.log('🎮 TV-UPDATE: Limpiando estados residuales del gameStore ANTES de mostrar ruleta...');
                 
                 // [modificación] Importar y usar las funciones del gameStore directamente
@@ -234,6 +230,77 @@ export default function TVScreen() {
                 gameStore.setGameState('roulette'); // [modificación] CRUCIAL: Forzar estado a roulette
                 
                 console.log('🎮 TV-UPDATE: Estados del gameStore limpiados - gameState forzado a \'roulette\'');
+                
+                // [modificación] CRUCIAL: Cargar el participante activo cuando se registra
+                console.log('🔍 TV-UPDATE: Cargando participante activo para la sesión...');
+                
+                // Verificar si ya hay un participante cargado para evitar duplicados
+                const currentParticipantInStore = gameStore.currentParticipant;
+                if (currentParticipantInStore && currentParticipantInStore.status === 'registered') {
+                  console.log('🔍 TV-UPDATE: Ya hay un participante registrado en el store, omitiendo carga');
+                  console.log('🔍 TV-UPDATE: Participante actual:', currentParticipantInStore.nombre);
+                  return;
+                }
+                
+                const loadCurrentParticipant = async (retryCount = 0) => {
+                  const maxRetries = 5;
+                  const baseDelay = 200; // 200ms base
+                  
+                  try {
+                    console.log(`🔍 TV-UPDATE: Intento ${retryCount + 1}/${maxRetries + 1} - Buscando participante registrado...`);
+                    
+                    const result = await supabaseClient
+                      .from('participants')
+                      .select('*')
+                      .eq('session_id', newRecord.session_id)
+                      .eq('status', 'registered')
+                      .order('created_at', { ascending: false })
+                      .limit(1)
+                      .maybeSingle();
+                      
+                    if (result.error && result.error.code !== 'PGRST116') {
+                      console.error('🔍 TV-UPDATE: Error cargando participante activo:', result.error);
+                      return;
+                    }
+                    
+                    if (result.data) {
+                      console.log('🔍 TV-UPDATE: ✅ Participante registrado encontrado:', {
+                        nombre: result.data.nombre,
+                        email: result.data.email,
+                        id: result.data.id,
+                        status: result.data.status,
+                        intento: retryCount + 1
+                      });
+                      gameStore.setCurrentParticipant(result.data as unknown as Participant);
+                      console.log('🔍 TV-UPDATE: ✅ Participante cargado exitosamente en gameStore');
+                      return; // Éxito, terminar
+                    } else {
+                      // No se encontró participante - posible race condition
+                      if (retryCount < maxRetries) {
+                        const delay = baseDelay * Math.pow(2, retryCount); // Backoff exponencial
+                        console.warn(`🔍 TV-UPDATE: No se encontró participante registrado (intento ${retryCount + 1}/${maxRetries + 1})`);
+                        console.warn(`🔍 TV-UPDATE: Reintentando en ${delay}ms... (posible race condition)`);
+                        
+                        setTimeout(() => loadCurrentParticipant(retryCount + 1), delay);
+                      } else {
+                        console.error('🔍 TV-UPDATE: ❌ FALLO TOTAL: No se encontró participante después de todos los reintentos');
+                        console.error('🔍 TV-UPDATE: Esto impedirá que la TV cambie a ruleta automáticamente');
+                      }
+                    }
+                  } catch (error) {
+                    console.error('🔍 TV-UPDATE: Error en consulta de participante activo:', error);
+                    
+                    // Retry también en caso de error de red/DB
+                    if (retryCount < maxRetries) {
+                      const delay = baseDelay * Math.pow(2, retryCount);
+                      console.warn(`🔍 TV-UPDATE: Reintentando consulta en ${delay}ms debido a error...`);
+                      setTimeout(() => loadCurrentParticipant(retryCount + 1), delay);
+                    }
+                  }
+                };
+                
+                // Ejecutar la carga del participante con retry
+                loadCurrentParticipant();
               }
 
               // [modificación] NUEVO: Detectar cuando se prepara para siguiente participante
@@ -241,16 +308,17 @@ export default function TVScreen() {
                   newRecord.status === 'pending_player_registration') {
                 console.log('🔄 TV-UPDATE: ¡SESIÓN PREPARADA PARA SIGUIENTE PARTICIPANTE! Volviendo a WaitingScreen');
                 console.log('🔄 TV-UPDATE: Estado anterior:', oldRecord?.status, '→ pending_player_registration');
-                console.log('🔄 TV-UPDATE: Participante anterior:', oldRecord?.nombre, '→', newRecord.nombre);
+                // NOTA: participant_id ya no se maneja en game_sessions
                 
                 // [modificación] Limpiar gameStore para volver a estado inicial
                 const gameStore = useGameStore.getState();
                 gameStore.resetPrizeFeedback();
                 gameStore.setCurrentQuestion(null);
                 gameStore.setLastSpinResultIndex(null);
+                gameStore.setCurrentParticipant(null); // [modificación] Limpiar participante actual
                 gameStore.setGameState('screensaver'); // [modificación] Volver a waiting screen
                 
-                console.log('🔄 TV-UPDATE: Estados del gameStore limpiados - gameState establecido a \'screensaver\' para waiting');
+                console.log('🔄 TV-UPDATE: Estados del gameStore limpiados incluyendo currentParticipant - gameState establecido a \'screensaver\' para waiting');
               }
               
               try {
@@ -267,19 +335,9 @@ export default function TVScreen() {
                   session_id: validatedSession.session_id,
                   admin_id: validatedSession.admin_id,
                   status: validatedSession.status,
-                  nombre: validatedSession.nombre || 'Pendiente',
-                  email: validatedSession.email || 'pendiente@registro.com',
-                  apellido: validatedSession.apellido || undefined,
-                  especialidad: validatedSession.especialidad || undefined,
-                  participant_id: validatedSession.participant_id || undefined,
                   created_at: validatedSession.created_at,
                   updated_at: validatedSession.updated_at,
-                  score: validatedSession.score || undefined,
-                  premio_ganado: validatedSession.premio_ganado || undefined,
-                  answeredcorrectly: validatedSession.answeredcorrectly || undefined,
-                  lastquestionid: validatedSession.lastquestionid || undefined,
-                  detalles_juego: validatedSession.detalles_juego || undefined,
-                  admin_updated_at: validatedSession.admin_updated_at || undefined
+                  game_data: validatedSession.game_data || undefined
                 });
                 console.log('📺 TV-UPDATE: gameSession sincronizado exitosamente');
                 
@@ -305,7 +363,7 @@ export default function TVScreen() {
           {
             event: 'DELETE',
             schema: 'public',
-            table: 'plays',
+            table: 'game_sessions',
           },
           () => {
 //             console.log('📺 TV-DELETE: 🗑️ Evento DELETE detectado:', payload);
@@ -317,8 +375,8 @@ export default function TVScreen() {
         .subscribe((status) => {
 //           console.log('📺 TV-REALTIME: 📡 Estado de suscripción:', status);
           if (status === 'SUBSCRIBED') {
-//             console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
-//             console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla plays');
+            console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
+            console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla game_sessions');
             setRealtimeReady(true);
             setIsRealtimeConnecting(false); // [modificación] Ya no está conectando
           } else if (status === 'CHANNEL_ERROR') {
@@ -360,15 +418,15 @@ export default function TVScreen() {
         // [modificación] Corregir consulta para usar await directamente
         try {
           const debugResult = await supabaseClient
-            .from('plays')
-            .select('session_id, status, nombre, email, updated_at')
+            .from('game_sessions')
+            .select('session_id, status, updated_at')
             .order('updated_at', { ascending: false })
             .limit(5);
             
           if (!debugResult.error && debugResult.data) {
 //             console.log('📺 TV-DEBUG: Sesiones encontradas (últimas 5):', debugResult.data);
             debugResult.data?.forEach(() => {
-//               console.log(`📺 TV-DEBUG: Sesión ${index + 1}: ${session.session_id.substring(0,8)}... - Estado: ${session.status} - Participante: ${session.nombre || 'N/A'}`);
+//               console.log(`📺 TV-DEBUG: Sesión ${index + 1}: ${session.session_id.substring(0,8)}... - Estado: ${session.status}`);
             });
           }
         } catch (debugError) {
@@ -376,15 +434,14 @@ export default function TVScreen() {
         }
       }
       
-      // [modificación] Consulta principal para sesiones activas
-      // [modificación] Corregir consulta para usar await directamente
+      // CORREGIDO: Consulta principal para sesiones activas en game_sessions
       const result = await supabaseClient
-        .from('plays')
+        .from('game_sessions')
         .select('*')
         .in('status', ['pending_player_registration', 'player_registered', 'playing'])
-        .order('updated_at', { ascending: false }) // [modificación] Ordenar por updated_at en lugar de created_at
+        .order('updated_at', { ascending: false })
         .limit(1)
-        .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 cuando no hay sesiones activas
+        .maybeSingle();
 
 //       console.log('📺 TV: Resultado de consulta de sesión activa:', { data: result.data, error: result.error });
 
@@ -395,11 +452,9 @@ export default function TVScreen() {
       }
 
       if (result.data) {
-//         console.log('📺 TV: Sesión activa encontrada:', result.data);
-//         console.log('📺 TV: ID de sesión:', result.data.session_id);
-//         console.log('📺 TV: Estado de sesión:', result.data.status);
-//         console.log('📺 TV: Participante:', result.data.nombre || 'N/A');
-//         console.log('📺 TV: Email:', result.data.email || 'N/A');
+        console.log('📺 TV: Sesión activa encontrada:', result.data);
+        console.log('📺 TV: ID de sesión:', result.data.session_id);
+        console.log('📺 TV: Estado de sesión:', result.data.status);
         
         // [modificación] Usar función de validación para convertir datos de Supabase
         try {
@@ -415,21 +470,70 @@ export default function TVScreen() {
             session_id: validatedSession.session_id,
             admin_id: validatedSession.admin_id,
             status: validatedSession.status,
-            nombre: validatedSession.nombre || 'Pendiente',
-            email: validatedSession.email || 'pendiente@registro.com',
-            apellido: validatedSession.apellido || undefined,
-            especialidad: validatedSession.especialidad || undefined,
-            participant_id: validatedSession.participant_id || undefined,
             created_at: validatedSession.created_at,
             updated_at: validatedSession.updated_at,
-            score: validatedSession.score || undefined,
-            premio_ganado: validatedSession.premio_ganado || undefined,
-            answeredcorrectly: validatedSession.answeredcorrectly || undefined,
-            lastquestionid: validatedSession.lastquestionid || undefined,
-            detalles_juego: validatedSession.detalles_juego || undefined,
-            admin_updated_at: validatedSession.admin_updated_at || undefined
+            game_data: validatedSession.game_data || undefined
           });
           console.log('📺 TV-INIT: gameSession sincronizado exitosamente en inicialización');
+          
+          // [modificación] CRUCIAL: Si la sesión ya tiene un participante registrado, cargarlo
+          if (validatedSession.status === 'player_registered' || validatedSession.status === 'playing') {
+            console.log('📺 TV-INIT: Sesión tiene participante activo, cargando participante...');
+            
+            const loadInitialParticipant = async (retryCount = 0) => {
+              const maxRetries = 3; // Menos reintentos para la inicialización
+              const baseDelay = 300;
+              
+              try {
+                console.log(`📺 TV-INIT: Intento ${retryCount + 1}/${maxRetries + 1} - Cargando participante inicial...`);
+                
+                const participantResult = await supabaseClient
+                  .from('participants')
+                  .select('*')
+                  .eq('session_id', validatedSession.session_id)
+                  .eq('status', 'registered')
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .maybeSingle();
+                  
+                if (participantResult.error && participantResult.error.code !== 'PGRST116') {
+                  console.error('📺 TV-INIT: Error cargando participante inicial:', participantResult.error);
+                  return;
+                }
+                
+                if (participantResult.data) {
+                  console.log('📺 TV-INIT: ✅ Participante inicial encontrado:', {
+                    nombre: participantResult.data.nombre,
+                    email: participantResult.data.email,
+                    id: participantResult.data.id,
+                    status: participantResult.data.status,
+                    intento: retryCount + 1
+                  });
+                  gameStore.setCurrentParticipant(participantResult.data as unknown as Participant);
+                  console.log('📺 TV-INIT: ✅ Participante inicial cargado exitosamente en gameStore');
+                  return; // Éxito
+                } else {
+                  if (retryCount < maxRetries) {
+                    const delay = baseDelay * Math.pow(1.5, retryCount);
+                    console.warn(`📺 TV-INIT: No se encontró participante (intento ${retryCount + 1}/${maxRetries + 1})`);
+                    console.warn(`📺 TV-INIT: Reintentando en ${delay}ms...`);
+                    setTimeout(() => loadInitialParticipant(retryCount + 1), delay);
+                  } else {
+                    console.warn('📺 TV-INIT: No se encontró participante registrado después de todos los reintentos');
+                  }
+                }
+              } catch (error) {
+                console.error('📺 TV-INIT: Error en consulta de participante inicial:', error);
+                if (retryCount < maxRetries) {
+                  const delay = baseDelay * Math.pow(1.5, retryCount);
+                  setTimeout(() => loadInitialParticipant(retryCount + 1), delay);
+                }
+              }
+            };
+            
+            // Ejecutar la carga del participante inicial
+            loadInitialParticipant();
+          }
           
           // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
         } catch (validationError) {
@@ -489,14 +593,14 @@ export default function TVScreen() {
 
     const checkForUpdates = async () => {
       try {
-        // [modificación] Corregir consulta para usar await directamente
+        // CORREGIDO: Consultar game_sessions en lugar de plays
         const result = await supabaseClient
-          .from('plays')
+          .from('game_sessions')
           .select('*')
           .in('status', ['pending_player_registration', 'player_registered', 'playing'])
           .order('updated_at', { ascending: false })
           .limit(1)
-          .maybeSingle(); // [modificación] Cambio de .single() a .maybeSingle() para evitar error 406 cuando no hay sesiones activas
+          .maybeSingle();
 
         if (!result.error && result.data) {
           // Solo actualizar si la sesión cambió o es diferente
@@ -509,6 +613,51 @@ export default function TVScreen() {
             try {
               const validatedSession = validateGameSession(result.data);
               setCurrentSession(validatedSession);
+              
+              // [modificación] CRUCIAL: Si el polling detecta una sesión con participante, cargar participante
+              if (validatedSession.status === 'player_registered' || validatedSession.status === 'playing') {
+                console.log('📺 TV (Polling): Sesión con participante detectada, cargando participante...');
+                
+                const loadPollingParticipant = async () => {
+                  try {
+                    console.log('📺 TV (Polling): Cargando participante registrado...');
+                    
+                    const participantResult = await supabaseClient
+                      .from('participants')
+                      .select('*')
+                      .eq('session_id', validatedSession.session_id)
+                      .eq('status', 'registered')
+                      .order('created_at', { ascending: false })
+                      .limit(1)
+                      .maybeSingle();
+                      
+                    if (participantResult.error && participantResult.error.code !== 'PGRST116') {
+                      console.error('📺 TV (Polling): Error cargando participante:', participantResult.error);
+                      return;
+                    }
+                    
+                    if (participantResult.data) {
+                      console.log('📺 TV (Polling): ✅ Participante encontrado:', {
+                        nombre: participantResult.data.nombre,
+                        email: participantResult.data.email,
+                        id: participantResult.data.id,
+                        status: participantResult.data.status
+                      });
+                      
+                      const gameStore = useGameStore.getState();
+                      gameStore.setCurrentParticipant(participantResult.data as unknown as Participant);
+                      console.log('📺 TV (Polling): ✅ Participante cargado exitosamente en gameStore');
+                    } else {
+                      console.warn('📺 TV (Polling): No se encontró participante registrado para la sesión');
+                    }
+                  } catch (error) {
+                    console.error('📺 TV (Polling): Error en consulta de participante:', error);
+                  }
+                };
+                
+                // Ejecutar la carga del participante
+                loadPollingParticipant();
+              }
               
               // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
             } catch (validationError) {
@@ -545,8 +694,7 @@ export default function TVScreen() {
       console.log('📺 TV-STATE: Sesión activa detectada');
       console.log('   Session ID:', currentSession.session_id.substring(0, 8) + '...');
       console.log('   Estado:', currentSession.status);
-      console.log('   Participante:', currentSession.nombre || 'N/A');
-      console.log('   Email:', currentSession.email || 'N/A');
+      // NOTA: participant_id ya no se maneja en game_sessions
       
       switch (currentSession.status) {
         case 'player_registered':
@@ -656,8 +804,7 @@ export default function TVScreen() {
           <div className="space-y-2"> {/* [modificación] Más espacio entre líneas */}
             <p><span className="text-blue-400">Usuario:</span> {user ? `${user.name} (${user.role})` : 'No configurado'}</p>
             <p><span className="text-blue-400">Sesión actual:</span> {currentSession ? `${currentSession.session_id.substring(0,8)}... - ${currentSession.status}` : 'Ninguna'}</p>
-            <p><span className="text-blue-400">Participante:</span> {currentSession?.nombre || 'N/A'}</p>
-            <p><span className="text-blue-400">Email:</span> {currentSession?.email || 'N/A'}</p>
+            {/* NOTA: participant_id ya no se maneja en game_sessions */}
             <p><span className="text-blue-400">Última actualización:</span> {currentSession?.updated_at ? new Date(currentSession.updated_at).toLocaleTimeString() : 'N/A'}</p>
             <p><span className="text-blue-400">Tiempo actual:</span> {currentTime?.toLocaleTimeString() || 'N/A'}</p>
             <p><span className="text-blue-400">Realtime:</span> 
@@ -765,7 +912,7 @@ export default function TVScreen() {
                   // [modificación] Corregir consulta para usar await directamente
                   try {
                     const allResult = await supabaseClient
-                      .from('plays')
+                      .from('game_sessions')
                       .select('*')
                       .order('updated_at', { ascending: false });
                     
@@ -778,8 +925,6 @@ export default function TVScreen() {
 //                           id: session.id,
 //                           session_id: session.session_id.substring(0, 8) + '...',
 //                           status: session.status,
-//                           nombre: session.nombre || 'N/A',
-//                           email: session.email || 'N/A',
 //                           admin_id: session.admin_id,
 //                           created_at: session.created_at,
 //                           updated_at: session.updated_at
@@ -795,7 +940,7 @@ export default function TVScreen() {
                   // [modificación] Corregir consulta para usar await directamente
                   try {
                     const activeResult = await supabaseClient
-                      .from('plays')
+                      .from('game_sessions')
                       .select('*')
                       .in('status', ['pending_player_registration', 'player_registered', 'playing'])
                       .order('updated_at', { ascending: false });
@@ -807,9 +952,7 @@ export default function TVScreen() {
                       activeResult.data?.forEach(() => {
 //                         console.log(`🔍 TV-DIAGNOSTICO: Sesión activa ${index + 1}:`, {
 //                           session_id: session.session_id.substring(0, 8) + '...',
-//                           status: session.status,
-//                           nombre: session.nombre || 'N/A',
-//                           email: session.email || 'N/A'
+//                           status: session.status
 //                         });
                       });
                     }
@@ -822,7 +965,7 @@ export default function TVScreen() {
                   // [modificación] Corregir consulta para usar await directamente
                   try {
                     const specificResult = await supabaseClient
-                      .from('plays')
+                      .from('game_sessions')
                       .select('*')
                       .eq('session_id', '34162bb4-7bc8-497f-add5-cbfc13dfc658')
                       .order('updated_at', { ascending: false });
@@ -836,8 +979,6 @@ export default function TVScreen() {
 //                           id: session.id,
 //                           session_id: session.session_id,
 //                           status: session.status,
-//                           nombre: session.nombre,
-//                           email: session.email,
 //                           admin_id: session.admin_id,
 //                           created_at: session.created_at,
 //                           updated_at: session.updated_at
@@ -867,8 +1008,7 @@ export default function TVScreen() {
                   session_id: 'test-session-' + Date.now(),
                   status: 'player_registered' as const,
                   admin_id: 'test-admin',
-                  nombre: 'Usuario de Prueba',
-                  email: 'test@example.com',
+                  // NOTA: participant_id ya no se maneja en game_sessions
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 };
@@ -887,7 +1027,8 @@ export default function TVScreen() {
 }
 
 // [modificación] Pantalla cuando el juego termina (única pantalla adicional que se mantiene)
-function GameCompletedScreen({ currentSession }: { currentSession: GameSession }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function GameCompletedScreen(_props: { currentSession: GameSession }) {
   const isMounted = useIsMounted(); // [modificación] Hook para verificar si está montado
 
   if (!isMounted) {
@@ -935,32 +1076,17 @@ function GameCompletedScreen({ currentSession }: { currentSession: GameSession }
         transition={{ duration: 0.8, delay: 0.2 }}
         className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-lg rounded-3xl p-12 max-w-3xl border border-purple-400/30"
       >
-        {currentSession.nombre && (
-          <div className="mb-8">
-            <h2 className="text-4xl font-semibold text-purple-300 mb-2">
-              Felicitaciones
-            </h2>
-            <p className="text-3xl text-white font-bold">
-              {currentSession.nombre}
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {currentSession.score !== undefined && (
-            <div className="bg-white/10 rounded-2xl p-6">
-              <p className="text-xl text-white/80 mb-2">Puntuación Final</p>
-              <p className="text-4xl font-bold text-yellow-400">{currentSession.score}</p>
-            </div>
-          )}
-
-          {currentSession.premio_ganado && (
-            <div className="bg-white/10 rounded-2xl p-6">
-              <p className="text-xl text-white/80 mb-2">Premio Ganado</p>
-              <p className="text-2xl font-bold text-green-400">{currentSession.premio_ganado}</p>
-            </div>
-          )}
+        {/* TODO: Implementar consulta a tabla participants para mostrar datos del participante */}
+        <div className="mb-8">
+          <h2 className="text-4xl font-semibold text-purple-300 mb-2">
+            Felicitaciones
+          </h2>
+          <p className="text-3xl text-white font-bold">
+            ¡Juego completado exitosamente!
+          </p>
         </div>
+
+        {/* Información de resultados removida - debe obtenerse desde tabla participants/plays */}
 
         <MotionDiv
           initial={{ opacity: 0 }}

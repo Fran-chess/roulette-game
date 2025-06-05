@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSessionStore } from '@/store/sessionStore';
-import { PlaySession } from '@/types';
+import { PlaySession, Participant } from '@/types';
 import { isPlayerRegistered } from '@/utils/session';
 
 interface SessionControlsProps {
@@ -15,8 +15,48 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [participant, setParticipant] = useState<Participant | null>(null);
+  const [participantLoading, setParticipantLoading] = useState(false);
   
   const adminUser = useSessionStore(state => state.user);
+  
+  /**
+   * Obtiene el participante activo de la sesión actual
+   * Busca en la tabla participants filtrando por session_id
+   */
+  const fetchParticipant = useCallback(async () => {
+    if (!session?.session_id) {
+      setParticipant(null);
+      return;
+    }
+
+    try {
+      setParticipantLoading(true);
+      const response = await fetch(`/api/admin/sessions/participants?sessionId=${session.session_id}`);
+      const data = await response.json();
+      
+      if (response.ok && data.participants && data.participants.length > 0) {
+        // Buscar el participante más reciente o activo
+        const activeParticipant = data.participants
+          .sort((a: Participant, b: Participant) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          )[0];
+        
+        setParticipant(activeParticipant);
+      } else {
+        setParticipant(null);
+      }
+    } catch (error) {
+      console.error('Error al obtener información del participante:', error);
+      setParticipant(null);
+    } finally {
+      setParticipantLoading(false);
+    }
+  }, [session?.session_id]);
+
+  useEffect(() => {
+    fetchParticipant();
+  }, [fetchParticipant]);
   
   /**
    * Resetea los datos del jugador para permitir un nuevo registro
@@ -55,6 +95,8 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
       }
       
       setSuccess('Jugador reseteado correctamente. Listo para nuevo registro.');
+      
+      setParticipant(null);
       
       // Notificar al componente padre sobre la actualización
       if (onSessionUpdate && data.session) {
@@ -122,8 +164,17 @@ export default function SessionControls({ session, onSessionUpdate }: SessionCon
       <div className="mb-4 text-sm">
         <p>ID: {session.session_id?.substring(0, 8)}...</p>
         <p>Estado: <span className="font-medium">{session.status}</span></p>
-        {isPlayerRegistered(session) && (
-          <p>Jugador: {session.nombre} ({session.email})</p>
+        {isPlayerRegistered(session) && participant && (
+          <div className="mt-2 p-2 bg-white/5 rounded">
+            <p>Jugador: {participant.nombre} {participant.apellido || ''}</p>
+            <p>Email: {participant.email}</p>
+            {participant.especialidad && (
+              <p>Especialidad: {participant.especialidad}</p>
+            )}
+          </div>
+        )}
+        {participantLoading && (
+          <p className="text-xs text-gray-400 mt-1">Cargando información del participante...</p>
         )}
       </div>
       

@@ -1,5 +1,5 @@
 // src/components/admin/SessionsTabContent.tsx
-import { motion } from 'framer-motion';
+import { motion} from 'framer-motion';
 import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiX, FiInfo } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 // [modificación] Importar el modal de confirmación
@@ -7,11 +7,11 @@ import ConfirmModal from '@/components/ui/ConfirmModal';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 // [modificación] Importar useRef y useState para controlar navegaciones
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 // [modificación] Importar el store global de navegación
 import { useNavigationStore } from '@/store/navigationStore';
 // [modificación] Importar PlaySession para usar la interfaz directamente
-import { PlaySession } from '@/types';
+import { PlaySession, Participant } from '@/types';
 
 interface SessionsTabContentProps {
   activeSessions: PlaySession[];
@@ -45,10 +45,65 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     session: null,
     type: 'confirm'
   });
+  // [modificación] Estado para almacenar los participantes activos de cada sesión
+  const [sessionParticipants, setSessionParticipants] = useState<Map<string, Participant | null>>(new Map());
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
-  // [modificación] Función para seleccionar una sesión y mostrar su información
+  // [modificación] Función para obtener el participante activo de una sesión
+  const fetchSessionParticipant = async (session: PlaySession) => {
+    if (!session.session_id) {
+      return null;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/sessions/participants?sessionId=${session.session_id}`);
+      const data = await response.json();
+      
+      if (response.ok && data.participants && data.participants.length > 0) {
+        // Buscar el participante más reciente o activo
+        const activeParticipant = data.participants
+          .sort((a: Participant, b: Participant) => 
+            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
+          )[0];
+        
+        return activeParticipant;
+      }
+    } catch (error) {
+      console.error(`Error al obtener participante para sesión ${session.session_id}:`, error);
+    }
+    
+    return null;
+  };
+
+  // [modificación] Effect para cargar los participantes de todas las sesiones activas
+  useEffect(() => {
+    const loadParticipants = async () => {
+      const newParticipantsMap = new Map<string, Participant | null>();
+      
+      // Cargar participantes para cada sesión
+      for (const session of activeSessions) {
+        if (session.session_id) {
+          const participant = await fetchSessionParticipant(session);
+          newParticipantsMap.set(session.session_id, participant);
+        } else {
+          newParticipantsMap.set(session.session_id, null);
+        }
+      }
+      
+      setSessionParticipants(newParticipantsMap);
+    };
+
+    if (activeSessions.length > 0) {
+      loadParticipants();
+    }
+  }, [activeSessions]);
+
+  // [modificación] Función helper para obtener el participante de una sesión
+  const getSessionParticipant = (sessionId: string): Participant | null => {
+    return sessionParticipants.get(sessionId) || null;
+  };
+
   // [modificación] Función para mostrar el modal de confirmación antes de cerrar la sesión
   const handleCloseSession = (session: PlaySession, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -100,7 +155,9 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
 
   // [modificación] Función para contar participantes de una sesión
   const getParticipantCount = (sessionId: string): number => {
-    return activeSessions.filter(s => s.session_id === sessionId && s.participant_id).length;
+    // Contar basándose en los participantes cargados
+    const participant = sessionParticipants.get(sessionId);
+    return participant ? 1 : 0;
   };
 
   // [modificación] Función para activar la partida usando el overlay global
@@ -243,7 +300,13 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                       <div className="flex items-center gap-1.5 text-slate-200">
                         <FiUser className="text-slate-300" size={12} />
                         <span className="font-sans">
-                          {session.nombre ? `${session.nombre} ${session.apellido || ''}` : 'Sin registrar'}
+                          {(() => {
+                            // [modificación] Obtener el participante activo de la sesión
+                            const participant = getSessionParticipant(session.session_id);
+                            return participant 
+                              ? `${participant.nombre} ${participant.apellido || ''}` 
+                              : 'Sin participante activo';
+                          })()}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-slate-300">

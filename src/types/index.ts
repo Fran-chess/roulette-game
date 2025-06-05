@@ -2,16 +2,16 @@
 
 export interface Participant {
   id: string;
-  created_at?: string;
-  timestamp?: Date;
+  session_id: string;
   nombre: string;
   apellido?: string;
   email?: string;
   especialidad?: string;
-  lastQuestionId?: string;
-  answeredCorrectly?: boolean;
-  prizeWon?: string;
-  play_count?: number;
+  status?: 'registered' | 'playing' | 'completed' | 'disqualified';
+  created_at?: string;
+  updated_at?: string;
+  started_playing_at?: string;
+  completed_at?: string;
 }
 
 export interface PrizeFeedback {
@@ -23,11 +23,17 @@ export interface PrizeFeedback {
 
 export interface Play {
   id: string;
-  created_at: string;
-  participant_id: string;
+  session_id: string;
+  participant_id?: string;
+  admin_id?: string;
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
   score?: number;
   premio_ganado?: string;
+  lastquestionid?: string;
+  answeredcorrectly?: boolean;
   detalles_juego?: Record<string, unknown>;
+  created_at: string;
+  updated_at?: string;
 }
 
 export interface PlaySession {
@@ -35,20 +41,16 @@ export interface PlaySession {
   session_id: string;
   admin_id: string;
   status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
-  nombre?: string;
-  apellido?: string;
-  email?: string;
-  especialidad?: string;
   created_at: string;
   updated_at: string;
-  admin_updated_at?: string;
   game_data?: Record<string, unknown>;
-  lastquestionid?: string;
-  answeredcorrectly?: boolean;
-  score?: number;
-  premio_ganado?: string;
-  participant_id?: string;
-  detalles_juego?: Record<string, unknown>;
+}
+
+export interface ParticipantWithPlay {
+  participant: Participant;
+  play?: Play;
+  totalPlays?: number;
+  lastPlayDate?: string;
 }
 
 export interface ParticipantsStats {
@@ -115,7 +117,7 @@ export interface GameStore {
   prizeFeedback: PrizeFeedback;
   showConfetti: boolean;
   setGameState: (state: GameState) => void;
-  addParticipant: (participantData: Omit<Participant, 'id' | 'timestamp'>) => void;
+  addParticipant: (participantData: Omit<Participant, 'id' | 'created_at'>) => void;
   startPlaySession: (
     userData: { nombre: string; apellido?: string; email: string; especialidad?: string },
     onSuccess?: (data: { participant: Participant, play?: Play, message: string }) => void,
