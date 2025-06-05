@@ -217,12 +217,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   fetchParticipantsStats: async () => {
     set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
     try {
+      console.log('🔍 Store: Iniciando fetchParticipantsStats...');
       const response = await fetch('/api/participants');
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Store: Error en fetchParticipantsStats response:', errorData);
         throw new Error(errorData.message || `Error ${response.status} al cargar estadísticas de participantes`);
       }
       const statsData: ParticipantsStats = await response.json();
+      console.log('✅ Store: fetchParticipantsStats datos recibidos:', statsData);
       const stats = { count: statsData.count, participants: statsData.participants || [] };
       set(state => ({ 
         adminState: { 
@@ -231,9 +234,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           isLoading: { ...state.adminState.isLoading, participants: false } 
         } 
       }));
+      console.log('✅ Store: fetchParticipantsStats guardado en store:', stats);
       return stats;
     } catch (error: Error | unknown) {
-      console.error("Store: fetchParticipantsStats error:", error);
+      console.error("❌ Store: fetchParticipantsStats error:", error);
       set(state => ({ 
         adminState: { 
           ...state.adminState, 
@@ -249,13 +253,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   fetchParticipantsList: async () => {
     set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
     try {
+      console.log('🔍 Store: Iniciando fetchParticipantsList...');
       const response = await fetch('/api/participants?detail=true');
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('❌ Store: Error en fetchParticipantsList response:', errorData);
         throw new Error(errorData.message || `Error ${response.status} al cargar lista de participantes`);
       }
       const data = await response.json();
+      console.log('✅ Store: fetchParticipantsList datos recibidos:', data);
       const participants = data.participants || [];
+      console.log('✅ Store: fetchParticipantsList participantes procesados:', participants);
       set(state => ({ 
         adminState: { 
           ...state.adminState, 
@@ -263,9 +271,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           isLoading: { ...state.adminState.isLoading, participants: false } 
         } 
       }));
+      console.log('✅ Store: fetchParticipantsList guardado en store - count:', data.count, 'participants length:', participants.length);
       return participants;
     } catch (error: Error | unknown) {
-      console.error("Store: fetchParticipantsList error:", error);
+      console.error("❌ Store: fetchParticipantsList error:", error);
       set(state => ({ 
         adminState: { 
           ...state.adminState, 

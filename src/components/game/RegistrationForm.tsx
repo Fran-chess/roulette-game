@@ -37,7 +37,7 @@ export default function RegistrationForm({
     general?: string;
   }>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     // Limpiar error específico al cambiar el campo
     if (errors[e.target.name as keyof typeof errors]) {
@@ -333,18 +333,51 @@ export default function RegistrationForm({
             >
               Especialidad
             </label>
-            <Input
-              id="especialidad"
-              name="especialidad"
-              type="text"
-              value={formData.especialidad}
-              onChange={handleChange}
-              placeholder="Tu especialidad médica"
-              className={`${inputTextColorOnDark} ${placeholderColorOnDark} ${inputBgOnDark} ${inputBorderOnDark} ${inputHoverStyles} ${inputFocusStyles} w-full py-2 px-3 rounded-md border text-base sm:text-lg`}
-              errorMessage={errors.especialidad}
-              maxLength={100}
-              aria-describedby="especialidad-error"
-            />
+            <div className="relative">
+              <select
+                id="especialidad"
+                name="especialidad"
+                value={formData.especialidad}
+                onChange={handleChange}
+                className={`${inputTextColorOnDark} ${inputBgOnDark} ${inputBorderOnDark} ${inputHoverStyles} ${inputFocusStyles} w-full py-2 px-3 rounded-md border text-base sm:text-lg appearance-none cursor-pointer focus:outline-none`}
+                aria-describedby="especialidad-error"
+              >
+                <option value="" className="bg-slate-800 text-white">
+                  Selecciona tu especialidad
+                </option>
+                <option value="Médico/a" className="bg-slate-800 text-white">
+                  Médico/a
+                </option>
+                <option value="Enfermero/a" className="bg-slate-800 text-white">
+                  Enfermero/a
+                </option>
+                <option value="Otros" className="bg-slate-800 text-white">
+                  Otros
+                </option>
+              </select>
+              {/* Icono de dropdown personalizado */}
+              <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none">
+                <svg
+                  className="w-4 h-4 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+            </div>
+            {/* Mostrar error si existe */}
+            {errors.especialidad && (
+              <div className="mt-1 text-red-400 text-sm">
+                {errors.especialidad}
+              </div>
+            )}
           </motion.div>
 
           {/* Email (Obligatorio) */}
