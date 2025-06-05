@@ -11,7 +11,7 @@ interface SecureAdminAuthState {
 }
 
 /**
- * [modificación] Hook personalizado para autenticación segura de admin
+ * Hook personalizado para autenticación segura de admin
  * Trabaja con cookies HTTP Only y valida sesiones automáticamente
  */
 export function useSecureAdminAuth() {
@@ -26,17 +26,16 @@ export function useSecureAdminAuth() {
   const { loginWithAdmin, setUser, logout: sessionLogout } = useSessionStore();
 
   /**
-   * [modificación] Verifica la sesión actual del admin usando el endpoint de perfil
+   * Verifica la sesión actual del admin usando el endpoint de perfil
    * Este endpoint valida automáticamente las cookies HTTP Only
    */
   const checkAuthStatus = useCallback(async (): Promise<void> => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      // [modificación] Llamar al endpoint que valida automáticamente las cookies
       const response = await fetch('/api/admin/profile', {
         method: 'GET',
-        credentials: 'include', // [modificación] Incluir cookies automáticamente
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -45,7 +44,6 @@ export function useSecureAdminAuth() {
       if (response.ok) {
         const { admin } = await response.json();
         
-        // [modificación] Validar que los datos del admin sean completos
         if (admin && admin.id && admin.email && admin.name) {
           const adminData: AdminUser = {
             id: admin.id,
@@ -54,7 +52,6 @@ export function useSecureAdminAuth() {
             role: 'admin',
           };
 
-          // [modificación] Actualizar estado local y sessionStore
           setAuthState({
             isAuthenticated: true,
             admin: adminData,
@@ -63,7 +60,6 @@ export function useSecureAdminAuth() {
             isInitialized: true,
           });
 
-          // [modificación] Sincronizar con sessionStore
           loginWithAdmin(adminData);
 
           console.log('✅ Sesión de admin verificada correctamente');
@@ -71,7 +67,6 @@ export function useSecureAdminAuth() {
           throw new Error('Datos de admin incompletos');
         }
       } else {
-        // [modificación] Sesión inválida o expirada
         setAuthState({
           isAuthenticated: false,
           admin: null,
@@ -80,7 +75,6 @@ export function useSecureAdminAuth() {
           isInitialized: true,
         });
 
-        // [modificación] Limpiar sessionStore
         setUser(null);
       }
     } catch (error) {
@@ -94,13 +88,12 @@ export function useSecureAdminAuth() {
         isInitialized: true,
       });
 
-      // [modificación] Limpiar sessionStore en caso de error
       setUser(null);
     }
   }, [loginWithAdmin, setUser]);
 
   /**
-   * [modificación] Función de login que maneja la autenticación completa
+   * Función de login que maneja la autenticación completa
    */
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
@@ -108,7 +101,7 @@ export function useSecureAdminAuth() {
 
       const response = await fetch('/api/admin/login', {
         method: 'POST',
-        credentials: 'include', // [modificación] Incluir cookies automáticamente
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -125,7 +118,6 @@ export function useSecureAdminAuth() {
           role: 'admin',
         };
 
-        // [modificación] Actualizar estado y sessionStore
         setAuthState({
           isAuthenticated: true,
           admin: adminData,
@@ -159,19 +151,17 @@ export function useSecureAdminAuth() {
   }, [loginWithAdmin]);
 
   /**
-   * [modificación] Función de logout que limpia todas las sesiones
+   * Función de logout que limpia todas las sesiones
    */
   const logout = useCallback(async (): Promise<void> => {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }));
 
-      // [modificación] Llamar al endpoint de logout que limpia las cookies
       await fetch('/api/admin/logout', {
         method: 'POST',
         credentials: 'include',
       });
 
-      // [modificación] Limpiar estado local y sessionStore
       setAuthState({
         isAuthenticated: false,
         admin: null,
@@ -186,7 +176,6 @@ export function useSecureAdminAuth() {
     } catch (error) {
       console.error('❌ Error en logout de admin:', error);
       
-      // [modificación] Limpiar estado local aunque falle la llamada al servidor
       setAuthState({
         isAuthenticated: false,
         admin: null,
@@ -200,21 +189,21 @@ export function useSecureAdminAuth() {
   }, [sessionLogout]);
 
   /**
-   * [modificación] Verificar estado de autenticación al montar el componente
+   * Verificar estado de autenticación al montar el componente
    */
   useEffect(() => {
     checkAuthStatus();
   }, [checkAuthStatus]);
 
   /**
-   * [modificación] Verificar periódicamente si la sesión sigue válida (cada 5 minutos)
+   * Verificar periódicamente si la sesión sigue válida (cada 5 minutos)
    */
   useEffect(() => {
     if (!authState.isAuthenticated || !authState.isInitialized) return;
 
     const interval = setInterval(() => {
       checkAuthStatus();
-    }, 5 * 60 * 1000); // [modificación] 5 minutos
+    }, 5 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, [authState.isAuthenticated, authState.isInitialized, checkAuthStatus]);

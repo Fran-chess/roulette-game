@@ -2,29 +2,16 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSessionStore, type GameSession } from '@/store/sessionStore';
-import { useGameStore } from '@/store/gameStore'; // [modificación] Agregar import para limpiar estados residuales
-// [modificación] Cambiar la importación de supabaseClient para usar importación dinámica
-// import { supabaseClient } from '@/lib/supabase';
-
-// [modificación] Importar hooks personalizados extraídos
+import { useGameStore } from '@/store/gameStore';
 import { useIsMounted } from '@/hooks/useIsMounted';
 import { useClock } from '@/hooks/useClock';
-
-// [modificación] Importar tipos necesarios
 import type { Participant } from '@/types';
-
-// [modificación] Importar función de validación desde sessionStore
 import { validateGameSession } from '@/store/sessionStore';
-
-// [modificación] Importar componentes de Motion centralizados
 import { MotionDiv, AnimatePresence } from './shared/MotionComponents';
-
-// [modificación] Importar componentes de pantalla extraídos (simplificados)
 import LoadingScreen from './screens/LoadingScreen';
 import WaitingScreen from './screens/WaitingScreen';
 import TVRouletteScreen from './screens/TVRouletteScreen';
 
-// [modificación] Tipos más específicos para Supabase
 type RealtimeChannel = {
   on: (event: string, config: object, callback: (payload: RealtimePayload) => void) => RealtimeChannel;
   subscribe: (callback: (status: string) => void) => RealtimeChannel;
@@ -40,23 +27,20 @@ type SupabaseQueryBuilder = {
   then: <T>(onfulfilled?: ((value: { data: DatabaseRecord[] | null; error: DatabaseError | null }) => T | PromiseLike<T>) | null) => Promise<T>;
 };
 
-// [modificación] Tipo para el cliente de Supabase con tipos más específicos
 type SupabaseClient = {
   channel: (name: string) => RealtimeChannel;
   removeChannel: (channel: RealtimeChannel) => void;
   from: (table: string) => SupabaseQueryBuilder;
 };
 
-// [modificación] Tipos para los datos de la base de datos
 type GameSessionData = {
   id: string;
   session_id: string;
   admin_id: string;
-  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived'; // [modificación] Cambio de string a union type específico
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
   created_at: string;
   updated_at: string;
-  game_data?: Record<string, unknown>; // [modificación] Agregado para compatibilidad con PlaySession
-  // NOTA: participant_id ya no se maneja aquí, la relación es a través de participants.session_id
+  game_data?: Record<string, unknown>;
 };
 
 type DatabaseRecord = {
@@ -70,8 +54,7 @@ type DatabaseRecord = {
   premio_ganado?: string;
   lastquestionid?: string;
   answeredcorrectly?: boolean;
-  game_data?: Record<string, unknown>; // [corrección] Usar game_data para tabla game_sessions
-  // NOTA: participant_id ya no se maneja aquí, la relación es a través de participants.session_id
+  game_data?: Record<string, unknown>;
   [key: string]: unknown;
 };
 
@@ -81,7 +64,6 @@ type DatabaseError = {
   [key: string]: unknown;
 };
 
-// [modificación] Tipo para los payloads de realtime con tipos más específicos
 type RealtimePayload = {
   commit_timestamp?: string;
   new?: DatabaseRecord;
@@ -89,29 +71,23 @@ type RealtimePayload = {
   [key: string]: unknown;
 };
 
-// [modificación] Componente principal para la vista de TV
 export default function TVScreen() {
   const { currentSession, user, setCurrentSession, setUser } = useSessionStore();
-  const [realtimeReady, setRealtimeReady] = useState(false); // [modificación] Estado para controlar polling
-  const [isRealtimeConnecting, setIsRealtimeConnecting] = useState(false); // [modificación] Estado de conexión
-  // [modificación] Estado para el cliente de Supabase tipado correctamente
+  const [realtimeReady, setRealtimeReady] = useState(false);
+  const [isRealtimeConnecting, setIsRealtimeConnecting] = useState(false);
   const [supabaseClient, setSupabaseClient] = useState<SupabaseClient | null>(null);
   
-  // [modificación] Usar hooks personalizados extraídos
   const isMounted = useIsMounted();
   const currentTime = useClock();
 
-  // [modificación] Inicializar cliente de Supabase de forma dinámica
   useEffect(() => {
     if (!isMounted) return;
     
     const initSupabaseClient = async () => {
       try {
-//         console.log('📺 TV: Inicializando cliente Supabase dinámicamente...');
         const { supabaseClient: client } = await import('@/lib/supabase');
         
         if (client) {
-//           console.log('📺 TV: ✅ Cliente Supabase inicializado exitosamente');
           setSupabaseClient(client as unknown as SupabaseClient);
         } else {
           console.error('📺 TV: ❌ Cliente Supabase no disponible después de importación');
@@ -124,21 +100,14 @@ export default function TVScreen() {
     initSupabaseClient();
   }, [isMounted]);
 
-  // [modificación] Función para inicializar la vista de TV - ahora como useCallback estable
   const initializeTVView = useCallback(async () => {
-    // [modificación] Declarar función de cleanup al inicio
     let cleanupFunction: (() => void) | undefined;
     
-    // [modificación] Verificar que el cliente de Supabase esté disponible y que esté montado
     if (!supabaseClient || !isMounted) {
       console.error('Cliente de Supabase no disponible en la vista de TV o componente no montado');
-//       console.log('📺 TV: Estado supabaseClient:', !!supabaseClient, 'isMounted:', isMounted);
       return;
     }
 
-//     console.log('Inicializando vista de TV...');
-
-    // Configurar usuario como viewer para la TV si no existe
     if (!user) {
       setUser({
         id: 'tv-viewer',
@@ -148,12 +117,9 @@ export default function TVScreen() {
       });
     }
 
-    // [modificación] Inicializar suscripción en tiempo real específica para TV con cleanup
     try {
-//       console.log('Configurando realtime específico para TV...');
-      setIsRealtimeConnecting(true); // [modificación] Marcar como conectando
+      setIsRealtimeConnecting(true);
       
-      // CORREGIDO: Crear canal específico para la TV y configurar suscripción a game_sessions
       const channel = supabaseClient
         .channel('tv_game_sessions_realtime')
         .on(
@@ -164,26 +130,14 @@ export default function TVScreen() {
             table: 'game_sessions',
           },
           (payload) => {
-//             console.log('📺 TV-INSERT: 🔄 Evento INSERT detectado:', payload);
-//             console.log('📺 TV-INSERT: Timestamp del evento:', payload.commit_timestamp);
             const { new: newRecord } = payload;
 
             if (newRecord) {
-//               console.log('📺 TV-INSERT: ✅ Nueva sesión insertada:', newRecord);
-//               console.log('📺 TV-INSERT: Session ID:', newRecord.session_id);
-//               console.log('📺 TV-INSERT: Estado:', newRecord.status);
-//               console.log('📺 TV-INSERT: Participante:', newRecord.nombre || 'N/A');
-//               console.log('📺 TV-INSERT: Email:', newRecord.email || 'N/A');
-              
               try {
                 const validatedSession = validateGameSession(newRecord);
-//                 console.log('📺 TV-INSERT: ✅ Sesión validada exitosamente');
-//                 console.log('📺 TV-INSERT: Actualizando estado de la TV a:', validatedSession.status);
                 setCurrentSession(validatedSession);
-//                 console.log('📺 TV-INSERT: Estado actualizado en TV');
               } catch (validationError) {
                 console.error('📺 TV-INSERT: ❌ Error validando sesión:', validationError);
-//                 console.log('📺 TV-INSERT: 🔄 Usando datos directamente como fallback');
                 setCurrentSession(newRecord as unknown as GameSession);
               }
             } else {
@@ -211,30 +165,23 @@ export default function TVScreen() {
               console.log('📺 TV-UPDATE: Estado anterior:', oldRecord?.status || 'N/A');
               console.log('📺 TV-UPDATE: Estado nuevo:', newRecord.status);
               console.log('📺 TV-UPDATE: Admin ID:', newRecord.admin_id);
-              // NOTA: participant_id ya no se maneja en game_sessions
               
-              // [modificación] CRUCIAL: Limpiar gameState residual INMEDIATAMENTE cuando se registra participante
-              // Detectar cuando la sesión cambia a 'player_registered' (independientemente del estado anterior)
               if (newRecord.status === 'player_registered') {
                 console.log('🎉 TV-UPDATE: ¡PARTICIPANTE REGISTRADO! Cambiando a ruleta automáticamente');
                 console.log(`🎉 TV-UPDATE: Transición detectada: ${oldRecord?.status || 'N/A'} → ${newRecord.status}`);
                 console.log('🎮 TV-UPDATE: Limpiando estados residuales del gameStore ANTES de mostrar ruleta...');
                 
-                // [modificación] Importar y usar las funciones del gameStore directamente
                 const gameStore = useGameStore.getState();
                 
-                // [modificación] Limpiar TODOS los estados residuales inmediatamente
                 gameStore.resetPrizeFeedback();
                 gameStore.setCurrentQuestion(null);
                 gameStore.setLastSpinResultIndex(null);
-                gameStore.setGameState('roulette'); // [modificación] CRUCIAL: Forzar estado a roulette
+                gameStore.setGameState('roulette');
                 
                 console.log('🎮 TV-UPDATE: Estados del gameStore limpiados - gameState forzado a \'roulette\'');
                 
-                // [modificación] CRUCIAL: Cargar el participante activo cuando se registra
                 console.log('🔍 TV-UPDATE: Cargando participante activo para la sesión...');
                 
-                // Verificar si ya hay un participante cargado para evitar duplicados
                 const currentParticipantInStore = gameStore.currentParticipant;
                 if (currentParticipantInStore && currentParticipantInStore.status === 'registered') {
                   console.log('🔍 TV-UPDATE: Ya hay un participante registrado en el store, omitiendo carga');
@@ -244,7 +191,7 @@ export default function TVScreen() {
                 
                 const loadCurrentParticipant = async (retryCount = 0) => {
                   const maxRetries = 5;
-                  const baseDelay = 200; // 200ms base
+                  const baseDelay = 200;
                   
                   try {
                     console.log(`🔍 TV-UPDATE: Intento ${retryCount + 1}/${maxRetries + 1} - Buscando participante registrado...`);
@@ -273,11 +220,10 @@ export default function TVScreen() {
                       });
                       gameStore.setCurrentParticipant(result.data as unknown as Participant);
                       console.log('🔍 TV-UPDATE: ✅ Participante cargado exitosamente en gameStore');
-                      return; // Éxito, terminar
+                      return;
                     } else {
-                      // No se encontró participante - posible race condition
                       if (retryCount < maxRetries) {
-                        const delay = baseDelay * Math.pow(2, retryCount); // Backoff exponencial
+                        const delay = baseDelay * Math.pow(2, retryCount);
                         console.warn(`🔍 TV-UPDATE: No se encontró participante registrado (intento ${retryCount + 1}/${maxRetries + 1})`);
                         console.warn(`🔍 TV-UPDATE: Reintentando en ${delay}ms... (posible race condition)`);
                         
@@ -290,7 +236,6 @@ export default function TVScreen() {
                   } catch (error) {
                     console.error('🔍 TV-UPDATE: Error en consulta de participante activo:', error);
                     
-                    // Retry también en caso de error de red/DB
                     if (retryCount < maxRetries) {
                       const delay = baseDelay * Math.pow(2, retryCount);
                       console.warn(`🔍 TV-UPDATE: Reintentando consulta en ${delay}ms debido a error...`);
@@ -299,26 +244,22 @@ export default function TVScreen() {
                   }
                 };
                 
-                // Ejecutar la carga del participante con retry
                 loadCurrentParticipant();
               }
 
-              // [modificación] NUEVO: Detectar cuando se prepara para siguiente participante
               if ((oldRecord?.status === 'player_registered' || oldRecord?.status === 'playing' || oldRecord?.status === 'completed') && 
                   newRecord.status === 'pending_player_registration') {
                 console.log('🔄 TV-UPDATE: ¡SESIÓN PREPARADA PARA SIGUIENTE PARTICIPANTE! Volviendo a WaitingScreen');
                 console.log('🔄 TV-UPDATE: Estado anterior:', oldRecord?.status, '→ pending_player_registration');
-                // NOTA: participant_id ya no se maneja en game_sessions
                 
-                // [modificación] Limpiar gameStore para volver a estado inicial
                 const gameStore = useGameStore.getState();
                 gameStore.resetPrizeFeedback();
                 gameStore.setCurrentQuestion(null);
                 gameStore.setLastSpinResultIndex(null);
-                gameStore.setCurrentParticipant(null); // [modificación] Limpiar participante actual
-                gameStore.setGameState('screensaver'); // [modificación] Volver a waiting screen
+                gameStore.setCurrentParticipant(null);
+                gameStore.setGameState('screensaver');
                 
-                console.log('🔄 TV-UPDATE: Estados del gameStore limpiados incluyendo currentParticipant - gameState establecido a \'screensaver\' para waiting');
+                console.log('�� TV-UPDATE: Estados del gameStore limpiados incluyendo currentParticipant - gameState establecido a \'screensaver\' para waiting');
               }
               
               try {
@@ -327,7 +268,6 @@ export default function TVScreen() {
                 console.log('📺 TV-UPDATE: Actualizando estado de la TV a:', validatedSession.status);
                 setCurrentSession(validatedSession);
                 
-                // [modificación] CRUCIAL: Sincronizar sessionStore con gameStore
                 const gameStore = useGameStore.getState();
                 console.log('📺 TV-UPDATE: Sincronizando gameStore con sessionStore...');
                 gameStore.setGameSession({
@@ -349,7 +289,6 @@ export default function TVScreen() {
                 console.log('📺 TV-UPDATE: 🔄 Usando datos directamente como fallback');
                 setCurrentSession(newRecord as unknown as GameSession);
                 
-                // [modificación] También sincronizar en caso de fallback
                 const gameStore = useGameStore.getState();
                 gameStore.setGameSession(newRecord as unknown as GameSessionData);
               }
@@ -366,56 +305,40 @@ export default function TVScreen() {
             table: 'game_sessions',
           },
           () => {
-//             console.log('📺 TV-DELETE: 🗑️ Evento DELETE detectado:', payload);
-//             console.log('📺 TV-DELETE: Datos del registro eliminado:', payload.old);
-//             console.log('📺 TV-DELETE: Limpiando sesión actual y volviendo a estado de espera');
             setCurrentSession(null);
           }
         )
         .subscribe((status) => {
-//           console.log('📺 TV-REALTIME: 📡 Estado de suscripción:', status);
           if (status === 'SUBSCRIBED') {
             console.log('✅ TV-REALTIME: Suscripción activa y lista para recibir eventos');
             console.log('✅ TV-REALTIME: Escuchando eventos: INSERT, UPDATE, DELETE en tabla game_sessions');
             setRealtimeReady(true);
-            setIsRealtimeConnecting(false); // [modificación] Ya no está conectando
+            setIsRealtimeConnecting(false);
           } else if (status === 'CHANNEL_ERROR') {
             console.error('❌ TV-REALTIME: Error en canal realtime');
             setRealtimeReady(false);
-            setIsRealtimeConnecting(false); // [modificación] Error de conexión
+            setIsRealtimeConnecting(false);
           } else if (status === 'CLOSED') {
             console.warn('⚠️ TV-REALTIME: Canal cerrado');
             setRealtimeReady(false);
-            setIsRealtimeConnecting(true); // [modificación] Intentando reconectar
+            setIsRealtimeConnecting(true);
           } else {
-//             console.log(`📺 TV-REALTIME: Estado de canal: ${status}`);
-            // [modificación] Mantener estado de conexión para estados intermedios
             setIsRealtimeConnecting(true);
           }
         });
 
-//       console.log('📺 TV: Canal realtime configurado');
-
-      // [modificación] Guardar función de cleanup para remover canal
       cleanupFunction = () => {
-//         console.log('📺 TV: Limpiando suscripción realtime...');
         supabaseClient.removeChannel(channel);
       };
     } catch (error) {
       console.error('Error al inicializar realtime específico para TV:', error);
       setRealtimeReady(false);
-      setIsRealtimeConnecting(false); // [modificación] Error de inicialización
-      cleanupFunction = () => {}; // [modificación] Función vacía en caso de error
+      setIsRealtimeConnecting(false);
+      cleanupFunction = () => {};
     }
 
-    // Cargar sesión activa actual desde la base de datos
     try {
-//       console.log('📺 TV: Cargando sesión activa desde la base de datos...');
-      
-      // [modificación] Consulta de debug reducida - solo en modo desarrollo
       if (process.env.NODE_ENV === 'development') {
-//         console.log('📺 TV-DEBUG: Consultando TODAS las sesiones para debug...');
-        // [modificación] Corregir consulta para usar await directamente
         try {
           const debugResult = await supabaseClient
             .from('game_sessions')
@@ -424,9 +347,7 @@ export default function TVScreen() {
             .limit(5);
             
           if (!debugResult.error && debugResult.data) {
-//             console.log('📺 TV-DEBUG: Sesiones encontradas (últimas 5):', debugResult.data);
             debugResult.data?.forEach(() => {
-//               console.log(`📺 TV-DEBUG: Sesión ${index + 1}: ${session.session_id.substring(0,8)}... - Estado: ${session.status}`);
             });
           }
         } catch (debugError) {
@@ -434,7 +355,6 @@ export default function TVScreen() {
         }
       }
       
-      // CORREGIDO: Consulta principal para sesiones activas en game_sessions
       const result = await supabaseClient
         .from('game_sessions')
         .select('*')
@@ -443,10 +363,7 @@ export default function TVScreen() {
         .limit(1)
         .maybeSingle();
 
-//       console.log('📺 TV: Resultado de consulta de sesión activa:', { data: result.data, error: result.error });
-
-      // [modificación] Verificación mejorada para manejar error que puede ser null
-      if (result.error?.code && result.error?.code !== 'PGRST116') { // PGRST116 = no rows found
+      if (result.error?.code && result.error?.code !== 'PGRST116') {
         console.error('📺 TV: Error cargando sesión activa:', result.error);
         return cleanupFunction;
       }
@@ -456,13 +373,10 @@ export default function TVScreen() {
         console.log('📺 TV: ID de sesión:', result.data.session_id);
         console.log('📺 TV: Estado de sesión:', result.data.status);
         
-        // [modificación] Usar función de validación para convertir datos de Supabase
         try {
           const validatedSession = validateGameSession(result.data);
           setCurrentSession(validatedSession);
-//           console.log('📺 TV: Estado inicial configurado exitosamente:', validatedSession.status);
           
-          // [modificación] CRUCIAL: Sincronizar gameStore con sessionStore en inicialización
           const gameStore = useGameStore.getState();
           console.log('📺 TV-INIT: Sincronizando gameStore con sesión inicial...');
           gameStore.setGameSession({
@@ -476,12 +390,11 @@ export default function TVScreen() {
           });
           console.log('📺 TV-INIT: gameSession sincronizado exitosamente en inicialización');
           
-          // [modificación] CRUCIAL: Si la sesión ya tiene un participante registrado, cargarlo
           if (validatedSession.status === 'player_registered' || validatedSession.status === 'playing') {
             console.log('📺 TV-INIT: Sesión tiene participante activo, cargando participante...');
             
             const loadInitialParticipant = async (retryCount = 0) => {
-              const maxRetries = 3; // Menos reintentos para la inicialización
+              const maxRetries = 3;
               const baseDelay = 300;
               
               try {
@@ -511,7 +424,7 @@ export default function TVScreen() {
                   });
                   gameStore.setCurrentParticipant(participantResult.data as unknown as Participant);
                   console.log('📺 TV-INIT: ✅ Participante inicial cargado exitosamente en gameStore');
-                  return; // Éxito
+                  return;
                 } else {
                   if (retryCount < maxRetries) {
                     const delay = baseDelay * Math.pow(1.5, retryCount);
@@ -531,38 +444,27 @@ export default function TVScreen() {
               }
             };
             
-            // Ejecutar la carga del participante inicial
             loadInitialParticipant();
           }
-          
-          // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
         } catch (validationError) {
           console.error('📺 TV: Error validando sesión:', validationError);
-          // [modificación] Fallback: usar datos directamente si la validación falla
           setCurrentSession(result.data as unknown as GameSession);
-//           console.log('📺 TV: Usando datos directamente como fallback');
           
-          // [modificación] También sincronizar en caso de fallback
           const gameStore = useGameStore.getState();
           gameStore.setGameSession(result.data as unknown as GameSessionData);
         }
       } else {
-//         console.log('📺 TV: No hay sesión activa en este momento (data es null/undefined)');
         setCurrentSession(null);
       }
     } catch (error) {
       console.error('📺 TV: Error al cargar sesión activa:', error);
     }
     
-//     console.log('📺 TV: Inicialización de vista TV completada');
-    
-    // [modificación] Retornar función de cleanup que incluya la limpieza del realtime
     return cleanupFunction;
   }, [isMounted, supabaseClient, user, setCurrentSession, setUser]);
 
-  // [modificación] Inicializar realtime y cargar sesión activa para la vista de TV con cleanup
   useEffect(() => {
-    if (!isMounted || !supabaseClient) return; // [modificación] Solo ejecutar después del mount y cuando supabaseClient esté disponible
+    if (!isMounted || !supabaseClient) return;
     
     let cleanupFunction: (() => void) | undefined;
 
@@ -572,7 +474,6 @@ export default function TVScreen() {
 
     runInitialization();
 
-    // [modificación] Cleanup al desmontar el componente
     return () => {
       if (cleanupFunction) {
         cleanupFunction();
@@ -580,20 +481,15 @@ export default function TVScreen() {
     };
   }, [isMounted, supabaseClient, initializeTVView]);
 
-  // [modificación] Sistema de polling como backup solo cuando realtime no está listo
   useEffect(() => {
-    if (!isMounted || !supabaseClient) return; // [modificación] Solo ejecutar después del mount y cuando supabaseClient esté disponible
+    if (!isMounted || !supabaseClient) return;
     
     if (realtimeReady) {
-//       console.log('📺 TV: Realtime activo, desactivando polling de backup');
-      return; // [modificación] No ejecutar polling si realtime está activo
+      return;
     }
-
-//     console.log('📺 TV: Realtime no listo, activando polling de backup');
 
     const checkForUpdates = async () => {
       try {
-        // CORREGIDO: Consultar game_sessions en lugar de plays
         const result = await supabaseClient
           .from('game_sessions')
           .select('*')
@@ -603,18 +499,15 @@ export default function TVScreen() {
           .maybeSingle();
 
         if (!result.error && result.data) {
-          // Solo actualizar si la sesión cambió o es diferente
           if (!currentSession || 
               currentSession.session_id !== result.data.session_id || 
               currentSession.status !== result.data.status ||
               currentSession.updated_at !== result.data.updated_at) {
             
-//             console.log('📺 TV (Polling): Detectado cambio en sesión:', result.data);
             try {
               const validatedSession = validateGameSession(result.data);
               setCurrentSession(validatedSession);
               
-              // [modificación] CRUCIAL: Si el polling detecta una sesión con participante, cargar participante
               if (validatedSession.status === 'player_registered' || validatedSession.status === 'playing') {
                 console.log('📺 TV (Polling): Sesión con participante detectada, cargando participante...');
                 
@@ -655,20 +548,15 @@ export default function TVScreen() {
                   }
                 };
                 
-                // Ejecutar la carga del participante
                 loadPollingParticipant();
               }
-              
-              // [modificación] Navegación removida - ahora se maneja en useEffect dedicado
             } catch (validationError) {
               console.error('📺 TV (Polling): Error validando sesión:', validationError);
               setCurrentSession(result.data as unknown as GameSession);
             }
           }
         } else if (!result.data) {
-          // [modificación] Si no hay datos (data = null), limpiar la sesión actual
           if (currentSession) {
-//             console.log('📺 TV (Polling): No hay sesiones activas, limpiando sesión actual');
             setCurrentSession(null);
           }
         }
@@ -677,19 +565,16 @@ export default function TVScreen() {
       }
     };
 
-    // [modificación] Polling cada 3 segundos como backup solo cuando sea necesario
     const pollingInterval = setInterval(checkForUpdates, 3000);
 
     return () => {
       clearInterval(pollingInterval);
     };
-  }, [realtimeReady, currentSession?.session_id, currentSession?.status, currentSession?.updated_at, setCurrentSession, isMounted, supabaseClient, currentSession]); // [modificación] Agregar currentSession a las dependencias para satisfacer el linter
+  }, [realtimeReady, currentSession?.session_id, currentSession?.status, currentSession?.updated_at, setCurrentSession, isMounted, supabaseClient, currentSession]);
 
-  // [modificación] useEffect para logging controlado del estado sin causar loops
   useEffect(() => {
     if (!isMounted) return;
     
-    // Solo hacer log cuando hay cambios reales en el estado de la sesión
     if (currentSession) {
       console.log('📺 TV-STATE: Sesión activa detectada');
       console.log('   Session ID:', currentSession.session_id.substring(0, 8) + '...');
@@ -752,7 +637,6 @@ export default function TVScreen() {
       case 'archived':
         // [modificación] Cuando se completa, volver a waiting room después de un tiempo
         setTimeout(() => {
-//           console.log('📺 TV: Juego completado, volviendo a sala de espera...');
           setCurrentSession(null);
         }, 5000);
         return <GameCompletedScreen currentSession={currentSession} />;
@@ -813,21 +697,17 @@ export default function TVScreen() {
               </span>
             </p>
             
-            {/* [modificación] Botones más grandes para TV 4K */}
             <button 
               onClick={async () => {
-//                 console.log('📺 TV: Forzando recarga de sesión...');
                 await initializeTVView();
               }}
-              className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botones más grandes
+              className="mt-3 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-base mr-3"
             >
               🔄 Refrescar
             </button>
             
-            {/* [modificación] Botón para crear nueva sesión rápida */}
             <button 
               onClick={async () => {
-//                 console.log('📺 TV: Creando nueva sesión rápida...');
                 try {
                   const response = await fetch('/api/admin/sessions/create', {
                     method: 'POST',
@@ -841,9 +721,7 @@ export default function TVScreen() {
                     if (sessionId) {
                       const fullUrl = `${window.location.origin}/register/${sessionId}`;
                       await navigator.clipboard.writeText(fullUrl);
-//                       console.log('📺 TV: Nueva sesión creada y URL copiado:', fullUrl);
                       alert(`Nueva sesión creada!\nURL copiado al portapapeles:\n${fullUrl.substring(0,50)}...`);
-                      // Refrescar después de crear
                       setTimeout(() => initializeTVView(), 1000);
                     }
                   }
@@ -851,16 +729,14 @@ export default function TVScreen() {
                   console.error('📺 TV: Error creando sesión:', error);
                 }
               }}
-              className="mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botón más grande
+              className="mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-base mr-3"
             >
               ⚡ Nueva Sesión
             </button>
             
-            {/* [modificación] Botón para resetear sesión actual */}
             {currentSession && (
               <button 
                 onClick={async () => {
-//                   console.log('📺 TV: Reseteando sesión actual...');
                   try {
                     const response = await fetch('/api/admin/sessions/reset-player', {
                       method: 'POST',
@@ -874,11 +750,9 @@ export default function TVScreen() {
                     if (response.ok) {
                       const data = await response.json();
                       void data;
-//                       console.log('📺 TV: Sesión reseteada exitosamente:', data);
                       const fullUrl = `${window.location.origin}/register/${currentSession.session_id}`;
                       await navigator.clipboard.writeText(fullUrl);
                       alert(`Sesión reseteada exitosamente!\nURL copiado al portapapeles:\n${fullUrl.substring(0,50)}...`);
-                      // Refrescar después de resetear
                       setTimeout(() => initializeTVView(), 1000);
                     } else {
                       const errorData = await response.json();
@@ -890,13 +764,12 @@ export default function TVScreen() {
                     alert(`Error al resetear sesión: ${error}`);
                   }
                 }}
-                className="mt-3 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botón más grande
+                className="mt-3 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded text-base mr-3"
               >
                 🔄 Resetear Sesión Actual
               </button>
             )}
             
-            {/* [modificación] Botón para diagnóstico avanzado de base de datos */}
             <button 
               onClick={async () => {
                 if (!supabaseClient) {
@@ -904,12 +777,7 @@ export default function TVScreen() {
                   return;
                 }
                 
-//                 console.log('🔍 TV-DIAGNOSTICO: Iniciando diagnóstico avanzado de base de datos...');
-                
                 try {
-                  // Consulta 1: Todas las sesiones sin filtros
-//                   console.log('🔍 TV-DIAGNOSTICO: 1. Consultando TODAS las sesiones...');
-                  // [modificación] Corregir consulta para usar await directamente
                   try {
                     const allResult = await supabaseClient
                       .from('game_sessions')
@@ -918,26 +786,11 @@ export default function TVScreen() {
                     
                     if (allResult.error) {
                       console.error('🔍 TV-DIAGNOSTICO: Error en consulta 1:', allResult.error);
-                    } else {
-//                       console.log(`🔍 TV-DIAGNOSTICO: Total de sesiones encontradas: ${allResult.data?.length || 0}`);
-                      allResult.data?.forEach(() => {
-//                         console.log(`🔍 TV-DIAGNOSTICO: Sesión ${index + 1}:`, {
-//                           id: session.id,
-//                           session_id: session.session_id.substring(0, 8) + '...',
-//                           status: session.status,
-//                           admin_id: session.admin_id,
-//                           created_at: session.created_at,
-//                           updated_at: session.updated_at
-//                         });
-                      });
                     }
                   } catch (error1) {
                     console.error('🔍 TV-DIAGNOSTICO: Error en consulta 1:', error1);
                   }
                   
-                  // Consulta 2: Sesiones específicas por estado
-//                   console.log('🔍 TV-DIAGNOSTICO: 2. Consultando sesiones con estados específicos...');
-                  // [modificación] Corregir consulta para usar await directamente
                   try {
                     const activeResult = await supabaseClient
                       .from('game_sessions')
@@ -947,22 +800,11 @@ export default function TVScreen() {
                     
                     if (activeResult.error) {
                       console.error('🔍 TV-DIAGNOSTICO: Error en consulta 2:', activeResult.error);
-                    } else {
-//                       console.log(`🔍 TV-DIAGNOSTICO: Sesiones activas encontradas: ${activeResult.data?.length || 0}`);
-                      activeResult.data?.forEach(() => {
-//                         console.log(`🔍 TV-DIAGNOSTICO: Sesión activa ${index + 1}:`, {
-//                           session_id: session.session_id.substring(0, 8) + '...',
-//                           status: session.status
-//                         });
-                      });
                     }
                   } catch (error2) {
                     console.error('🔍 TV-DIAGNOSTICO: Error en consulta 2:', error2);
                   }
                   
-                  // Consulta 3: Buscar la sesión específica que detecta la tablet
-//                   console.log('🔍 TV-DIAGNOSTICO: 3. Buscando sesión específica 34162bb4-7bc8-497f-add5-cbfc13dfc658...');
-                  // [modificación] Corregir consulta para usar await directamente
                   try {
                     const specificResult = await supabaseClient
                       .from('game_sessions')
@@ -972,50 +814,32 @@ export default function TVScreen() {
                     
                     if (specificResult.error) {
                       console.error('🔍 TV-DIAGNOSTICO: Error en consulta 3:', specificResult.error);
-                    } else {
-//                       console.log(`🔍 TV-DIAGNOSTICO: Registros para sesión específica: ${specificResult.data?.length || 0}`);
-                      specificResult.data?.forEach(() => {
-//                         console.log(`🔍 TV-DIAGNOSTICO: Registro ${index + 1} de sesión específica:`, {
-//                           id: session.id,
-//                           session_id: session.session_id,
-//                           status: session.status,
-//                           admin_id: session.admin_id,
-//                           created_at: session.created_at,
-//                           updated_at: session.updated_at
-//                         });
-                      });
                     }
                   } catch (error3) {
                     console.error('🔍 TV-DIAGNOSTICO: Error en consulta 3:', error3);
                   }
-                  
-//                   console.log('🔍 TV-DIAGNOSTICO: Diagnóstico completado');
                 } catch (error) {
                   console.error('🔍 TV-DIAGNOSTICO: Error durante diagnóstico:', error);
                 }
               }}
-              className="mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-base mr-3" // [modificación] Botón más grande
+              className="mt-3 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-base mr-3"
             >
               🔍 Diagnóstico DB
             </button>
             
-            {/* [modificación] Botón para testing: simular participante registrado */}
             <button 
               onClick={() => {
-//                 console.log('📺 TV-TEST: Simulando participante registrado...');
                 const testSession = {
                   id: 'test-' + Date.now(),
                   session_id: 'test-session-' + Date.now(),
                   status: 'player_registered' as const,
                   admin_id: 'test-admin',
-                  // NOTA: participant_id ya no se maneja en game_sessions
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString(),
                 };
                 setCurrentSession(testSession);
-//                 console.log('📺 TV-TEST: Estado actualizado a player_registered - la TV debería mostrar ruleta');
               }}
-              className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-base" // [modificación] Botón más grande
+              className="mt-3 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded text-base"
             >
               🧪 Test Participante
             </button>

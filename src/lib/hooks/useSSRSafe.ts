@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react';
 
 /**
- * Hook para verificar de forma segura si el componente está montado del lado del cliente
+ * Hook para verificar si podemos acceder al DOM de forma segura
  * Evita errores de hidratación y acceso prematuro al DOM
  */
-export function useSSRSafe() {
+export function useDOMSafe() {
   const [isClient, setIsClient] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [isDOMReady, setIsDOMReady] = useState(false);
 
   useEffect(() => {
-    // [modificación] Verificar que estamos en el cliente
     setIsClient(true);
     
-    // [modificación] Pequeño delay para asegurar que el DOM está completamente listo
     const timer = setTimeout(() => {
       setIsReady(true);
     }, 50);
@@ -20,38 +19,8 @@ export function useSSRSafe() {
     return () => clearTimeout(timer);
   }, []);
 
-  return {
-    isClient,
-    isReady,
-    // [modificación] Utilitarios para condiciones comunes
-    canUseDOM: isClient && typeof window !== 'undefined',
-    canAnimate: isReady && isClient,
-  };
-}
-
-/**
- * Hook específico para verificar si podemos usar Framer Motion de forma segura
- */
-export function useFramerMotionSafe() {
-  const { canAnimate } = useSSRSafe();
-  const [canUseMotion, setCanUseMotion] = useState(false);
-
-  useEffect(() => {
-    if (canAnimate) {
-      // [modificación] Verificar que Framer Motion está disponible
-      setCanUseMotion(true);
-    }
-  }, [canAnimate]);
-
-  return canUseMotion;
-}
-
-/**
- * Hook para verificar si podemos acceder al DOM de forma segura
- */
-export function useDOMSafe() {
-  const { isClient, canUseDOM } = useSSRSafe();
-  const [isDOMReady, setIsDOMReady] = useState(false);
+  const canUseDOM = isClient && typeof window !== 'undefined';
+  const canAnimate = isReady && isClient;
 
   useEffect(() => {
     if (canUseDOM && document.readyState === 'complete') {
@@ -67,5 +36,6 @@ export function useDOMSafe() {
     isDOMReady,
     canUseDOM,
     isClient,
+    canAnimate,
   };
 } 

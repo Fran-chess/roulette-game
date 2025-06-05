@@ -271,11 +271,8 @@ export const useSessionStore = create<SessionState>()(
       
       // [modificación] Verificar si ya existe un canal activo
       if (realtimeChannel) {
-// //         console.log('Canal de realtime ya existe, reutilizando conexión existente');
         return;
       }
-
-// //       console.log('Inicializando nueva suscripción de realtime para tabla game_sessions');
       
       const channel = supabaseClient
         .channel('game_sessions_channel')
@@ -287,20 +284,17 @@ export const useSessionStore = create<SessionState>()(
             table: 'game_sessions',
           },
           (payload) => {
-// //             console.log('Evento realtime recibido:', payload.eventType, payload);
             const { eventType, new: newRecord, old: oldRecord } = payload;
             const { sessions, currentSession } = get();
 
             switch (eventType) {
               case 'INSERT':
-// //                 console.log('Nueva sesión insertada:', newRecord);
                 set({
                   sessions: [...sessions, newRecord as GameSession],
                 });
                 break;
               
               case 'UPDATE':
-// //                 console.log('Sesión actualizada:', newRecord);
                 const updatedSessions = sessions.map(session =>
                   session.session_id === newRecord.session_id ? newRecord as GameSession : session
                 );
@@ -314,7 +308,6 @@ export const useSessionStore = create<SessionState>()(
                 break;
               
               case 'DELETE':
-// //                 console.log('Sesión eliminada:', oldRecord);
                 set({
                   sessions: sessions.filter(session => session.session_id !== oldRecord.session_id),
                   currentSession: currentSession?.session_id === oldRecord.session_id 
@@ -325,14 +318,7 @@ export const useSessionStore = create<SessionState>()(
             }
           }
         )
-        .subscribe((status) => {
-// //           console.log('Estado de suscripción realtime:', status);
-          if (status === 'SUBSCRIBED') {
-// //             console.log('✅ Suscripción realtime activa para tabla game_sessions');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('❌ Error en canal realtime');
-          }
-        });
+        .subscribe();
 
       set({ realtimeChannel: channel });
     },

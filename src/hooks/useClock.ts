@@ -13,7 +13,6 @@ export function useClock(): Date | null {
   useEffect(() => {
     if (!isMounted) return;
     
-    // [modificación] Establecer fecha inicial después del mount para evitar hydration mismatch
     setCurrentTime(new Date());
     
     const timer = setInterval(() => {

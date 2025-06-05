@@ -58,11 +58,6 @@ export const supabaseClient = (() => {
     
     // [modificación] Verificar que es la única instancia
     verifyClientSingleton();
-    
-    // [modificación] Log para debugging en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-// //       console.log('✅ Supabase client inicializado correctamente (instancia única)');
-    }
   }
   return _supabaseClient;
 })();
@@ -90,11 +85,6 @@ export const supabaseAdmin = (() => {
         // [modificación] Removido db.schema que causaba error de TypeScript
       }
     );
-    
-    // [modificación] Log para debugging en desarrollo
-    if (process.env.NODE_ENV === 'development') {
-// //       console.log('✅ Supabase admin client inicializado correctamente');
-    }
   }
   return _supabaseAdmin;
 })();
@@ -108,22 +98,14 @@ export interface SupabaseError {
   code?: string;
 }
 
-// [modificación] Función de ayuda para depurar errores de Supabase en desarrollo con tipo específico
+/**
+ * Función de ayuda para depurar errores de Supabase en desarrollo
+ */
 export function handleSupabaseError(error: Error | SupabaseError | unknown, context: string) {
   if (process.env.NODE_ENV !== 'production') {
     console.error(`Error de Supabase en ${context}:`, error);
   }
   return error;
-}
-
-// [modificación] Función para verificar el estado de la conexión
-export function checkSupabaseConnection() {
-  if (process.env.NODE_ENV === 'development') {
-// //     console.log('🔍 Verificando conexión con Supabase...');
-// //     console.log('URL:', supabaseUrl ? '✅ Configurada' : '❌ No configurada');
-// //     console.log('Anon Key:', supabaseAnonKey ? '✅ Configurada' : '❌ No configurada');
-// //     console.log('Service Role Key:', supabaseServiceRoleKey ? '✅ Configurada' : '❌ No configurada');
-  }
 }
 
 // [modificación] Función para verificar que solo hay una instancia activa
@@ -140,8 +122,6 @@ export function verifyClientSingleton() {
     
     if (clientInstances > 0) {
       console.warn('⚠️ Detectada posible múltiple instanciación de Supabase client');
-    } else {
-// //       console.log('✅ Verificación singleton: Primera y única instancia de Supabase client');
     }
   }
 }
