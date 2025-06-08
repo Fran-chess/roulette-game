@@ -4,13 +4,13 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 // [modificación] Eliminación del import de Image ya que no mostraremos imágenes de premios
 // import Image from "next/image";
-import { 
-  CheckCircleIcon, 
+import {
+  CheckCircleIcon,
   XCircleIcon,
   // [modificación] Iconos específicos para los 3 premios únicos
   BookOpenIcon,
   BriefcaseIcon,
-  BeakerIcon
+  BeakerIcon,
 } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
@@ -19,47 +19,72 @@ import MassiveConfetti from "@/components/ui/MassiveConfetti";
 // [modificación] Función para obtener el icono correcto según el premio (solo 3 premios específicos)
 const getPrizeIcon = (prizeName: string | undefined) => {
   if (!prizeName) return BeakerIcon; // Fallback por si no hay nombre de premio
-  
+
   const prizeNameLower = prizeName.toLowerCase();
-  
-  if (prizeNameLower.includes('taza') || prizeNameLower.includes('mug') || prizeNameLower.includes('cup')) {
+
+  if (
+    prizeNameLower.includes("taza") ||
+    prizeNameLower.includes("mug") ||
+    prizeNameLower.includes("cup")
+  ) {
     return BeakerIcon; // BeakerIcon para taza/mug
-  } else if (prizeNameLower.includes('neceser') || prizeNameLower.includes('estuche') || prizeNameLower.includes('maletín')) {
+  } else if (
+    prizeNameLower.includes("neceser") ||
+    prizeNameLower.includes("estuche") ||
+    prizeNameLower.includes("maletín")
+  ) {
     return BriefcaseIcon; // BriefcaseIcon para neceser
-  } else if (prizeNameLower.includes('libreta') || prizeNameLower.includes('cuaderno') || prizeNameLower.includes('agenda') || prizeNameLower.includes('notebook')) {
+  } else if (
+    prizeNameLower.includes("libreta") ||
+    prizeNameLower.includes("cuaderno") ||
+    prizeNameLower.includes("agenda") ||
+    prizeNameLower.includes("notebook")
+  ) {
     return BookOpenIcon; // BookOpenIcon para libreta
   }
-  
+
   // Si no coincide con ninguno de los 3 premios, usar BeakerIcon como fallback
   return BeakerIcon;
 };
 
 export default function PrizeModal() {
   const router = useRouter();
-  
+
   // [modificación] Estados para detección de tipo de pantalla
   const [isTablet, setIsTablet] = useState(false);
   const [isTVTouch, setIsTVTouch] = useState(false);
   const [isTV65, setIsTV65] = useState(false);
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
-  
+
   // [modificación] ID único para tracking de logs
-  const componentId = useRef(`PrizeModal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
-  
+  const componentId = useRef(
+    `PrizeModal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  );
+
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
-  const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
+  const setCurrentParticipant = useGameStore(
+    (state) => state.setCurrentParticipant
+  );
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
-  const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
+  const setLastSpinResultIndex = useGameStore(
+    (state) => state.setLastSpinResultIndex
+  );
   const setShowConfetti = useGameStore((state) => state.setShowConfetti);
   const gameSession = useGameStore((state) => state.gameSession);
   const gameState = useGameStore((state) => state.gameState);
   const showConfetti = useGameStore((state) => state.showConfetti);
+  const currentQuestion = useGameStore((state) => state.currentQuestion);
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
+
+  // [modificación] Verificar si el participante ya había ganado un premio anteriormente
+  // Esto se puede detectar cuando la respuesta es correcta pero no hay prizeName
+  const yaGanoPremio =
+    answeredCorrectly && !prizeName && currentQuestion?.prize;
 
   // [modificación] useEffect para detección de tipo de pantalla y windowSize
   useEffect(() => {
@@ -76,7 +101,7 @@ export default function PrizeModal() {
       setIsTVTouch(width >= 1025 && !isTV65Resolution);
       setWindowSize({ width, height });
 
-// //       console.log(`📱 PrizeModal: Resolución detectada: ${width}x${height}, TV65: ${isTV65Resolution}`);
+      // //       console.log(`📱 PrizeModal: Resolución detectada: ${width}x${height}, TV65: ${isTV65Resolution}`);
     };
 
     handleResize();
@@ -120,8 +145,9 @@ export default function PrizeModal() {
   }, [isTV65, isTVTouch, isTablet]);
 
   const titleClasses = useMemo(() => {
-    const baseClasses = "font-marineBlack text-white mb-6 leading-tight drop-shadow-2xl";
-    
+    const baseClasses =
+      "font-marineBlack text-white mb-6 leading-tight drop-shadow-2xl";
+
     if (isTV65) {
       return `${baseClasses} text-[10rem] font-extrabold mb-12 text-shadow-ultra-strong`;
     } else if (isTVTouch) {
@@ -134,8 +160,9 @@ export default function PrizeModal() {
 
   // [modificación] Mejorar el tamaño de "¡Respuesta correcta!"
   const correctAnswerTitleClasses = useMemo(() => {
-    const baseClasses = "text-verde-salud font-marineBlack mb-4 leading-tight drop-shadow-2xl";
-    
+    const baseClasses =
+      "text-verde-salud font-marineBlack mb-4 leading-tight drop-shadow-2xl";
+
     if (isTV65) {
       return `${baseClasses} text-[8rem] font-extrabold mb-10 text-shadow-ultra-strong`;
     } else if (isTVTouch) {
@@ -148,7 +175,7 @@ export default function PrizeModal() {
 
   const subtitleClasses = useMemo(() => {
     const baseClasses = "text-white font-marineRegular leading-relaxed";
-    
+
     if (isTV65) {
       return `${baseClasses} text-[6rem] mb-12 text-shadow-strong`;
     } else if (isTVTouch) {
@@ -161,7 +188,7 @@ export default function PrizeModal() {
 
   const explanationContainerClasses = useMemo(() => {
     const baseClasses = "bg-black/10 p-4 rounded-lg border text-white";
-    
+
     if (isTV65) {
       return `${baseClasses} p-16 rounded-2xl border-4 border-red-400/40 my-12`;
     } else if (isTVTouch) {
@@ -174,7 +201,7 @@ export default function PrizeModal() {
 
   const explanationTextClasses = useMemo(() => {
     const baseClasses = "font-marineBold";
-    
+
     if (isTV65) {
       return `${baseClasses} text-[5rem] mb-4 text-shadow-strong`;
     } else if (isTVTouch) {
@@ -187,7 +214,7 @@ export default function PrizeModal() {
 
   const correctAnswerClasses = useMemo(() => {
     const baseClasses = "font-marineBold text-verde-salud";
-    
+
     if (isTV65) {
       return `${baseClasses} text-[5.5rem] mb-8 text-shadow-strong`;
     } else if (isTVTouch) {
@@ -200,7 +227,7 @@ export default function PrizeModal() {
 
   const explanationDetailClasses = useMemo(() => {
     const baseClasses = "text-white/90";
-    
+
     if (isTV65) {
       return `${baseClasses} text-[4.2rem] leading-relaxed text-shadow-soft`;
     } else if (isTVTouch) {
@@ -214,7 +241,7 @@ export default function PrizeModal() {
   // [modificación] Mejorar el tamaño de "Has ganado:"
   const hasGanadoClasses = useMemo(() => {
     const baseClasses = "font-marineBold text-white mb-3";
-    
+
     if (isTV65) {
       return `${baseClasses} text-[6.5rem] mb-8 text-shadow-strong`;
     } else if (isTVTouch) {
@@ -227,7 +254,7 @@ export default function PrizeModal() {
 
   const prizeNameClasses = useMemo(() => {
     const baseClasses = "font-marineBold text-white";
-    
+
     if (isTV65) {
       return `${baseClasses} text-[7rem] mb-12 text-shadow-strong`;
     } else if (isTVTouch) {
@@ -241,7 +268,7 @@ export default function PrizeModal() {
   // [modificación] Eliminar prizeInstructionsClasses ya que no mostraremos las instrucciones del mostrador
   // const prizeInstructionsClasses = useMemo(() => {
   //   const baseClasses = "bg-black/5 border border-white/30 text-white p-4 rounded-xl mt-4 mb-8 font-marineRegular shadow-md";
-  //   
+  //
   //   if (isTV65) {
   //     return `${baseClasses} p-16 rounded-2xl mt-12 mb-16 text-[4.2rem] leading-relaxed text-shadow-soft`;
   //   } else if (isTVTouch) {
@@ -264,8 +291,9 @@ export default function PrizeModal() {
   }, [isTV65, isTVTouch, isTablet]);
 
   const buttonClasses = useMemo(() => {
-    const baseClasses = "w-full font-marineBold rounded-xl shadow-2xl border-2 border-celeste-medio bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud transition-all duration-200 hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)] active:scale-95 focus:outline-none focus:ring-4 focus:ring-celeste-medio/40";
-    
+    const baseClasses =
+      "w-full font-marineBold rounded-xl shadow-2xl border-2 border-celeste-medio bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud transition-all duration-200 hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)] active:scale-95 focus:outline-none focus:ring-4 focus:ring-celeste-medio/40";
+
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-strong`;
     } else if (isTVTouch) {
@@ -277,8 +305,9 @@ export default function PrizeModal() {
   }, [isTV65, isTVTouch, isTablet]);
 
   const secondaryButtonClasses = useMemo(() => {
-    const baseClasses = "w-full bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 text-white font-marineBold rounded-xl shadow-lg transform active:scale-95 transition-all duration-300";
-    
+    const baseClasses =
+      "w-full bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 text-white font-marineBold rounded-xl shadow-lg transform active:scale-95 transition-all duration-300";
+
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-soft`;
     } else if (isTVTouch) {
@@ -295,9 +324,15 @@ export default function PrizeModal() {
     const componentIdValue = componentId.current;
     void componentIdValue;
     console.log(`🎁 PrizeModal [${componentIdValue}]: Componente montado`);
-    console.log(`🎁 PrizeModal [${componentIdValue}]: Estado inicial - gameState: ${gameState}, answeredCorrectly: ${answeredCorrectly}`);
-    console.log(`🎁 PrizeModal [${componentIdValue}]: gameSession disponible:`, !!gameSession, gameSession?.session_id);
-    
+    console.log(
+      `🎁 PrizeModal [${componentIdValue}]: Estado inicial - gameState: ${gameState}, answeredCorrectly: ${answeredCorrectly}`
+    );
+    console.log(
+      `🎁 PrizeModal [${componentIdValue}]: gameSession disponible:`,
+      !!gameSession,
+      gameSession?.session_id
+    );
+
     return () => {
       // [modificación] Usar variable copiada en cleanup
       console.log(`🎁 PrizeModal [${componentIdValue}]: Componente DESMONTADO`);
@@ -306,112 +341,171 @@ export default function PrizeModal() {
 
   // [modificación] Logging adicional para debug de cambios de estado
   useEffect(() => {
-    if (gameState === 'prize') {
-      console.log(`🎁 PrizeModal [${componentId.current}]: Estado 'prize' detectado, answeredCorrectly: ${answeredCorrectly}`);
-      console.log(`🎁 PrizeModal [${componentId.current}]: gameSession en estado prize:`, gameSession);
+    if (gameState === "prize") {
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: Estado 'prize' detectado, answeredCorrectly: ${answeredCorrectly}`
+      );
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: gameSession en estado prize:`,
+        gameSession
+      );
     }
   }, [gameState, answeredCorrectly, gameSession]);
 
   // [modificación] Función para volver a jugar - mantiene el mismo participante y va a la ruleta
   const handlePlayAgain = async () => {
-    console.log(`🎁 PrizeModal [${componentId.current}]: handlePlayAgain iniciado`);
-    console.log("PrizeModal: Preparando para volver a jugar con el mismo participante...");
-    
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: handlePlayAgain iniciado`
+    );
+    console.log(
+      "PrizeModal: Preparando para volver a jugar con el mismo participante..."
+    );
+
     // [modificación] Orden optimizado para minimizar re-renders
-    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando currentQuestion`);
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: Limpiando currentQuestion`
+    );
     setCurrentQuestion(null);
-    
-    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando lastSpinResultIndex`);
+
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: Limpiando lastSpinResultIndex`
+    );
     setLastSpinResultIndex(null);
-    
+
     // [modificación] NO limpiar confetti inmediatamente - dejarlo por más tiempo para una celebración completa
-    console.log(`🎁 PrizeModal [${componentId.current}]: Confetti se mantendrá por 5 segundos más para celebración completa`);
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: Confetti se mantendrá por 5 segundos más para celebración completa`
+    );
     setTimeout(() => {
-      console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti después de celebración extendida`);
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti después de celebración extendida`
+      );
       setShowConfetti(false);
     }, 5000); // [modificación] - Extendido a 5 segundos para una celebración más larga
-    
+
     // [modificación] Cambiar al estado de ruleta en setTimeout para evitar conflictos
     setTimeout(() => {
-      console.log(`🎁 PrizeModal [${componentId.current}]: Estableciendo gameState a 'roulette'`);
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: Estableciendo gameState a 'roulette'`
+      );
       setGameState("roulette");
-      
+
       // [modificación] Resetear prizeFeedback después del cambio de estado
-      console.log(`🎁 PrizeModal [${componentId.current}]: Reseteando prizeFeedback`);
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: Reseteando prizeFeedback`
+      );
       resetPrizeFeedback();
-      
-      console.log(`🎁 PrizeModal [${componentId.current}]: handlePlayAgain completado`);
+
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: handlePlayAgain completado`
+      );
     }, 50); // [modificación] Pequeño delay para evitar conflictos de estado
-    
+
     console.log("PrizeModal: Volviendo a la ruleta con el mismo participante");
   };
 
   // [modificación] Función corregida para volver al inicio - Resetear participante pero mantener sesión activa
   const handleGoHome = async () => {
-    console.log(`🎁 PrizeModal [${componentId.current}]: handleGoHome iniciado - preparando para siguiente participante`);
-    console.log("PrizeModal: Preparando para siguiente participante en la misma sesión...");
-    
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: handleGoHome iniciado - preparando para siguiente participante`
+    );
+    console.log(
+      "PrizeModal: Preparando para siguiente participante en la misma sesión..."
+    );
+
     // [modificación] Preservar gameSession para mantener la sesión activa
     const sessionForNext = gameSession;
-    
-    console.log(`🎁 PrizeModal [${componentId.current}]: Manteniendo sesión activa para siguiente participante:`, sessionForNext?.session_id);
-    
+
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: Manteniendo sesión activa para siguiente participante:`,
+      sessionForNext?.session_id
+    );
+
     try {
       // [modificación] CRUCIAL: Llamar endpoint para resetear solo el participante y volver la sesión a estado 'pending_player_registration'
       if (sessionForNext?.session_id) {
-        console.log('🎁 PrizeModal: Llamando API para resetear participante y preparar sesión para siguiente jugador...');
-        
-        const response = await fetch('/api/admin/sessions/prepare-next-player', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            sessionId: sessionForNext.session_id,
-            adminId: sessionForNext.admin_id || 'auto_system'
-          }),
-        });
+        console.log(
+          "🎁 PrizeModal: Llamando API para resetear participante y preparar sesión para siguiente jugador..."
+        );
+
+        const response = await fetch(
+          "/api/admin/sessions/prepare-next-player",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: sessionForNext.session_id,
+              adminId: sessionForNext.admin_id || "auto_system",
+            }),
+          }
+        );
 
         const data = await response.json();
-        
+
         if (!response.ok) {
-          console.error('🎁 PrizeModal: Error al preparar sesión para siguiente participante:', data);
-          throw new Error(data.message || 'Error al preparar sesión para siguiente participante');
+          console.error(
+            "🎁 PrizeModal: Error al preparar sesión para siguiente participante:",
+            data
+          );
+          throw new Error(
+            data.message ||
+              "Error al preparar sesión para siguiente participante"
+          );
         }
 
-        console.log('✅ PrizeModal: Sesión preparada exitosamente para siguiente participante:', data);
-        console.log('✅ PrizeModal: La TV debería volver a WaitingScreen y estar lista para el próximo registro');
+        console.log(
+          "✅ PrizeModal: Sesión preparada exitosamente para siguiente participante:",
+          data
+        );
+        console.log(
+          "✅ PrizeModal: La TV debería volver a WaitingScreen y estar lista para el próximo registro"
+        );
       }
     } catch (error) {
-      console.error('🎁 PrizeModal: Error preparando sesión para siguiente participante:', error);
+      console.error(
+        "🎁 PrizeModal: Error preparando sesión para siguiente participante:",
+        error
+      );
       // Continuar con limpieza local aunque falle la API
     }
-    
+
     // [modificación] Limpiar solo el estado del participante actual, NO la sesión
-    console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando estado del participante actual...`);
-    
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: Limpiando estado del participante actual...`
+    );
+
     setCurrentParticipant(null);
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
-    
+
     // [modificación] Mantener confetti por un momento antes de limpiar
-    console.log(`🎁 PrizeModal [${componentId.current}]: Confetti se mantendrá por 3 segundos más antes de ir al inicio`);
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: Confetti se mantendrá por 3 segundos más antes de ir al inicio`
+    );
     setTimeout(() => {
-      console.log(`🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti antes de ir al inicio`);
+      console.log(
+        `🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti antes de ir al inicio`
+      );
       setShowConfetti(false);
     }, 3000);
-    
+
     // [modificación] Verificar si estamos en contexto de TV
-    const isTV = window.location.pathname.includes('/tv');
-    
+    const isTV = window.location.pathname.includes("/tv");
+
     if (isTV) {
-      console.log('PrizeModal: Estamos en TV, volviendo a WaitingScreen pero manteniendo sesión activa para siguiente participante');
+      console.log(
+        "PrizeModal: Estamos en TV, volviendo a WaitingScreen pero manteniendo sesión activa para siguiente participante"
+      );
       // [modificación] En TV, NO limpiar gameSession - solo cambiar a estado de espera
       // La API ya habrá actualizado la base de datos, esto es solo UI local
-      setGameState('screensaver'); // [modificación] Usar 'screensaver' para volver a waiting
+      setGameState("screensaver"); // [modificación] Usar 'screensaver' para volver a waiting
       // NO limpiar setGameSession(null) - mantener la sesión activa
     } else {
-      console.log(`PrizeModal: Redirigiendo a pantalla de registro para siguiente participante en la misma sesión`);
-      // [modificación] En tablet/admin, navegar de vuelta al formulario de registro 
+      console.log(
+        `PrizeModal: Redirigiendo a pantalla de registro para siguiente participante en la misma sesión`
+      );
+      // [modificación] En tablet/admin, navegar de vuelta al formulario de registro
       // manteniendo la misma sessionId para permitir nuevo participante
       if (sessionForNext?.session_id) {
         router.push(`/register/${sessionForNext.session_id}`);
@@ -421,18 +515,29 @@ export default function PrizeModal() {
       }
       // NO limpiar gameSession ni currentSession - mantener para siguiente participante
     }
-    
-    console.log(`🎁 PrizeModal [${componentId.current}]: handleGoHome completado - sesión mantenida activa para siguiente participante`);
+
+    console.log(
+      `🎁 PrizeModal [${componentId.current}]: handleGoHome completado - sesión mantenida activa para siguiente participante`
+    );
   };
 
   // [modificación] Verificación más estricta para evitar renders innecesarios
-  if (gameState !== "prize" || answeredCorrectly === null || typeof answeredCorrectly === 'undefined') {
+  if (
+    gameState !== "prize" ||
+    answeredCorrectly === null ||
+    typeof answeredCorrectly === "undefined"
+  ) {
     // [modificación] Si gameState es 'prize' pero answeredCorrectly es null, hay estado inconsistente - resetear
-    if (gameState === "prize" && (answeredCorrectly === null || typeof answeredCorrectly === 'undefined')) {
-      console.warn(`🎁 PrizeModal: Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a roulette`);
+    if (
+      gameState === "prize" &&
+      (answeredCorrectly === null || typeof answeredCorrectly === "undefined")
+    ) {
+      console.warn(
+        `🎁 PrizeModal: Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a roulette`
+      );
       // Reset automático para evitar loops
       setTimeout(() => {
-        setGameState('roulette');
+        setGameState("roulette");
         resetPrizeFeedback();
       }, 0);
     }
@@ -478,10 +583,10 @@ export default function PrizeModal() {
 
   // --- Estilos Comunes ---
   // [modificación] Remover modalBaseClasses estático - ahora se usa modalContainerClasses dinámico
-  
+
   return (
     <motion.div
-      key={`prizeModal-${currentParticipant?.id || 'anonymous'}`}
+      key={`prizeModal-${currentParticipant?.id || "anonymous"}`}
       variants={backdropVariants}
       initial="hidden"
       animate="visible"
@@ -505,15 +610,11 @@ export default function PrizeModal() {
             className="w-full"
           >
             <XCircleIcon className={`${iconClasses} text-red-500`} />
-            <h2 className={titleClasses}>
-              ¡Respuesta Incorrecta!
-            </h2>
+            <h2 className={titleClasses}>¡Respuesta Incorrecta!</h2>
 
             <div className={explanationContainerClasses}>
               <p className={explanationTextClasses}>Respuesta correcta:</p>
-              <p className={correctAnswerClasses}>
-                {correctOption}
-              </p>
+              <p className={correctAnswerClasses}>{correctOption}</p>
               {explanation && (
                 <p className={explanationDetailClasses}>{explanation}</p>
               )}
@@ -527,7 +628,7 @@ export default function PrizeModal() {
               >
                 Volver a jugar
               </Button>
-              
+
               <Button
                 onClick={handleGoHome}
                 variant="secondary"
@@ -549,9 +650,7 @@ export default function PrizeModal() {
             <h2 className={titleClasses}>
               ¡Felicitaciones {currentParticipant?.nombre}!
             </h2>
-            <h3 className={correctAnswerTitleClasses}>
-              ¡Respuesta correcta!
-            </h3>
+            <h3 className={correctAnswerTitleClasses}>¡Respuesta correcta!</h3>
 
             {prizeName && (
               <>
@@ -568,25 +667,25 @@ export default function PrizeModal() {
                       }}
                       className="mb-6"
                     >
-                      <PrizeIcon className={`${prizeIconClasses} text-yellow-400`} />
+                      <PrizeIcon
+                        className={`${prizeIconClasses} text-yellow-400`}
+                      />
                     </motion.div>
                   );
                 })()}
-                
-                <p className={hasGanadoClasses}>
-                  Has ganado:
-                </p>
-                <p className={prizeNameClasses}>
-                  {prizeName}
-                </p>
-                
+
+                <p className={hasGanadoClasses}>Has ganado:</p>
+                <p className={prizeNameClasses}>{prizeName}</p>
+
                 {/* [modificación] Eliminar completamente el texto del mostrador */}
               </>
             )}
 
             {!prizeName && (
               <p className={subtitleClasses}>
-                ¡Bien hecho! Sigue participando.
+                {yaGanoPremio
+                  ? `¡Excelente ${currentParticipant?.nombre}! Respuesta correcta. Puedes seguir jugando y disfrutando. ¡Gracias por participar!`
+                  : "¡Bien hecho! Sigue participando."}
               </p>
             )}
 
@@ -598,7 +697,7 @@ export default function PrizeModal() {
               >
                 Volver a jugar
               </Button>
-              
+
               <Button
                 onClick={handleGoHome}
                 variant="secondary"
@@ -610,41 +709,32 @@ export default function PrizeModal() {
           </motion.div>
         )}
       </motion.div>
-      
+
       {/* [modificación] - Sistema de confetti masivo desde todos los bordes usando componente reutilizable */}
-      <MassiveConfetti 
-        show={showConfetti} 
-        windowSize={windowSize} 
+      <MassiveConfetti
+        show={showConfetti}
+        windowSize={windowSize}
         isTV65={isTV65}
       />
-      
+
       {/* [modificación] Agregar estilos CSS para sombras de texto */}
       <style jsx global>{`
         .text-shadow-ultra-strong {
-          text-shadow: 
-            0 6px 12px rgba(0, 0, 0, 1),
-            0 12px 24px rgba(0, 0, 0, 0.9),
-            0 24px 48px rgba(0, 0, 0, 0.8),
-            0 48px 96px rgba(0, 0, 0, 0.6),
-            0 0 60px rgba(255, 255, 255, 0.15),
-            2px 2px 0 rgba(0, 0, 0, 0.8),
-            -2px -2px 0 rgba(0, 0, 0, 0.8);
+          text-shadow: 0 6px 12px rgba(0, 0, 0, 1),
+            0 12px 24px rgba(0, 0, 0, 0.9), 0 24px 48px rgba(0, 0, 0, 0.8),
+            0 48px 96px rgba(0, 0, 0, 0.6), 0 0 60px rgba(255, 255, 255, 0.15),
+            2px 2px 0 rgba(0, 0, 0, 0.8), -2px -2px 0 rgba(0, 0, 0, 0.8);
         }
 
         .text-shadow-strong {
-          text-shadow: 
-            0 3px 6px rgba(0, 0, 0, 1),
-            0 6px 12px rgba(0, 0, 0, 0.8),
-            0 12px 24px rgba(0, 0, 0, 0.6),
-            1px 1px 0 rgba(0, 0, 0, 0.9),
+          text-shadow: 0 3px 6px rgba(0, 0, 0, 1), 0 6px 12px rgba(0, 0, 0, 0.8),
+            0 12px 24px rgba(0, 0, 0, 0.6), 1px 1px 0 rgba(0, 0, 0, 0.9),
             -1px -1px 0 rgba(0, 0, 0, 0.9);
         }
 
         .text-shadow-soft {
-          text-shadow: 
-            0 2px 4px rgba(0, 0, 0, 0.8),
-            0 4px 8px rgba(0, 0, 0, 0.6),
-            1px 1px 0 rgba(0, 0, 0, 0.7);
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8),
+            0 4px 8px rgba(0, 0, 0, 0.6), 1px 1px 0 rgba(0, 0, 0, 0.7);
         }
 
         .rounded-4xl {
@@ -652,8 +742,7 @@ export default function PrizeModal() {
         }
 
         .shadow-3xl {
-          box-shadow: 
-            0 35px 70px -12px rgba(0, 0, 0, 0.9),
+          box-shadow: 0 35px 70px -12px rgba(0, 0, 0, 0.9),
             0 0 80px rgba(255, 255, 255, 0.25),
             inset 0 3px 6px rgba(255, 255, 255, 0.15);
         }
@@ -762,14 +851,10 @@ export default function PrizeModal() {
         /* [modificación] Optimizaciones para TV 65" */
         @media (min-width: 2160px) {
           .text-shadow-ultra-strong {
-            text-shadow: 
-              0 8px 16px rgba(0, 0, 0, 1),
-              0 16px 32px rgba(0, 0, 0, 0.9),
-              0 32px 64px rgba(0, 0, 0, 0.8),
-              0 64px 128px rgba(0, 0, 0, 0.6),
-              0 0 80px rgba(255, 255, 255, 0.2),
-              3px 3px 0 rgba(0, 0, 0, 0.9),
-              -3px -3px 0 rgba(0, 0, 0, 0.9);
+            text-shadow: 0 8px 16px rgba(0, 0, 0, 1),
+              0 16px 32px rgba(0, 0, 0, 0.9), 0 32px 64px rgba(0, 0, 0, 0.8),
+              0 64px 128px rgba(0, 0, 0, 0.6), 0 0 80px rgba(255, 255, 255, 0.2),
+              3px 3px 0 rgba(0, 0, 0, 0.9), -3px -3px 0 rgba(0, 0, 0, 0.9);
           }
         }
       `}</style>

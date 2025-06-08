@@ -1,0 +1,176 @@
+import { NextResponse } from 'next/server';
+import { supabaseAdmin } from '@/lib/supabase';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * Endpoint para procesar y guardar jugadas de participantes
+ * Implementa la lógica para que un participante solo pueda ganar un premio por sesión
+ */
+export async function POST(request: Request) {
+  try {
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { message: 'Error en la conexión con la base de datos' },
+        { status: 500 }
+      );
+    }
+
+    const {
+      participant_id,
+      session_id,
+      question_id,
+      answered_correctly,
+      prize_name,
+      admin_id
+    } = await request.json();
+
+    console.log('🎮 SUBMIT-PLAY: Iniciando procesamiento de jugada');
+    console.log('   - Participante:', participant_id);
+    console.log('   - Sesión:', session_id);
+    console.log('   - Pregunta:', question_id);
+    console.log('   - Respuesta correcta:', answered_correctly);
+    console.log('   - Premio potencial:', prize_name);
+    console.log('   - Admin ID válido:', admin_id && admin_id.length === 36 ? 'Sí' : 'No (usará null)');
+
+    // Validar campos obligatorios
+    if (!participant_id || !session_id || !question_id || typeof answered_correctly !== 'boolean') {
+      return NextResponse.json(
+        { message: 'Faltan campos obligatorios' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar que el participante existe
+    const { data: participant, error: participantError } = await supabaseAdmin
+      .from('participants')
+      .select('id, nombre, session_id')
+      .eq('id', participant_id)
+      .single();
+
+    if (participantError || !participant) {
+      console.error('❌ SUBMIT-PLAY: Participante no encontrado:', participantError);
+      return NextResponse.json(
+        { message: 'Participante no encontrado' },
+        { status: 404 }
+      );
+    }
+
+    // Verificar que el participante pertenece a la sesión
+    if (participant.session_id !== session_id) {
+      console.error('❌ SUBMIT-PLAY: Participante no pertenece a la sesión');
+      return NextResponse.json(
+        { message: 'Participante no pertenece a la sesión especificada' },
+        { status: 400 }
+      );
+    }
+
+    // 🏆 LÓGICA PRINCIPAL: Verificar si el participante ya ganó un premio en esta sesión
+    let yaGano = false;
+    if (answered_correctly && prize_name) {
+      console.log('🔍 SUBMIT-PLAY: Verificando si el participante ya ganó un premio...');
+      
+      const { data: previousWins, error: winCheckError } = await supabaseAdmin
+        .from('plays')
+        .select('id, premio_ganado, created_at')
+        .eq('participant_id', participant_id)
+        .not('premio_ganado', 'is', null)
+        .neq('premio_ganado', '')
+        .limit(1);
+
+      if (winCheckError) {
+        console.error('❌ SUBMIT-PLAY: Error verificando premios anteriores:', winCheckError);
+        return NextResponse.json(
+          { message: 'Error verificando premios anteriores' },
+          { status: 500 }
+        );
+      }
+
+      yaGano = previousWins && previousWins.length > 0;
+      
+      if (yaGano) {
+        console.log('🚫 SUBMIT-PLAY: El participante ya ganó un premio anteriormente');
+        console.log('   - Premio anterior:', previousWins[0].premio_ganado);
+        console.log('   - Fecha:', previousWins[0].created_at);
+      } else {
+        console.log('✅ SUBMIT-PLAY: Participante elegible para recibir premio');
+      }
+    }
+
+    // Determinar el premio final basado en la lógica de negocio
+    const premioFinal = (answered_correctly && prize_name && !yaGano) ? prize_name : null;
+
+    console.log('🎯 SUBMIT-PLAY: Resultado del procesamiento:');
+    console.log('   - Respuesta correcta:', answered_correctly);
+    console.log('   - Ya ganó anteriormente:', yaGano);
+    console.log('   - Premio a otorgar:', premioFinal || 'Ninguno');
+
+    // Crear la jugada en la base de datos
+    const playData = {
+      id: uuidv4(),
+      participant_id,
+      session_id,
+      // [modificación] Asignar admin_id solo si es UUID válido (36 caracteres), sino null
+      admin_id: (admin_id && admin_id.length === 36) ? admin_id : null,
+      lastquestionid: question_id,
+      answeredcorrectly: answered_correctly,
+      premio_ganado: premioFinal,
+      status: 'completed',
+      score: answered_correctly ? 1 : 0,
+      detalles_juego: {
+        question_id,
+        answered_correctly,
+        prize_offered: prize_name,
+        prize_awarded: premioFinal,
+        already_won_prize: yaGano,
+        timestamp: new Date().toISOString()
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: savedPlay, error: saveError } = await supabaseAdmin
+      .from('plays')
+      .insert(playData)
+      .select()
+      .single();
+
+    if (saveError) {
+      console.error('❌ SUBMIT-PLAY: Error guardando jugada:', saveError);
+      return NextResponse.json(
+        { message: 'Error guardando la jugada', error: saveError.message },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ SUBMIT-PLAY: Jugada guardada exitosamente:', savedPlay.id);
+
+    // Respuesta con información completa para el frontend
+    return NextResponse.json({
+      success: true,
+      message: 'Jugada procesada exitosamente',
+      play: savedPlay,
+      result: {
+        answered_correctly,
+        prize_awarded: premioFinal,
+        already_won_prize: yaGano,
+        message: yaGano && answered_correctly && prize_name
+          ? `¡Respuesta correcta! Sin embargo, ya ganaste un premio anteriormente. ¡Gracias por seguir participando!`
+          : answered_correctly && premioFinal
+          ? `¡Felicitaciones! Respuesta correcta y ganaste: ${premioFinal}`
+          : answered_correctly
+          ? '¡Respuesta correcta! Sigue participando.'
+          : 'Respuesta incorrecta. ¡Sigue intentando!'
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ SUBMIT-PLAY: Error interno:', error);
+    return NextResponse.json(
+      { 
+        message: 'Error interno del servidor',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      },
+      { status: 500 }
+    );
+  }
+} 

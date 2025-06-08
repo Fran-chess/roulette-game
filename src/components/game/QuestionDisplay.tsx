@@ -174,6 +174,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
 
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
+  const gameSession = useGameStore((state) => state.gameSession);
   const updateCurrentParticipantScore = useGameStore(
     (state) => state.updateCurrentParticipantScore
   );
@@ -258,24 +259,78 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     hasTimeUpExecutedRef.current = false;
   }, [question.id]);
 
-  const handleTimeUp = useCallback(() => {
+  const handleTimeUp = useCallback(async () => {
     if (isAnswered || hasTimeUpExecutedRef.current) return;
     hasTimeUpExecutedRef.current = true;
     setIsAnswered(true);
+    
     const correctOption = question.options.find((o) => o.correct);
+
+    try {
+      // Guardar la jugada de tiempo agotado en el backend
+      if (currentParticipant) {
+        console.log('⏰ QuestionDisplay: Tiempo agotado, enviando jugada al servidor...');
+        
+        const playData = {
+          participant_id: currentParticipant.id,
+          session_id: currentParticipant.session_id,
+          question_id: question.id,
+          answered_correctly: false,
+          prize_name: undefined,
+          // [modificación] Usar admin_id real de la sesión o null
+          admin_id: gameSession?.admin_id || null
+        };
+
+        const response = await fetch('/api/plays/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(playData),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          console.log('✅ QuestionDisplay: Jugada de tiempo agotado guardada exitosamente');
+          
+          updateCurrentParticipantScore({
+            questionId: question.id,
+            answeredCorrectly: false,
+            prizeWon: undefined,
+          });
+        } else {
+          console.error('❌ QuestionDisplay: Error guardando jugada de tiempo agotado:', result.message);
+          
+          // Fallback: actualizar store local
+          updateCurrentParticipantScore({
+            questionId: question.id,
+            answeredCorrectly: false,
+            prizeWon: undefined,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('❌ QuestionDisplay: Error de red al guardar jugada de tiempo agotado:', error);
+      
+      // Fallback: actualizar store local
+      if (currentParticipant) {
+        updateCurrentParticipantScore({
+          questionId: question.id,
+          answeredCorrectly: false,
+          prizeWon: undefined,
+        });
+      }
+    }
+
+    // Actualizar feedback (siempre local para tiempo agotado)
     setPrizeFeedback({
       answeredCorrectly: false,
       explanation: question.explanation || "",
       correctOption: correctOption?.text || "",
       prizeName: "",
     });
-    if (currentParticipant) {
-      updateCurrentParticipantScore({
-        questionId: question.id,
-        answeredCorrectly: false,
-        prizeWon: undefined,
-      });
-    }
+
     setTimeout(() => {
       setGameState("prize");
     }, 3000);
@@ -285,34 +340,121 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     question.explanation,
     question.options,
     currentParticipant,
+    gameSession,
     updateCurrentParticipantScore,
     setGameState,
     setPrizeFeedback,
   ]);
 
   const handleAnswer = useCallback(
-    (option: AnswerOption) => {
+    async (option: AnswerOption) => {
       if (isAnswered || hasTimeUpExecutedRef.current) return;
       hasTimeUpExecutedRef.current = true;
       setSelectedAnswer(option);
       setIsAnswered(true);
+      
       const correctAnswer = option.correct;
-      const prizeWon = correctAnswer ? question.prize : undefined;
-      if (correctAnswer) setShowConfetti(true);
       const correctOption = question.options.find((o) => o.correct);
-      setPrizeFeedback({
-        answeredCorrectly: correctAnswer,
-        explanation: !correctAnswer ? question.explanation || "" : "",
-        correctOption: correctOption?.text || "",
-        prizeName: prizeWon || "",
-      });
-      if (currentParticipant) {
-        updateCurrentParticipantScore({
-          questionId: question.id,
+      
+      // Mostrar confetti inmediatamente para respuestas correctas
+      if (correctAnswer) setShowConfetti(true);
+
+      try {
+        // Guardar la jugada en el backend con la lógica de premios únicos
+        if (currentParticipant) {
+          console.log('🎮 QuestionDisplay: Enviando jugada al servidor...');
+          
+          const playData = {
+            participant_id: currentParticipant.id,
+            session_id: currentParticipant.session_id,
+            question_id: question.id,
+            answered_correctly: correctAnswer,
+            prize_name: correctAnswer ? question.prize : undefined,
+            // [modificación] Usar admin_id real de la sesión o null
+            admin_id: gameSession?.admin_id || null
+          };
+
+          const response = await fetch('/api/plays/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(playData),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            console.log('✅ QuestionDisplay: Jugada guardada exitosamente');
+            console.log('🏆 Resultado:', result.result);
+
+            // Actualizar el feedback con la información del servidor
+            setPrizeFeedback({
+              answeredCorrectly: correctAnswer,
+              explanation: !correctAnswer ? question.explanation || "" : "",
+              correctOption: correctOption?.text || "",
+              prizeName: result.result.prize_awarded || "", // Usar el premio otorgado por el servidor
+            });
+
+            // Actualizar el store local (mantener compatibilidad)
+            updateCurrentParticipantScore({
+              questionId: question.id,
+              answeredCorrectly: correctAnswer,
+              prizeWon: result.result.prize_awarded,
+            });
+
+            // Si ya había ganado un premio, mostrar mensaje especial en el log
+            if (result.result.already_won_prize && correctAnswer) {
+              console.log('🎉 El participante ya había ganado un premio, pero puede seguir jugando');
+            }
+          } else {
+            console.error('❌ QuestionDisplay: Error guardando jugada:', result.message);
+            
+            // Fallback: usar lógica local si falla el servidor
+            setPrizeFeedback({
+              answeredCorrectly: correctAnswer,
+              explanation: !correctAnswer ? question.explanation || "" : "",
+              correctOption: correctOption?.text || "",
+              prizeName: correctAnswer ? question.prize || "" : "",
+            });
+
+            updateCurrentParticipantScore({
+              questionId: question.id,
+              answeredCorrectly: correctAnswer,
+              prizeWon: correctAnswer ? question.prize : undefined,
+            });
+          }
+        } else {
+          // Sin participante: usar lógica local
+          console.warn('⚠️ QuestionDisplay: No hay participante actual, usando lógica local');
+          setPrizeFeedback({
+            answeredCorrectly: correctAnswer,
+            explanation: !correctAnswer ? question.explanation || "" : "",
+            correctOption: correctOption?.text || "",
+            prizeName: correctAnswer ? question.prize || "" : "",
+          });
+        }
+      } catch (error) {
+        console.error('❌ QuestionDisplay: Error de red al guardar jugada:', error);
+        
+        // Fallback: usar lógica local si hay error de red
+        setPrizeFeedback({
           answeredCorrectly: correctAnswer,
-          prizeWon: prizeWon,
+          explanation: !correctAnswer ? question.explanation || "" : "",
+          correctOption: correctOption?.text || "",
+          prizeName: correctAnswer ? question.prize || "" : "",
         });
+
+        if (currentParticipant) {
+          updateCurrentParticipantScore({
+            questionId: question.id,
+            answeredCorrectly: correctAnswer,
+            prizeWon: correctAnswer ? question.prize : undefined,
+          });
+        }
       }
+
+      // Cambiar al estado de premio después de 3 segundos
       setTimeout(() => {
         setGameState("prize");
       }, 3000);
@@ -324,6 +466,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       question.explanation,
       question.options,
       currentParticipant,
+      gameSession,
       updateCurrentParticipantScore,
       setGameState,
       setPrizeFeedback,

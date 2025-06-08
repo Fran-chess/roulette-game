@@ -71,52 +71,47 @@ export async function POST(request: Request) {
 
     console.log(`📱 REGISTER: Sesión encontrada con admin_id: ${existingSession.admin_id}`);
 
-    // Verificar si ya hay un participante ACTIVO registrado en esta sesión
-    // MODIFICADO: Solo rechazar si hay un participante con status 'registered' o 'playing'
-    // Permitir nuevos registros cuando la sesión esté en 'pending_player_registration'
-    const { data: activeParticipant, error: participantCheckError } = await supabaseAdmin
+    // Verificar si el participante actual ya está registrado con este email
+    // CORREGIDO: Permitir múltiples participantes por sesión, solo verificar email duplicado
+    const { data: participantWithEmail, error: participantCheckError } = await supabaseAdmin
       .from('participants')
       .select('*')
       .eq('session_id', sessionId)
+      .eq('email', email.trim().toLowerCase())
       .in('status', ['registered', 'playing'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (participantCheckError) {
-      console.error('❌ REGISTER: Error al verificar participante activo:', participantCheckError);
+      console.error('❌ REGISTER: Error al verificar participante por email:', participantCheckError);
       return NextResponse.json(
-        { message: 'Error al verificar participante activo', error: participantCheckError.message },
+        { message: 'Error al verificar participante', error: participantCheckError.message },
         { status: 500 }
       );
     }
 
-    // Solo rechazar si hay un participante activo (registered o playing)
-    if (activeParticipant) {
-      console.log('📱 REGISTER: Ya hay un participante activo en esta sesión');
-      
-      if ((activeParticipant as unknown as Participant).email === email.trim().toLowerCase()) {
-        console.log('📱 REGISTER: Participante ya registrado con el mismo email en esta sesión');
-        return NextResponse.json({
-          message: 'Participante ya registrado en esta sesión',
-          session: existingSession,
-          participant: activeParticipant,
-          isExisting: true
-        });
-      } else {
-        console.log('📱 REGISTER: Ya hay un participante activo diferente en esta sesión');
-        return NextResponse.json(
-          { message: 'Ya hay otro participante actualmente registrado en esta sesión. Use "Preparar Siguiente" para continuar.' },
-          { status: 409 }
-        );
-      }
+    // Solo rechazar si este email específico ya está activo en la sesión
+    if (participantWithEmail) {
+      console.log('📱 REGISTER: Participante ya registrado con este email en la sesión');
+      return NextResponse.json({
+        message: 'Este email ya está registrado y activo en esta sesión',
+        session: existingSession,
+        participant: participantWithEmail,
+        isExisting: true
+      });
     }
 
+    console.log('📱 REGISTER: ✅ Email disponible para registro en esta sesión');
+
     // Verificar que la sesión esté en estado correcto para recibir nuevos participantes
-    if (existingSession.status !== 'pending_player_registration') {
-      console.log('📱 REGISTER: Sesión no está en estado pending_player_registration, estado actual:', existingSession.status);
+    // CORREGIDO: Permitir registros tanto en 'pending_player_registration' como en 'player_registered'
+    const allowedStatesForRegistration = ['pending_player_registration', 'player_registered'];
+    const sessionStatus = existingSession.status as string;
+    if (!allowedStatesForRegistration.includes(sessionStatus)) {
+      console.log('📱 REGISTER: Sesión no está disponible para registro, estado actual:', sessionStatus);
       return NextResponse.json(
-        { message: `La sesión debe estar en estado 'pending_player_registration' para registrar participantes. Estado actual: '${existingSession.status}'` },
+        { message: `La sesión no está disponible para nuevos registros. Estado actual: '${sessionStatus}'` },
         { status: 400 }
       );
     }
@@ -210,10 +205,14 @@ export async function POST(request: Request) {
     // Esto previene race conditions entre el INSERT del participante y UPDATE de la sesión
     const updateTimestamp = new Date().toISOString();
     
+    // CORREGIDO: Solo cambiar a 'player_registered' si viene de 'pending_player_registration'
+    // Si ya está en 'player_registered', mantener ese estado para múltiples participantes
+    const newStatus = sessionStatus === 'pending_player_registration' ? 'player_registered' : sessionStatus;
+    
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('game_sessions')
       .update({
-        status: 'player_registered',
+        status: newStatus,
         updated_at: updateTimestamp
       })
       .eq('session_id', sessionId)
@@ -233,7 +232,7 @@ export async function POST(request: Request) {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     console.log(`✅ REGISTER: Sesión ${sessionId} actualizada exitosamente`);
-    console.log(`✅ REGISTER: Estado actualizado a: player_registered`);
+    console.log(`✅ REGISTER: Estado actualizado a: ${newStatus}`);
 
     const participantData = finalParticipant as unknown as Participant;
     
@@ -245,7 +244,7 @@ export async function POST(request: Request) {
       participant: finalParticipant,
       participantId: participantData.id,
       registered: true,
-      sessionStatus: 'player_registered',
+      sessionStatus: newStatus,
       isReturningPlayer: !!existingParticipant, // Indicar si es un jugador que regresa
       action: existingParticipant ? 'reactivated' : 'created' // Acción realizada
     });

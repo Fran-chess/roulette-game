@@ -124,6 +124,7 @@ export default function TVRouletteScreen() {
   // [SOLUCIONADO] Combinado en un solo useEffect para evitar ciclo infinito
   // Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
   // PERO NO interferir con el estado 'prize' cuando hay feedback válido
+  // [SOLUCIONADO] NO interferir con el estado 'screensaver' para evitar parpadeo al volver al inicio
   useEffect(() => {
     console.log('🔍 TV: Evaluando useEffect UNIFICADO con condiciones:');
     console.log('  - currentParticipant:', !!currentParticipant, currentParticipant ? `(${currentParticipant.nombre})` : '');
@@ -132,6 +133,12 @@ export default function TVRouletteScreen() {
     console.log('  - gameState:', gameState);
     console.log('  - prizeFeedback.answeredCorrectly:', prizeFeedback.answeredCorrectly);
     
+    // [SOLUCIONADO] Si gameState es 'screensaver', significa que se está volviendo al inicio - NO interferir
+    if (gameState === 'screensaver') {
+      console.log('🔄 TV: Estado es "screensaver" - NO interferir, se está volviendo al inicio');
+      return;
+    }
+    
     // Caso 1: Asegurar gameState 'roulette' cuando hay participante registrado
     if (
       currentParticipant &&
@@ -139,7 +146,6 @@ export default function TVRouletteScreen() {
       (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
       gameState !== 'roulette' &&
       gameState !== 'question' &&
-      gameState !== 'screensaver' && 
       !(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)
     ) {
       console.log(`🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`);

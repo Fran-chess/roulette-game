@@ -57,7 +57,7 @@ export default function TVScreen() {
   // [optimización] Estados para manejo de suscripciones múltiples y eliminación de race conditions
   const [, setIsParticipantLoading] = useState(false);
   const isParticipantLoadingRef = useRef(false);
-  const loadCurrentParticipantRef = useRef<((sessionId: string) => Promise<Participant | null>) | null>(null);
+  const loadCurrentParticipantRef = useRef<((sessionId: string) => Promise<void>) | null>(null);
   const handleParticipantEventRef = useRef<((payload: RealtimePostgresChangesPayload<DatabaseRecord>) => void) | null>(null);
   const handleSessionEventRef = useRef<((payload: RealtimePostgresChangesPayload<DatabaseRecord>) => void) | null>(null);
   const initializeTVViewRef = useRef<(() => Promise<() => void>) | null>(null);
@@ -384,7 +384,10 @@ export default function TVScreen() {
 
   // Asignar funciones a refs para uso en callbacks sin dependencias
   useEffect(() => {
-    loadCurrentParticipantRef.current = loadCurrentParticipant;
+    // Crear wrapper que no retorna nada para que coincida con el tipo de la referencia
+    loadCurrentParticipantRef.current = async (sessionId: string) => {
+      await loadCurrentParticipant(sessionId);
+    };
     handleParticipantEventRef.current = handleParticipantEvent;
     handleSessionEventRef.current = handleSessionEvent;
     initializeTVViewRef.current = initializeTVView;
@@ -433,6 +436,9 @@ export default function TVScreen() {
     }
   }, [currentSession, isMounted]);
 
+  // [modificación] Usar hook reactivo para gameState en lugar de getState()
+  const gameState = useGameStore((state) => state.gameState);
+
   // [modificación] Determinar qué pantalla mostrar según el estado (simplificado)
   const renderScreen = () => {
     if (!isMounted) {
@@ -440,9 +446,7 @@ export default function TVScreen() {
       return <LoadingScreen />;
     }
 
-    // [modificación] Obtener gameState del gameStore para manejar "volver al inicio"
-    const gameState = useGameStore.getState().gameState;
-    
+    // [SOLUCIONADO] Usar gameState reactivo para evitar lecturas desactualizadas
     // [modificación] Si gameState es 'screensaver', mostrar WaitingScreen independientemente de la sesión
     if (gameState === 'screensaver') {
       return <WaitingScreen />;
