@@ -8,8 +8,8 @@ import RouletteWheel from "@/components/game/RouletteWheel";
 import QuestionDisplay from "@/components/game/QuestionDisplay";
 import PrizeModal from "@/components/game/PrizeModal";
 import GameLayout from "./GameLayout";
-import Button from "@/components/ui/Button";
 import RouletteWheelIcon from "@/components/ui/RouletteWheelIcon";
+import { useRouletteButton } from "@/hooks/useRouletteButton";
 
 export default function GamePage() {
   // Params y router
@@ -185,9 +185,43 @@ export default function GamePage() {
 
   // Referencia al componente de la ruleta
   const rouletteRef = useRef<{ spin: () => void }>(null);
+  
+  // [NUEVO] Estado para controlar cuando la ruleta está girando
+  const [isSpinning, setIsSpinning] = useState(false);
+  
+  // [NUEVO] Hook neumórfico para el botón (detectar si es móvil/tablet/desktop)
+  const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'tv' | 'desktop'>('desktop');
+  
+  // [NUEVO] Hook neumórfico para el botón
+  const rouletteButtonState = useRouletteButton(isSpinning, deviceType);
+
+  // [NUEVO] Detectar tipo de dispositivo
+  useEffect(() => {
+    const detectDevice = () => {
+      const width = window.innerWidth;
+      if (width < 768) {
+        setDeviceType('mobile');
+      } else if (width >= 768 && width <= 1280) {
+        setDeviceType('tablet');
+      } else {
+        setDeviceType('desktop');
+      }
+    };
+    
+    detectDevice();
+    window.addEventListener('resize', detectDevice);
+    return () => window.removeEventListener('resize', detectDevice);
+  }, []);
 
   const handleSpin = () => {
-    if (rouletteRef.current) rouletteRef.current.spin();
+    if (rouletteRef.current && !rouletteButtonState.isDisabled) {
+      rouletteRef.current.spin();
+    }
+  };
+  
+  // [NUEVO] Función para manejar el cambio de estado del spinning
+  const handleSpinStateChange = (spinning: boolean) => {
+    setIsSpinning(spinning);
   };
 
   // Loading
@@ -271,30 +305,25 @@ export default function GamePage() {
           ((gameState === "screensaver" || gameState === "register") && questions && questions.length > 0)) && (
           <>
             <div className="w-full flex justify-center mb-2.5">
-              <RouletteWheel questions={questions} ref={rouletteRef} />
+              <RouletteWheel 
+                questions={questions} 
+                ref={rouletteRef}
+                onSpinStateChange={handleSpinStateChange}
+              />
             </div>
             <div className="relative">
-              {/* [modificación] Contenedor del botón con overflow-hidden para que el glow cubra exactamente el 100% */}
-              <div className="relative overflow-hidden rounded-full">
-                {/* [modificación] Efecto de glow que cubre EXACTAMENTE el 100% del botón */}
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-full opacity-70 blur-xl animate-pulse"></div>
-                
-                <Button
-                  variant="gradient"
-                  className="relative px-10 py-5 text-xl font-extrabold shadow-xl rounded-full
-                   bg-gradient-to-r from-teal-400 via-green-400 to-emerald-500
-                   border-2 border-white/30 hover:border-white/60
-                   animate-pulse-subtle spin-button-glow
-                   hover:shadow-[0_0_15px_5px_rgba(16,185,129,0.6)] overflow-hidden"
-                  onClick={handleSpin}
-                  touchOptimized
-                >
-                  <span className="inline-block mr-3 -mt-1 align-middle">
-                    <RouletteWheelIcon className="w-7 h-7" />
-                  </span>
-                  ¡Girar la Ruleta!
-                </Button>
-              </div>
+              {/* [NUEVO] Botón neumórfico con efectos dinámicos */}
+              <button
+                className={`${rouletteButtonState.buttonClasses} text-white font-extrabold focus:outline-none focus:ring-4 focus:ring-blue-300`}
+                onClick={handleSpin}
+                disabled={rouletteButtonState.isDisabled}
+                aria-label={rouletteButtonState.buttonText}
+              >
+                <span className={`inline-block mr-3 -mt-1 align-middle ${rouletteButtonState.iconClasses}`}>
+                  <RouletteWheelIcon className="w-7 h-7" />
+                </span>
+                {rouletteButtonState.buttonText}
+              </button>
             </div>
           </>
         )}

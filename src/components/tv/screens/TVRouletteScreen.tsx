@@ -6,13 +6,13 @@ import { MotionDiv } from '../shared/MotionComponents';
 import LoadingScreen from './LoadingScreen';
 import RouletteWheel from '@/components/game/RouletteWheel';
 import Logo from '@/components/ui/Logo';
-import Button from '@/components/ui/Button';
 import RouletteWheelIcon from '@/components/ui/RouletteWheelIcon';
 import { Question, GameState } from '@/types';
 import { useGameStore } from '@/store/gameStore';
 import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
 import MassiveConfetti from '@/components/ui/MassiveConfetti';
+import { useRouletteButton } from '@/hooks/useRouletteButton';
 
 /**
  * Pantalla que muestra la ruleta en la TV cuando se registra un participante
@@ -40,6 +40,12 @@ export default function TVRouletteScreen() {
   // [modificación] Estados del gameStore
   const lastSpinResultIndex = useGameStore((state) => state.lastSpinResultIndex);
   const currentQuestion = useGameStore((state) => state.currentQuestion);
+  
+  // [NUEVO] Estado para controlar cuando la ruleta está girando
+  const [isSpinning, setIsSpinning] = useState(false);
+  
+  // [NUEVO] Hook neumórfico para el botón
+  const rouletteButtonState = useRouletteButton(isSpinning, 'tv');
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
   const setQuestionsInStore = useGameStore((state) => state.setQuestions);
   const gameState: GameState = useGameStore((state) => state.gameState);
@@ -194,13 +200,18 @@ export default function TVRouletteScreen() {
 
   // [modificación] Función para manejar el giro de la ruleta
   const handleSpin = () => {
-    if (rouletteRef.current) {
+    if (rouletteRef.current && !rouletteButtonState.isDisabled) {
       console.log('📺 TV: Iniciando giro de ruleta desde TV...');
       setGameState('roulette');
       rouletteRef.current.spin();
     } else {
-      console.warn('📺 TV: No se pudo acceder a la referencia de la ruleta');
+      console.warn('📺 TV: No se pudo acceder a la referencia de la ruleta o botón deshabilitado');
     }
+  };
+  
+  // [NUEVO] Función para manejar el cambio de estado del spinning
+  const handleSpinStateChange = (spinning: boolean) => {
+    setIsSpinning(spinning);
   };
 
   // [modificación] Cargar preguntas y guardarlas en el store
@@ -329,7 +340,11 @@ export default function TVRouletteScreen() {
               }}
             >
               {questions.length > 0 ? (
-                <RouletteWheel questions={questions} ref={rouletteRef} />
+                <RouletteWheel 
+                  questions={questions} 
+                  ref={rouletteRef}
+                  onSpinStateChange={handleSpinStateChange}
+                />
               ) : (
                 <div className="text-white text-8xl text-center font-bold">
                   Cargando categorías...
@@ -337,43 +352,24 @@ export default function TVRouletteScreen() {
               )}
             </MotionDiv>
 
-            {/* Botón "¡Girar la Ruleta!" - [modificación] Mejorado para mayor legibilidad y contraste */}
+            {/* Botón "¡Girar la Ruleta!" - [NUEVO] Con efectos neumórficos */}
             <MotionDiv
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
               className="relative flex justify-center"
             >
-              {/* [modificación] Contenedor del botón con overflow-hidden para que el glow cubra exactamente el 100% */}
-              <div className="relative overflow-hidden rounded-full">
-                {/* [modificación] Efecto de glow que cubre EXACTAMENTE el 100% del botón */}
-                <div className="absolute inset-0 bg-gradient-to-r from-green-400 via-teal-300 to-blue-500 rounded-full opacity-70 blur-xl animate-pulse"></div>
-                
-                <Button
-                  variant="custom"
-                  className="relative px-40 py-24 text-8xl font-black shadow-2xl rounded-full
-                   border-8 border-white/40 hover:border-white/70
-                   animate-pulse-subtle spin-button-glow
-                   hover:shadow-[0_0_60px_25px_rgba(90,204,193,0.8)]
-                   transform hover:scale-110 transition-all duration-300
-                   min-h-[240px] min-w-[1400px]
-                   text-white focus:outline-none focus:ring-8 focus:ring-blue-300
-                   backdrop-blur-md leading-tight
-                   active:scale-105 active:shadow-[0_0_40px_15px_rgba(90,204,193,0.6)]
-                   active:border-white/80 overflow-hidden"
-                  style={{
-                    backgroundColor: 'oklch(38% 0.199 265.638)',
-                    boxShadow: '0 0 40px rgba(90, 204, 193, 0.6), inset 0 0 20px rgba(255, 255, 255, 0.1)',
-                  }}
-                  onClick={handleSpin}
-                  touchOptimized
-                >
-                  <span className="inline-block mr-8 -mt-3 align-middle">
-                    <RouletteWheelIcon className="w-28 h-28" size={112} /> {/* [modificación] Icono más grande */}
-                  </span>
-                  ¡GIRAR LA RULETA!
-                </Button>
-              </div>
+              <button
+                className={`${rouletteButtonState.buttonClasses} text-white font-black focus:outline-none focus:ring-8 focus:ring-blue-300`}
+                onClick={handleSpin}
+                disabled={rouletteButtonState.isDisabled}
+                aria-label={rouletteButtonState.buttonText}
+              >
+                <span className={`inline-block mr-8 -mt-3 align-middle ${rouletteButtonState.iconClasses}`}>
+                  <RouletteWheelIcon className="w-28 h-28" size={112} />
+                </span>
+                {rouletteButtonState.buttonText}
+              </button>
             </MotionDiv>
           </MotionDiv>
         </div>

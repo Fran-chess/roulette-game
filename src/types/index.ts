@@ -150,4 +150,5 @@ export interface GameStore {
 // --- NUEVA INTERFAZ AÑADIDA ---
 export interface RouletteWheelProps {
   questions: Question[]; // Question ya está definida arriba
+  onSpinStateChange?: (spinning: boolean) => void; // Callback opcional para notificar cambios en el estado de spinning
 }

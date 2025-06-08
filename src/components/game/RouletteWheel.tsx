@@ -15,15 +15,15 @@ import { motion } from "framer-motion";
 import React from "react";
 import { useDOMSafe } from "@/lib/hooks/useSSRSafe";
 
-// [modificación] Interfaz para segmentos de la ruleta
+// Interfaz para segmentos de la ruleta
 interface WheelSegment {
   text: string;
   color: string;
-  questions: Question[]; // Ahora contiene múltiples preguntas de la misma categoría
+  questions: Question[];
 }
 
 // --- Funciones Helper ---
-// [modificación] Paleta de colores oficial de DarSalud (exactamente 5 colores)
+// Paleta de colores oficial de DarSalud
 const rouletteColors = [
   "#192A6E", // azul-intenso (reservado para "Dar Salud")
   "#5ACCC1", // verde-salud
@@ -32,15 +32,14 @@ const rouletteColors = [
   "#D5A7CD", // rosado-lila
 ];
 
-// [modificación] Mapeo específico para categorías solicitadas
+// Mapeo específico para categorías solicitadas
 const specificCategoryColors: { [key: string]: string } = {
   "Dar Salud": "#192A6E",          // azul-intenso (EXCLUSIVO para Dar Salud)
   "Bacterias": "#40C0EF",          // celeste-medio
   "Factores de riesgo": "#F2BD35", // amarillo-ds
-  // Todas las demás categorías usan los otros colores distribuidos automáticamente
 };
 
-// [modificación] Función mejorada para asignar colores evitando adyacencia repetida
+// Función para asignar colores evitando adyacencia repetida
 function assignColorsToSegments(segments: { text: string; questions: Question[] }[]): WheelSegment[] {
   if (!segments || segments.length === 0) return [];
   
@@ -50,36 +49,34 @@ function assignColorsToSegments(segments: { text: string; questions: Question[] 
   // Colores disponibles (excluyendo azul intenso que es exclusivo de "Dar Salud")
   const availableColorsForOthers = rouletteColors.filter(color => color !== "#192A6E");
   
-      segments.forEach((segment, index) => {
-      const normalizedCategory = segment.text === "Dar Salud II" ? "Dar Salud" : segment.text;
+  segments.forEach((segment, index) => {
+    const normalizedCategory = segment.text === "Dar Salud II" ? "Dar Salud" : segment.text;
+    
+    // Si tiene color específico definido, usarlo
+    if (specificCategoryColors[normalizedCategory]) {
+      result.push({
+        text: segment.text,
+        color: specificCategoryColors[normalizedCategory],
+        questions: segment.questions
+      });
+      usedColors.push(specificCategoryColors[normalizedCategory]);
+      return;
+    }
+
+    // Para todas las demás categorías, usar los otros colores evitando adyacencia
+    let availableColors = availableColorsForOthers.filter(color => {
+      const prevColor = index > 0 ? usedColors[index - 1] : null;
+      const nextSegment = segments[index + 1];
+      const nextNormalizedCategory = nextSegment ? (nextSegment.text === "Dar Salud II" ? "Dar Salud" : nextSegment.text) : null;
+      const nextColor = nextNormalizedCategory && specificCategoryColors[nextNormalizedCategory] ? specificCategoryColors[nextNormalizedCategory] : null;
       
-      // Si tiene color específico definido, usarlo
-      if (specificCategoryColors[normalizedCategory]) {
-        result.push({
-          text: segment.text,
-          color: specificCategoryColors[normalizedCategory],
-          questions: segment.questions
-        });
-        usedColors.push(specificCategoryColors[normalizedCategory]);
-        return;
-      }
-    
-           // Para todas las demás categorías, usar los otros colores evitando adyacencia
-       let availableColors = availableColorsForOthers.filter(color => {
-         // Evitar el color del segmento anterior
-         const prevColor = index > 0 ? usedColors[index - 1] : null;
-         // Evitar el color del siguiente segmento si tiene color específico
-         const nextSegment = segments[index + 1];
-         const nextNormalizedCategory = nextSegment ? (nextSegment.text === "Dar Salud II" ? "Dar Salud" : nextSegment.text) : null;
-         const nextColor = nextNormalizedCategory && specificCategoryColors[nextNormalizedCategory] ? specificCategoryColors[nextNormalizedCategory] : null;
-         
-         // También verificar el color del segmento que vendrá después del siguiente (para mejor distribución)
-         const nextNextSegment = segments[index + 2];
-         const nextNextColor = nextNextSegment && usedColors.length > index + 1 ? usedColors[index + 1] : null;
-         
-         return color !== prevColor && color !== nextColor && color !== nextNextColor;
-       });
-    
+      // También verificar el color del segmento que vendrá después del siguiente (para mejor distribución)
+      const nextNextSegment = segments[index + 2];
+      const nextNextColor = nextNextSegment && usedColors.length > index + 1 ? usedColors[index + 1] : null;
+      
+      return color !== prevColor && color !== nextColor && color !== nextNextColor;
+    });
+
     // Si no hay colores disponibles, relajar restricciones gradualmente
     if (availableColors.length === 0) {
       availableColors = availableColorsForOthers.filter(color => {
@@ -124,14 +121,12 @@ function getContrastYIQ(hexcolor: string): string {
   return yiq >= 135 ? "#1E1E1E" : "#FFFFFF";
 }
 
-// [modificación] Función de easing mejorada para simular desaceleración realista de ruleta
+// Función de easing para simular desaceleración realista de ruleta
 function customEasingFunction(t: number): number {
-  // Función cúbica con desaceleración más pronunciada al final
-  // Simula mejor el comportamiento físico de una ruleta real
   return 1 - Math.pow(1 - t, 3.5);
 }
 
-// [modificación] Nueva función para agrupar preguntas por categoría y crear configuración de ruleta
+// Función para agrupar preguntas por categoría y crear configuración de ruleta
 function createRouletteSegments(questions: Question[]): WheelSegment[] {
   if (!questions || questions.length === 0) return [];
 
@@ -139,7 +134,6 @@ function createRouletteSegments(questions: Question[]): WheelSegment[] {
   const groupedQuestions: { [key: string]: Question[] } = {};
   
   questions.forEach(question => {
-    // Normalizar "Dar Salud II" a "Dar Salud" para agruparlos
     const normalizedCategory = question.category === "Dar Salud II" ? "Dar Salud" : question.category;
     
     if (!groupedQuestions[normalizedCategory]) {
@@ -148,13 +142,10 @@ function createRouletteSegments(questions: Question[]): WheelSegment[] {
     groupedQuestions[normalizedCategory].push(question);
   });
 
-  // Crear array de categorías únicas (sin "Dar Salud II" ya que se normalizó)
   const categories = Object.keys(groupedQuestions);
-  
-  // Crear lista de segmentos sin colores asignados
   const segmentsWithoutColors: { text: string; questions: Question[] }[] = [];
   
-  // [modificación] Primero agregar todas las categorías normales
+  // Agregar todas las categorías normales
   categories.forEach(category => {
     if (category !== "Dar Salud") {
       segmentsWithoutColors.push({
@@ -164,16 +155,13 @@ function createRouletteSegments(questions: Question[]): WheelSegment[] {
     }
   });
 
-  // [modificación] Agregar "Dar Salud" dos veces en posiciones no consecutivas
+  // Agregar "Dar Salud" dos veces en posiciones no consecutivas
   if (groupedQuestions["Dar Salud"]) {
     const darSaludQuestions = groupedQuestions["Dar Salud"];
+    const totalSegments = segmentsWithoutColors.length + 2;
+    const firstPosition = Math.floor(totalSegments / 3);
+    const secondPosition = Math.floor((totalSegments * 2) / 3);
     
-    // Calcular posiciones no consecutivas para "Dar Salud"
-    const totalSegments = segmentsWithoutColors.length + 2; // +2 por los dos "Dar Salud"
-    const firstPosition = Math.floor(totalSegments / 3); // Aproximadamente en el primer tercio
-    const secondPosition = Math.floor((totalSegments * 2) / 3); // Aproximadamente en el segundo tercio
-    
-    // Insertar "Dar Salud" en posiciones calculadas
     segmentsWithoutColors.splice(firstPosition, 0, {
       text: "Dar Salud",
       questions: darSaludQuestions
@@ -185,15 +173,12 @@ function createRouletteSegments(questions: Question[]): WheelSegment[] {
     });
   }
 
-  // [modificación] Asignar colores evitando adyacencia repetida
   return assignColorsToSegments(segmentsWithoutColors);
 }
 
-
-
 // --- Componente principal ---
 const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
-  ({ questions }, ref) => {
+  ({ questions, onSpinStateChange }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const { isDOMReady, canUseDOM } = useDOMSafe();
@@ -208,11 +193,17 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     const [isMobile, setIsMobile] = useState(false);
 
     const [isSpinning, setIsSpinning] = useState(false);
-    const [currentAngle, setCurrentAngle] = useState(0);
-    const [highlightedSegment, setHighlightedSegment] = useState<number | null>(
-      null
-    );
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+      const [currentAngle, setCurrentAngle] = useState(0);
+  const [highlightedSegment, setHighlightedSegment] = useState<number | null>(null);
+  const [pointerBounce, setPointerBounce] = useState(0); // [NUEVO] Estado para animación de rebote del puntero
+  // [NUEVO] Estado para animación suave del segmento ganador
+  const [winnerGlowIntensity, setWinnerGlowIntensity] = useState(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+    // [NUEVO] Notificar cambios en el estado de spinning
+    useEffect(() => {
+      onSpinStateChange?.(isSpinning);
+    }, [isSpinning, onSpinStateChange]);
 
     const animationConfigRef = useRef({
       startTime: 0,
@@ -228,6 +219,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       const segments = createRouletteSegments(questions);
       return segments;
     }, [questions]);
+    
     const numSegments = wheelSegments.length;
     const anglePerSegment = numSegments > 0 ? (2 * Math.PI) / numSegments : 0;
 
@@ -270,7 +262,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       return () => {};
     }, [canUseDOM]);
 
-    // --- [modificación] Dibujo recibe size explícito, nunca usa viewport directamente (movido antes de handleResize) ---
+    // Dibujo de ruleta con borde casino y LEDs animados
     const drawRoulette = useCallback(
       (rotationAngle = 0, canvasSize?: number) => {
         const canvas = canvasRef.current;
@@ -284,7 +276,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
         ctx.clearRect(0, 0, size, size);
 
-        // [modificación] Fuente base optimizada para TV 4K - reducido para letras más pequeñas
+        // Fuente base optimizada para TV 4K - reducido para letras más pequeñas
         const baseFontSize = Math.max(20, radius * (isMobile ? 0.08 : 0.12));
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
@@ -314,38 +306,42 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           ctx.arc(0, 0, radius, startAngle, endAngle);
           ctx.closePath();
 
-          // [modificación] Renderizado mejorado para segmento destacado
+          // Renderizado mejorado para segmento destacado
           if (highlightedSegment === i) {
-            // [modificación] Glow exterior dorado brillante
+            // [NUEVO] Glow suave y fluido para el segmento ganador
+            const glowAlpha = 0.3 + winnerGlowIntensity * 0.4; // Intensidad base + variación suave
+            const shadowBlurIntensity = 20 + winnerGlowIntensity * 15; // Variación del blur
+            
+            // Glow exterior dorado brillante con animación suave
             ctx.save();
-            ctx.shadowColor = "#FFD700";
-            ctx.shadowBlur = 25;
+            ctx.shadowColor = `rgba(255, 215, 0, ${glowAlpha})`;
+            ctx.shadowBlur = shadowBlurIntensity;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             ctx.fillStyle = segment.color;
             ctx.fill();
             
-            // [modificación] Borde exterior grueso y blanco como aureola
-            ctx.lineWidth = 8;
-            ctx.strokeStyle = "#FFFFFF";
-            ctx.shadowColor = "#FFD700";
-            ctx.shadowBlur = 15;
+            // Borde exterior grueso y blanco como aureola con intensidad variable
+            ctx.lineWidth = 6 + winnerGlowIntensity * 4; // Grosor variable más suave
+            ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 + winnerGlowIntensity * 0.3})`;
+            ctx.shadowColor = `rgba(255, 215, 0, ${glowAlpha * 0.8})`;
+            ctx.shadowBlur = shadowBlurIntensity * 0.7;
             ctx.stroke();
             ctx.restore();
           } else {
-            // [modificación] Segmento normal sin efectos especiales
+            // Segmento normal sin efectos especiales
             ctx.fillStyle = segment.color;
             ctx.fill();
           }
 
-          // [modificación] Renderizado de texto profesional y adaptativo
+          // Renderizado de texto profesional y adaptativo
           ctx.save();
           const textAngle = startAngle + anglePerSegment / 2;
           ctx.rotate(textAngle);
 
           const textX = radius * (isMobile ? 0.52 : 0.62);
 
-          // [modificación] Capitaliza cada palabra
+          // Capitaliza cada palabra
           const displayText = segment.text
             .split(" ")
             .map(
@@ -354,7 +350,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             )
             .join(" ");
 
-          // [modificación] Disminuye tamaño de fuente hasta que quepa el texto (mínimo 8px para permitir texto más pequeño)
+          // Disminuye tamaño de fuente hasta que quepa el texto (mínimo 8px para permitir texto más pequeño)
           let fontSizeLocal = baseFontSize;
           ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           while (
@@ -365,36 +361,39 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
           }
 
-          // [modificación] Texto destacado para segmento ganador
+          // Texto destacado para segmento ganador
           if (highlightedSegment === i) {
-            // [modificación] Texto ganador con efecto de brillo intenso
-            ctx.fillStyle = "#FFFFFF"; // [modificación] Texto blanco brillante
+            // [NUEVO] Texto ganador con efecto de brillo suave y fluido
+            const textGlowAlpha = 0.6 + winnerGlowIntensity * 0.4; // Alpha variable para el texto
+            const textBlurIntensity = 15 + winnerGlowIntensity * 10; // Blur variable más suave
             
-            // [modificación] Múltiples capas de glow para efecto de brillo
-            // Capa 1: Glow dorado exterior intenso
-            ctx.shadowColor = "#FFD700";
-            ctx.shadowBlur = 20;
+            ctx.fillStyle = "#FFFFFF"; // Texto blanco brillante
+            
+            // Múltiples capas de glow para efecto de brillo suave
+            // Capa 1: Glow dorado exterior con intensidad variable
+            ctx.shadowColor = `rgba(255, 215, 0, ${textGlowAlpha})`;
+            ctx.shadowBlur = textBlurIntensity;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             ctx.font = `600 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
             ctx.fillText(displayText, textX, 0);
             
-            // [modificación] Capa 2: Glow blanco interior para brillo
-            ctx.shadowColor = "#FFFFFF";
-            ctx.shadowBlur = 10;
+            // Capa 2: Glow blanco interior para brillo con intensidad variable
+            ctx.shadowColor = `rgba(255, 255, 255, ${textGlowAlpha * 0.8})`;
+            ctx.shadowBlur = textBlurIntensity * 0.6;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             ctx.fillText(displayText, textX, 0);
             
-            // [modificación] Capa 3: Texto final con brillo amarillo-blanco
-            ctx.shadowColor = "#FFFF99";
-            ctx.shadowBlur = 5;
+            // Capa 3: Texto final con brillo amarillo-blanco suave
+            ctx.shadowColor = `rgba(255, 255, 153, ${textGlowAlpha * 0.7})`;
+            ctx.shadowBlur = textBlurIntensity * 0.3;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
             ctx.fillStyle = "#FFFFFF";
             ctx.fillText(displayText, textX, 0);
           } else {
-            // [modificación] Texto normal con sombra elegante
+            // Texto normal con sombra elegante
             ctx.fillStyle = getContrastYIQ(segment.color);
             ctx.shadowColor = "rgba(0,0,0,0.5)";
             ctx.shadowBlur = 8;
@@ -407,59 +406,228 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         });
         ctx.restore();
 
-        // Puntero más grande para TV 4K
+        // [MEJORADO] Puntero ultra visible con glow y sombras múltiples
         ctx.save();
         const pointerBaseHalfHeight = radius * (isMobile ? 0.10 : 0.12);
-        const pointerTipX = centerX + radius - radius * 0.02;
-        const pointerBaseX = centerX + radius + radius * 0.16;
+        const bounceOffset = pointerBounce * 3; // [NUEVO] Offset de animación de rebote
+        const pointerTipX = centerX + radius - radius * 0.02 + bounceOffset;
+        const pointerBaseX = centerX + radius + radius * 0.16 + bounceOffset;
+        
+        // [NUEVO] Glow pulsante adicional cuando no está girando - MÁS LENTO Y SUAVE
+        if (!isSpinning) {
+          const pulseIntensity = 0.5 + 0.3 * Math.sin(Date.now() * 0.0015); // Pulso más lento y suave
+          
+          // Glow exterior pulsante
+          ctx.shadowColor = "#FFD700";
+          ctx.shadowBlur = 35 + pulseIntensity * 15;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          ctx.beginPath();
+          ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
+          ctx.lineTo(pointerTipX, centerY);
+          ctx.lineTo(pointerBaseX, centerY + pointerBaseHalfHeight);
+          ctx.closePath();
+          ctx.fillStyle = `rgba(255, 215, 0, ${0.2 + pulseIntensity * 0.3})`;
+          ctx.fill();
+        }
+        
+        // [NUEVO] CAPA 1: Glow exterior ultra brillante
+        ctx.shadowColor = "#FFD700"; // Dorado brillante
+        ctx.shadowBlur = 25;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.beginPath();
         ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
         ctx.lineTo(pointerTipX, centerY);
         ctx.lineTo(pointerBaseX, centerY + pointerBaseHalfHeight);
         ctx.closePath();
         ctx.fillStyle = "#192A6E";
-        ctx.shadowColor = "rgba(0,0,0,0.37)";
-        ctx.shadowBlur = 6;
         ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.8)";
-        ctx.lineWidth = 3;
+        
+        // [NUEVO] CAPA 2: Sombra profunda debajo del puntero
+        ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 8;
+        ctx.shadowOffsetY = 12;
+        ctx.beginPath();
+        ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
+        ctx.lineTo(pointerTipX, centerY);
+        ctx.lineTo(pointerBaseX, centerY + pointerBaseHalfHeight);
+        ctx.closePath();
+        ctx.fillStyle = "#192A6E";
+        ctx.fill();
+        
+        // [NUEVO] CAPA 3: Puntero principal con gradiente
+        ctx.shadowColor = "rgba(0, 0, 0, 0)"; // Sin sombra para esta capa
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        // Gradiente radial para el puntero
+        const pointerGradient = ctx.createLinearGradient(
+          pointerTipX, centerY - pointerBaseHalfHeight,
+          pointerBaseX, centerY + pointerBaseHalfHeight
+        );
+        pointerGradient.addColorStop(0, "#40C0EF"); // celeste brillante en la punta
+        pointerGradient.addColorStop(0.5, "#192A6E"); // azul DarSalud en el medio
+        pointerGradient.addColorStop(1, "#0D1B3C"); // azul muy oscuro en la base
+        
+        ctx.beginPath();
+        ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
+        ctx.lineTo(pointerTipX, centerY);
+        ctx.lineTo(pointerBaseX, centerY + pointerBaseHalfHeight);
+        ctx.closePath();
+        ctx.fillStyle = pointerGradient;
+        ctx.fill();
+        
+        // [NUEVO] CAPA 4: Borde brillante con glow
+        ctx.strokeStyle = "#5ACCC1"; // Verde-salud brillante
+        ctx.lineWidth = isMobile ? 4 : 6;
+        ctx.shadowColor = "#5ACCC1";
+        ctx.shadowBlur = 12;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.stroke();
+        
+        // [NUEVO] CAPA 5: Borde interior blanco brillante
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.lineWidth = isMobile ? 2 : 3;
+        ctx.shadowColor = "#FFFFFF";
+        ctx.shadowBlur = 8;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.stroke();
+        
+        // [NUEVO] CAPA 6: Punto de luz en la punta del puntero
+        ctx.beginPath();
+        ctx.arc(pointerTipX, centerY, radius * 0.015, 0, 2 * Math.PI);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.shadowColor = "#FFD700";
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fill();
+        
         ctx.restore();
 
-        // Círculo central con gradiente más grande para TV 4K
+        // Círculo central tecnológico con efectos múltiples
+        const centralRadius = radius * (isMobile ? 0.12 : 0.14);
+        
+        // CAPA 1: Sombra exterior profunda para relieve
         ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.15)";
-        ctx.shadowBlur = 10;
+        ctx.shadowColor = "rgba(0, 0, 0, 0.6)";
+        ctx.shadowBlur = 25;
+        ctx.shadowOffsetY = 8;
+        ctx.shadowOffsetX = 4;
         ctx.beginPath();
-        ctx.arc(
+        ctx.arc(centerX, centerY, centralRadius, 0, 2 * Math.PI);
+        ctx.fillStyle = "rgba(0, 0, 0, 0.3)"; // Sombra base
+        ctx.fill();
+        ctx.restore();
+
+        // CAPA 2: Base del círculo con degradé tecnológico
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, centralRadius, 0, 2 * Math.PI);
+        
+        // Degradé radial tecnológico más sofisticado
+        const mainGradient = ctx.createRadialGradient(
+          centerX - centralRadius * 0.3, // Offset para simular iluminación
+          centerY - centralRadius * 0.3,
+          0,
           centerX,
           centerY,
-          radius * (isMobile ? 0.12 : 0.14), // [modificación] Más grande para TV 4K
+          centralRadius
+        );
+        mainGradient.addColorStop(0, "#40C0EF"); // celeste brillante (centro)
+        mainGradient.addColorStop(0.3, "#2196F3"); // azul medio
+        mainGradient.addColorStop(0.7, "#192A6E"); // azul DarSalud
+        mainGradient.addColorStop(1, "#0D1B3C"); // azul muy oscuro (borde)
+        
+        ctx.fillStyle = mainGradient;
+        ctx.fill();
+        ctx.restore();
+
+        // CAPA 3: Highlight superior para efecto relieve
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(
+          centerX - centralRadius * 0.2,
+          centerY - centralRadius * 0.25,
+          centralRadius * 0.6,
           0,
           2 * Math.PI
         );
-        const gradientBg = ctx.createRadialGradient(
-          centerX,
-          centerY,
+        
+        const highlightGradient = ctx.createRadialGradient(
+          centerX - centralRadius * 0.2,
+          centerY - centralRadius * 0.25,
           0,
-          centerX,
-          centerY,
-          radius * (isMobile ? 0.12 : 0.14)
+          centerX - centralRadius * 0.2,
+          centerY - centralRadius * 0.25,
+          centralRadius * 0.6
         );
-        gradientBg.addColorStop(0, "#50e9ff"); // celeste intenso
-        gradientBg.addColorStop(0.6, "#2196f3"); // azul claro
-        gradientBg.addColorStop(1, "#153e75"); // azul profundo
-        ctx.fillStyle = gradientBg;
+        highlightGradient.addColorStop(0, "rgba(255, 255, 255, 0.4)");
+        highlightGradient.addColorStop(0.5, "rgba(255, 255, 255, 0.2)");
+        highlightGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+        
+        ctx.fillStyle = highlightGradient;
         ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.7)"; // [modificación] Borde más visible
-        ctx.lineWidth = 3; // [modificación] Borde más grueso para TV 4K
+        ctx.restore();
+
+        // CAPA 4: Reflejo tipo vidrio (parte superior)
+        ctx.save();
+        ctx.beginPath();
+        // Crear un arco en la mitad superior para simular reflejo
+        ctx.arc(centerX, centerY, centralRadius * 0.85, Math.PI, 2 * Math.PI);
+        ctx.closePath();
+        
+        const glassGradient = ctx.createLinearGradient(
+          centerX,
+          centerY - centralRadius * 0.85,
+          centerX,
+          centerY
+        );
+        glassGradient.addColorStop(0, "rgba(255, 255, 255, 0.3)");
+        glassGradient.addColorStop(0.6, "rgba(255, 255, 255, 0.1)");
+        glassGradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+        
+        ctx.fillStyle = glassGradient;
+        ctx.fill();
+        ctx.restore();
+
+        // CAPA 5: Borde brillante tecnológico multicapa
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, centralRadius, 0, 2 * Math.PI);
+        
+        // Borde exterior brillante
+        ctx.strokeStyle = "#5ACCC1"; // Verde-salud brillante
+        ctx.lineWidth = isMobile ? 4 : 6;
+        ctx.shadowColor = "#5ACCC1";
+        ctx.shadowBlur = 15;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         ctx.stroke();
         ctx.restore();
+
+        // CAPA 6: Borde interior metálico
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, centralRadius - (isMobile ? 2 : 3), 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.lineWidth = isMobile ? 2 : 3;
+        ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.restore();
+
+
       },
-      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady]
+      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, pointerBounce, isSpinning, winnerGlowIntensity]
     );
 
-    // --- [modificación] Ajuste de tamaño del canvas optimizado para TV 4K ---
+    // Ajuste de tamaño del canvas optimizado para TV 4K
     const handleResize = useCallback(() => {
       const container = containerRef.current;
       const canvas = canvasRef.current;
@@ -471,14 +639,14 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       // Siempre el tamaño máximo cuadrado posible dentro del contenedor
       let size = Math.min(containerWidth, containerHeight);
 
-      // [modificación] Ajuste mínimos optimizados para TV 65" 4K (3840x2160) - tamaños más grandes
+      // Ajuste mínimos optimizados para TV 65" 4K (3840x2160) - tamaños más grandes
       if (isMobile) {
         size = Math.max(300, Math.min(size, 500));
       } else if (isTablet) {
         size = Math.max(450, Math.min(size, 700));
       } else {
-        // [modificación] Para desktop/TV: tamaños mucho más grandes para 4K, especialmente para 55vh
-        size = Math.max(800, Math.min(size, 2200)); // [modificación] Aumentado de 1000 a 2200 para soportar 55vh
+        // Para desktop/TV: tamaños mucho más grandes para 4K, especialmente para 55vh
+        size = Math.max(800, Math.min(size, 2200)); // Aumentado de 1000 a 2200 para soportar 55vh
       }
 
       // Asigna el size cuadrado
@@ -505,13 +673,76 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       isLandscape,
     ]);
 
-    // --- Spin ---
+    // [NUEVO] Efecto para mantener el glow pulsante del puntero cuando no está girando
+    useEffect(() => {
+      if (!isSpinning && numSegments > 0 && isDOMReady) {
+        let animationId: number;
+        
+        const pulsePointer = () => {
+          drawRoulette(currentAngle);
+          animationId = requestAnimationFrame(pulsePointer);
+        };
+        
+        // Iniciar el pulso solo si no hay animación activa
+        const timeoutId = setTimeout(() => {
+          animationId = requestAnimationFrame(pulsePointer);
+        }, 100);
+        
+        return () => {
+          clearTimeout(timeoutId);
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+          }
+        };
+      }
+    }, [isSpinning, numSegments, isDOMReady, currentAngle, drawRoulette]);
+
+    // [NUEVO] Efecto para animación suave del segmento ganador - MÁS LENTO Y FLUIDO
+    useEffect(() => {
+      if (highlightedSegment !== null && !isSpinning) {
+        let animationId: number;
+        let startTime: number | null = null;
+        
+        const animateWinnerGlow = (timestamp: number) => {
+          if (!startTime) startTime = timestamp;
+          
+          // Tiempo transcurrido en segundos - MUCHO MÁS LENTO para suavidad
+          const elapsed = (timestamp - startTime) * 0.0008; // Reducido de 0.003 a 0.0008 para 4x más lento
+          
+          // Función sinusoidal suave para el glow - MÁS FLUIDA
+          const glowValue = 0.5 + 0.5 * Math.sin(elapsed);
+          
+          // Aplicar curva de easing para transiciones ultra suaves
+          const easedGlow = 0.3 + 0.7 * (Math.sin(glowValue * Math.PI - Math.PI/2) + 1) / 2;
+          
+          setWinnerGlowIntensity(easedGlow);
+          
+          // Redibujar el canvas con la nueva intensidad
+          drawRoulette(currentAngle);
+          
+          animationId = requestAnimationFrame(animateWinnerGlow);
+        };
+        
+        animationId = requestAnimationFrame(animateWinnerGlow);
+        
+        return () => {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+          }
+        };
+      } else {
+        // Resetear la intensidad cuando no hay segmento ganador
+        setWinnerGlowIntensity(0);
+      }
+    }, [highlightedSegment, isSpinning, currentAngle, drawRoulette]);
+
+    // Spin
     const spin = useCallback(() => {
       if (isSpinning || numSegments === 0 || !isDOMReady) return;
       setIsSpinning(true);
       setHighlightedSegment(null);
       
-      // [modificación] Reproducir audio sincronizado
+      // Reproducir audio sincronizado
       if (audioRef.current && canUseDOM) {
         audioRef.current.currentTime = 0;
         audioRef.current.play().catch(() => {});
@@ -521,14 +752,14 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       const randomStopSegment = Math.floor(Math.random() * numSegments);
       const stopAngleOnWheel = randomStopSegment * anglePerSegment;
       
-      // [modificación] Duración fija de 2424ms para sincronizar con el audio
+      // Duración fija de 2424ms para sincronizar con el audio
       // El archivo wheel-spin.mp3 dura aproximadamente 2.42 segundos (2424ms)
       // Esta sincronización asegura que la animación termine exactamente cuando termina el sonido
       const AUDIO_DURATION_MS = 2424; // Duración exacta del archivo de audio
       
       animationConfigRef.current = {
         startTime: performance.now(),
-        duration: AUDIO_DURATION_MS, // [modificación] Cambio de Math.random() * 2000 + 6000 a duración fija
+        duration: AUDIO_DURATION_MS, // Cambio de Math.random() * 2000 + 6000 a duración fija
         targetAngle: randomSpins * 2 * Math.PI + stopAngleOnWheel,
         animationFrameId: 0,
       };
@@ -551,8 +782,37 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             } catch {}
           }
           
+          // [NUEVO] Iniciar animación de rebote del puntero con efecto de redibujado
+          const bounceAnimation = () => {
+            const bounceFrames = [0, 4, 2, 0]; // Menos frames, rebote más simple y suave
+            let frameIndex = 0;
+            
+            const animateBounce = () => {
+              if (frameIndex < bounceFrames.length) {
+                setPointerBounce(bounceFrames[frameIndex]);
+                // Redibujar el canvas durante la animación de rebote
+                requestAnimationFrame(() => {
+                  drawRoulette(finalEffectiveAngle);
+                });
+                frameIndex++;
+                setTimeout(animateBounce, 200); // 200ms entre frames para un rebote más pausado
+              } else {
+                setPointerBounce(0); // Asegurar que termine en 0
+                // Redibujado final
+                requestAnimationFrame(() => {
+                  drawRoulette(finalEffectiveAngle);
+                });
+              }
+            };
+            
+            animateBounce();
+          };
+          
+          // Iniciar rebote inmediatamente
+          bounceAnimation();
+          
           setTimeout(() => {
-            // [modificación] Seleccionar una pregunta aleatoria del segmento ganador
+            // Seleccionar una pregunta aleatoria del segmento ganador
             const winningSegment = wheelSegments[winningSegmentIndex];
             if (winningSegment && winningSegment.questions.length > 0) {
               const randomQuestionIndex = Math.floor(Math.random() * winningSegment.questions.length);
@@ -591,7 +851,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       },
     }), [isSpinning, numSegments, isDOMReady, spin]);
 
-    // [modificación] No renderizar hasta que DOM esté listo
+    // No renderizar hasta que DOM esté listo
     if (!isDOMReady || !canUseDOM) {
       return (
         <div className="flex flex-col items-center justify-center w-full min-h-[400px]">
@@ -600,14 +860,14 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       );
     }
 
-    // --- Render ---
+    // Render
     return (
       <motion.div
         ref={containerRef}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        // [modificación] maxHeight evita desbordes, minHeight:0 soluciona problemas de flexbox
+        // maxHeight evita desbordes, minHeight:0 soluciona problemas de flexbox
         className="flex flex-col items-center justify-center w-full"
         style={{
           maxHeight: "calc(100vh - 110px)",

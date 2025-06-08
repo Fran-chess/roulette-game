@@ -7,44 +7,23 @@ import Button from "@/components/ui/Button";
 import {
   CheckCircleIcon,
   XCircleIcon,
-  // [modificación] Iconos específicos para los 3 premios únicos
-  BookOpenIcon,
-  BriefcaseIcon,
-  BeakerIcon,
+  // [modificación] Solo dos iconos: trofeo para premios físicos y corazón para agradecimiento
+  TrophyIcon,        // Para todos los premios físicos
+  HeartIcon,         // Para agradecimiento cuando no hay premio
 } from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
 
-// [modificación] Función para obtener el icono correcto según el premio (solo 3 premios específicos)
+// [modificación] Función simplificada para obtener el icono: trofeo para premios, corazón para agradecimiento
 const getPrizeIcon = (prizeName: string | undefined) => {
-  if (!prizeName) return BeakerIcon; // Fallback por si no hay nombre de premio
-
-  const prizeNameLower = prizeName.toLowerCase();
-
-  if (
-    prizeNameLower.includes("taza") ||
-    prizeNameLower.includes("mug") ||
-    prizeNameLower.includes("cup")
-  ) {
-    return BeakerIcon; // BeakerIcon para taza/mug
-  } else if (
-    prizeNameLower.includes("neceser") ||
-    prizeNameLower.includes("estuche") ||
-    prizeNameLower.includes("maletín")
-  ) {
-    return BriefcaseIcon; // BriefcaseIcon para neceser
-  } else if (
-    prizeNameLower.includes("libreta") ||
-    prizeNameLower.includes("cuaderno") ||
-    prizeNameLower.includes("agenda") ||
-    prizeNameLower.includes("notebook")
-  ) {
-    return BookOpenIcon; // BookOpenIcon para libreta
+  // Si hay un premio específico, mostrar trofeo
+  if (prizeName) {
+    return TrophyIcon; // [modificación] Trofeo dorado para todos los premios físicos
   }
-
-  // Si no coincide con ninguno de los 3 premios, usar BeakerIcon como fallback
-  return BeakerIcon;
+  
+  // Si no hay premio, mostrar corazón de agradecimiento
+  return HeartIcon; // [modificación] HeartIcon para mostrar agradecimiento por jugar
 };
 
 export default function PrizeModal() {
@@ -668,7 +647,7 @@ export default function PrizeModal() {
                       className="mb-6"
                     >
                       <PrizeIcon
-                        className={`${prizeIconClasses} text-yellow-400`}
+                        className={`${prizeIconClasses} ${PrizeIcon === HeartIcon ? 'text-red-400' : 'text-yellow-500'}`}
                       />
                     </motion.div>
                   );

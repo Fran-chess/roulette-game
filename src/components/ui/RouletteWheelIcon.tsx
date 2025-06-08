@@ -1,4 +1,4 @@
-// src/components/icons/RouletteWheelIcon.tsx
+// src/components/ui/RouletteWheelIcon.tsx
 
 import React from "react";
 
