@@ -663,6 +663,265 @@ body {
   }
 }
 
+/* [modificación] NUEVO: Reglas específicas para tablet vertical 800x1340 */
+@media screen and (min-width: 769px) and (max-width: 850px) and (min-height: 1300px) and (max-height: 1400px) {
+  /* [modificación] Optimizaciones específicas para AdminLogin */
+  .admin-login-container {
+    max-width: 600px !important;
+    padding: 2rem !important;
+  }
+
+  .admin-login-header h2 {
+    font-size: 2.5rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .admin-login-header p {
+    font-size: 1.25rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .admin-login-icon {
+    width: 5rem !important;
+    height: 5rem !important;
+  }
+
+  .admin-login-icon svg {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+  }
+
+  /* [modificación] Inputs optimizados para tablet 800x1340 */
+  .admin-login-input {
+    font-size: 1.5rem !important;
+    padding: 1rem 1.5rem !important;
+    min-height: 60px !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .admin-login-label {
+    font-size: 1.125rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* [modificación] Botón optimizado para tablet 800x1340 */
+  .admin-login-button {
+    font-size: 1.5rem !important;
+    padding: 1.25rem 2rem !important;
+    min-height: 70px !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* [modificación] Espaciado optimizado para formulario */
+  .admin-login-form {
+    gap: 1.5rem !important;
+  }
+
+  .admin-login-form-fields {
+    gap: 1.25rem !important;
+  }
+
+  /* [modificación] Mensaje de error optimizado */
+  .admin-login-error {
+    font-size: 1rem !important;
+    padding: 0.875rem 1rem !important;
+  }
+
+  /* [modificación] Footer del login optimizado */
+  .admin-login-footer p {
+    font-size: 0.875rem !important;
+  }
+
+  /* [modificación] NUEVO: Optimizaciones específicas para RegistrationForm en tablet 800x1340 */
+  .registration-form-tablet-vertical {
+    max-width: 700px !important;
+    padding: 3.5rem 3rem 2.5rem 3rem !important;
+    margin: 0 auto !important;
+    background: rgba(255, 255, 255, 0.09) !important;
+    box-shadow: 0 12px 40px 0 rgba(90, 204, 193, 0.16), 0 1.5px 16px 0 rgba(64, 192, 239, 0.18) !important;
+    backdrop-filter: blur(18px) saturate(120%) !important;
+    border-radius: 2.25rem !important;
+    border: 2.5px solid rgba(90, 204, 193, 0.16) !important;
+  }
+
+  .registration-form-tablet-vertical h2 {
+    font-size: 2.7rem !important;
+    font-weight: 900 !important;
+    margin-bottom: 2.5rem !important;
+    color: #fff !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.21) !important;
+    letter-spacing: -1.5px !important;
+  }
+
+  .registration-form-tablet-vertical label {
+    font-size: 1.3rem !important;
+    margin-bottom: 0.6rem !important;
+    font-weight: 700 !important;
+    color: #d3eefc !important;
+    letter-spacing: 0.1px !important;
+  }
+
+  .registration-form-tablet-vertical input,
+  .registration-form-tablet-vertical select {
+    font-size: 1.4rem !important;
+    padding: 1.25rem 1.8rem !important;
+    min-height: 66px !important;
+    border-radius: 1rem !important;
+    border: 2px solid rgba(255, 255, 255, 0.24) !important;
+    background: rgba(0, 20, 40, 0.14) !important;
+    color: #fff !important;
+    margin-bottom: 1.5rem !important;
+    transition: border 0.2s;
+    font-weight: 500 !important;
+  }
+
+  .registration-form-tablet-vertical input:focus,
+  .registration-form-tablet-vertical select:focus {
+    border: 2px solid #5accc1 !important;
+    outline: none !important;
+    background: rgba(90, 204, 193, 0.10) !important;
+  }
+
+  .registration-form-tablet-vertical select {
+    background-image: url('data:image/svg+xml;utf8,<svg fill="gray" height="26" viewBox="0 0 24 24" width="26" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 1.2rem center;
+    background-size: 2.2rem;
+  }
+
+  .registration-form-tablet-vertical button {
+    font-size: 1.55rem !important;
+    font-weight: 800 !important;
+    padding: 1.7rem 2.5rem !important;
+    min-height: 76px !important;
+    border-radius: 1.25rem !important;
+    box-shadow: 0 8px 28px 0 rgba(64, 192, 239, 0.18) !important;
+    margin-top: 1.6rem !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .registration-form-tablet-vertical .error-message {
+    font-size: 1rem !important;
+    margin-top: -0.8rem !important;
+    margin-bottom: 0.7rem !important;
+    color: #ffdede !important;
+    background: none !important;
+    border: none !important;
+    padding-left: 0.2rem !important;
+  }
+
+  .registration-form-tablet-vertical .back-button {
+    width: 60px !important;
+    height: 60px !important;
+    top: 2rem !important;
+    left: 2rem !important;
+  }
+
+  .registration-form-tablet-vertical .back-button svg {
+    width: 2rem !important;
+    height: 2rem !important;
+  }
+
+  /* [modificación] Optimizaciones específicas para AdminPanel */
+  .admin-panel-container {
+    max-width: 750px !important;
+    margin: 0 auto !important;
+  }
+
+  /* [modificación] Tabs del panel optimizados */
+  .admin-panel-tabs button {
+    font-size: 1.25rem !important;
+    padding: 1rem 1.5rem !important;
+    min-height: 60px !important;
+  }
+
+  /* [modificación] Contenido del dashboard optimizado */
+  .admin-dashboard-title {
+    font-size: 2.25rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .admin-dashboard-subtitle {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 2rem !important;
+  }
+
+  /* [modificación] Cards de estadísticas optimizadas */
+  .admin-stats-card {
+    padding: 1.5rem !important;
+    border-radius: 1rem !important;
+  }
+
+  .admin-stats-card h3 {
+    font-size: 1.5rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .admin-stats-card p {
+    font-size: 2rem !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+  }
+
+  .admin-stats-card span {
+    font-size: 1rem !important;
+  }
+
+  /* [modificación] Botones del dashboard optimizados */
+  .admin-dashboard-button {
+    font-size: 1.375rem !important;
+    padding: 1.25rem 2rem !important;
+    min-height: 70px !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* [modificación] Lista de sesiones optimizada */
+  .admin-sessions-list {
+    gap: 1rem !important;
+  }
+
+  .admin-session-item {
+    padding: 1.25rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .admin-session-item h4 {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .admin-session-item p {
+    font-size: 1rem !important;
+    line-height: 1.4 !important;
+  }
+
+  .admin-session-button {
+    font-size: 1.125rem !important;
+    padding: 0.875rem 1.5rem !important;
+    min-height: 50px !important;
+  }
+
+  /* [modificación] Espaciado general optimizado */
+  .admin-content-spacing {
+    gap: 1.5rem !important;
+  }
+
+  .admin-section-spacing {
+    margin-bottom: 2rem !important;
+  }
+
+  /* [modificación] Scrollable content optimizado */
+  .admin-scrollable-content {
+    max-height: calc(100vh - 200px) !important;
+    padding: 1rem !important;
+  }
+}
+
 /* [modificación] Reglas específicas para height exacto 841px (móvil y tablet) */
 
 @media screen and (height: 841px) {
@@ -1126,4 +1385,12 @@ body {
 .text-shadow-fixed {
   text-shadow: 0 4px 8px rgba(0, 0, 0, 1), 0 8px 16px rgba(0, 0, 0, 0.9),
     2px 2px 0 rgba(0, 0, 0, 0.9), -2px -2px 0 rgba(0, 0, 0, 0.9);
+}
+
+/* [modificación] Placeholders siempre visibles y legibles */
+input::placeholder, 
+select::placeholder, 
+textarea::placeholder {
+  color: #fff !important;
+  opacity: 0.93 !important;
 }

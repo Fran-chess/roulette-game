@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiX, FiUser, FiMail, FiBriefcase, FiCalendar, FiLoader, FiUsers, FiChevronDown, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiX, FiUser, FiMail, FiBriefcase, FiCalendar, FiLoader, FiUsers, FiChevronDown } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 import type { Participant } from '@/types';
 import { createPortal } from 'react-dom';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ParticipantsModalProps {
   isOpen: boolean;
@@ -33,32 +33,10 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
   const [mounted, setMounted] = useState(false);
   const [collapsedDates, setCollapsedDates] = useState<Set<string>>(new Set());
   const [participantsLimits, setParticipantsLimits] = useState<Map<string, number>>(new Map());
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSpecialty, setSelectedSpecialty] = useState<string>('');
 
-  // Filtrar participantes según búsqueda y especialidad - MOVIDO ANTES DEL EARLY RETURN
-  const filteredParticipants = useMemo(() => {
-    return participants.filter(participant => {
-      const matchesSearch = !searchTerm || 
-        participant.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (participant.apellido && participant.apellido.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (participant.email && participant.email.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesSpecialty = !selectedSpecialty || 
-        (participant.especialidad && participant.especialidad.toLowerCase() === selectedSpecialty.toLowerCase());
-      
-      return matchesSearch && matchesSpecialty;
-    });
-  }, [participants, searchTerm, selectedSpecialty]);
 
-  // Obtener especialidades únicas para el filtro - MOVIDO ANTES DEL EARLY RETURN
-  const uniqueSpecialties = useMemo(() => {
-    const specialties = participants
-      .map(p => p.especialidad)
-      .filter(Boolean) // Eliminar valores nulos/undefined
-      .filter((value, index, array) => array.indexOf(value) === index); // Únicos
-    return specialties.sort();
-  }, [participants]);
+  // Usar directamente todos los participantes sin filtros
+  const filteredParticipants = participants;
 
   // Hook para asegurar que el componente esté montado en el cliente
   useEffect(() => {
@@ -83,8 +61,6 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
     if (isOpen) {
       setCollapsedDates(new Set());
       setParticipantsLimits(new Map());
-      setSearchTerm('');
-      setSelectedSpecialty('');
     }
   }, [isOpen]);
 
@@ -205,11 +181,6 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
               </h2>
               <p className="text-white/70 text-lg mt-2">
                 Total: <span className="font-marineBold text-blue-300">{totalCount}</span> participantes únicos registrados
-                {searchTerm || selectedSpecialty ? (
-                  <span className="text-orange-300 ml-2">
-                    (Mostrando {filteredParticipants.length} filtrados)
-                  </span>
-                ) : null}
               </p>
             </div>
             <Button
@@ -221,54 +192,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
             </Button>
           </div>
 
-          {/* Controles de filtro y búsqueda */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Búsqueda */}
-            <div className="flex-1 relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar por nombre, apellido o email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
-              />
-            </div>
 
-            {/* Filtro por especialidad */}
-            {uniqueSpecialties.length > 0 && (
-              <div className="relative">
-                <FiFilter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60" size={20} />
-                <select
-                  value={selectedSpecialty}
-                  onChange={(e) => setSelectedSpecialty(e.target.value)}
-                  className="pl-10 pr-8 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 appearance-none cursor-pointer min-w-[200px]"
-                >
-                  <option value="" className="bg-gray-800">Todas las especialidades</option>
-                  {uniqueSpecialties.map(specialty => (
-                    <option key={specialty} value={specialty} className="bg-gray-800">
-                      {specialty}
-                    </option>
-                  ))}
-                </select>
-                <FiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 pointer-events-none" size={16} />
-              </div>
-            )}
-
-            {/* Botón limpiar filtros */}
-            {(searchTerm || selectedSpecialty) && (
-              <Button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedSpecialty('');
-                }}
-                variant="custom"
-                className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl transition-all duration-200"
-              >
-                Limpiar
-              </Button>
-            )}
-          </div>
         </div>
 
         {/* Contenido del modal */}
@@ -295,13 +219,10 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
               <motion.div variants={fadeInUp} className="text-white/70">
                 <FiUser className="mx-auto mb-6" size={64} />
                 <h3 className="text-2xl font-marineBold mb-4">
-                  {searchTerm || selectedSpecialty ? 'No se encontraron participantes' : 'No hay participantes'}
+                  No hay participantes
                 </h3>
                 <p className="text-white/60 text-lg">
-                  {searchTerm || selectedSpecialty 
-                    ? 'Intenta ajustar los filtros de búsqueda.' 
-                    : 'Aún no se han registrado participantes en el sistema.'
-                  }
+                  Aún no se han registrado participantes en el sistema.
                 </p>
               </motion.div>
             </motion.div>
@@ -454,9 +375,6 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <span className="text-white/60 text-sm">
               Mostrando <span className="font-marineBold text-white">{filteredParticipants.length}</span> de <span className="font-marineBold text-white">{totalCount}</span> participantes únicos
-              {(searchTerm || selectedSpecialty) && (
-                <span className="text-orange-300 ml-2">(Filtrado aplicado)</span>
-              )}
             </span>
             <Button
               onClick={onClose}

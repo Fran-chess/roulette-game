@@ -38,11 +38,27 @@ export default function GamePage() {
   const setQuestions = useGameStore((state) => state.setQuestions);
   const gameSession = useGameStore((state) => state.gameSession);
   const currentQuestion = useGameStore((state) => state.currentQuestion);
+  
+  // Refs para funciones para evitar dependencias en useEffect (después de declarar las funciones)
+  const setGameSessionRef = useRef(setGameSession);
+  const setQuestionsRef = useRef(setQuestions);
+  const setGameStateRef = useRef(setGameState);
+  const setCurrentQuestionRef = useRef(setCurrentQuestion);
+  const questionsRef = useRef(questions);
 
   // [modificación] Redirección global envuelta en useCallback para estabilizar referencia
   const handleRedirect = useCallback((path: string) => {
     router.push(path);
   }, [router]);
+
+  // Actualizar refs cuando cambien las funciones
+  useEffect(() => {
+    setGameSessionRef.current = setGameSession;
+    setQuestionsRef.current = setQuestions;
+    setGameStateRef.current = setGameState;
+    setCurrentQuestionRef.current = setCurrentQuestion;
+    questionsRef.current = questions;
+  }, [setGameSession, setQuestions, setGameState, setCurrentQuestion, questions]);
 
   // Efecto de carga de sesión y preguntas
   useEffect(() => {
@@ -67,7 +83,7 @@ export default function GamePage() {
           throw new Error("Datos de sesión no disponibles");
 
         const session = sessionData.data;
-        setGameSession(session);
+        setGameSessionRef.current(session);
 
         if (!session.nombre || !session.email) {
           handleRedirect(`/register/${sessionId}`);
@@ -101,12 +117,16 @@ export default function GamePage() {
 
         if (
           !loadingQuestionsRef.current &&
-          (!questions || questions.length === 0)
+          (!questionsRef.current || questionsRef.current.length === 0)
         ) {
           await loadQuestions();
         }
-        if (gameState === "screensaver" || gameState === "register") {
-          setGameState("roulette");
+        
+        // ⚠️ SOLUCIONADO: Solo cambiar gameState en la carga inicial, no en cada render
+        const currentGameState = useGameStore.getState().gameState;
+        if (currentGameState === "screensaver" || currentGameState === "register") {
+          console.log(`[GamePage] Carga inicial: Cambiando gameState de '${currentGameState}' a 'roulette'`);
+          setGameStateRef.current("roulette");
         }
       } catch (error: Error | unknown) {
         setError(error instanceof Error ? error.message : "Error al cargar el juego");
@@ -124,7 +144,7 @@ export default function GamePage() {
         const questionsResponse = await fetch("/api/questions");
         if (!questionsResponse.ok) throw new Error("Error al cargar preguntas");
         const questionsData = await questionsResponse.json();
-        setQuestions(questionsData.questions || []);
+        setQuestionsRef.current(questionsData.questions || []);
       } finally {
         setTimeout(() => {
           loadingQuestionsRef.current = false;
@@ -135,11 +155,8 @@ export default function GamePage() {
     loadSessionData();
   }, [
     sessionId,
-    setGameSession,
-    setQuestions,
-    setGameState,
-    gameState,
-    questions,
+    // ⚠️ REMOVIDO: setGameSession, setQuestions, setGameState y gameState para evitar ciclo infinito
+    // Este efecto solo debe ejecutarse cuando cambie sessionId (carga inicial)
     handleRedirect,
   ]);
 
@@ -147,24 +164,24 @@ export default function GamePage() {
   useEffect(() => {
     // [modificación] Log para rastrear el estado del juego y el índice del resultado del giro
 // //     console.log("[GamePage] useEffect for lastSpinResultIndex triggered. lastSpinResultIndex:", lastSpinResultIndex, "questions.length:", questions.length);
-    if (lastSpinResultIndex !== null && questions.length > 0) {
+    if (lastSpinResultIndex !== null && questionsRef.current && questionsRef.current.length > 0) {
       const indexToUse = lastSpinResultIndex;
       // [modificación] Log para rastrear el índice a usar
 // //       console.log("[GamePage] Valid conditions met. indexToUse:", indexToUse);
-      if (indexToUse >= 0 && indexToUse < questions.length) {
-        const questionToSet = questions[indexToUse];
+      if (indexToUse >= 0 && indexToUse < questionsRef.current.length) {
+        const questionToSet = questionsRef.current[indexToUse];
         // [modificación] Log para rastrear la pregunta a establecer
 // //         console.log("[GamePage] Setting current question:", questionToSet);
-        setCurrentQuestion(questionToSet);
+        setCurrentQuestionRef.current(questionToSet);
         // [modificación] Log para rastrear el cambio de estado del juego
 // //         console.log("[GamePage] Setting gameState to 'question'");
-        setGameState("question");
+        setGameStateRef.current("question");
       } else {
         // [modificación] Advertencia si el índice está fuera de los límites
-        console.warn("[GamePage] lastSpinResultIndex is out of bounds:", indexToUse, "questions.length:", questions.length);
+        console.warn("[GamePage] lastSpinResultIndex is out of bounds:", indexToUse, "questionsRef.current.length:", questionsRef.current.length);
       }
     }
-  }, [lastSpinResultIndex, questions, setCurrentQuestion, setGameState]); // [modificación] Agregado setCurrentQuestion y setGameState a las dependencias
+  }, [lastSpinResultIndex]); // ⚠️ SOLUCIONADO: Removido questions, setCurrentQuestion y setGameState para evitar ciclos infinitos
 
   // Referencia al componente de la ruleta
   const rouletteRef = useRef<{ spin: () => void }>(null);

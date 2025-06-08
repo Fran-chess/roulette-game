@@ -294,7 +294,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="relative z-10 w-full max-w-5xl mx-auto rounded-2xl overflow-hidden backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl"
+        className="relative z-10 w-full max-w-5xl mx-auto rounded-2xl overflow-hidden backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl admin-panel-container"
         style={{
           WebkitTapHighlightColor: "transparent",
         }}
@@ -322,7 +322,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
 
         {/* --- Contenido principal del panel admin --- */}
         <motion.div
-          className="overflow-hidden scrollable-content"
+          className="overflow-hidden scrollable-content admin-scrollable-content"
           style={{
             minHeight: "auto",
             maxHeight: "calc(100vh - 180px)",
@@ -377,7 +377,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
                     (s) => s.status !== "completed" && s.status !== "archived"
                   ).length
                 }
-                totalSessionsCount={adminState.activeSessions.length}
                 onInitiateNewSession={handleCreateNewSession}
                 onLogout={handleLogoutCallback}
                 isLoading={adminState.isLoading.sessionAction}
@@ -391,6 +390,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
                 onCreateNewSession={handleCreateNewSession}
                 isLoadingCreation={adminState.isLoading.sessionAction}
                 isLoadingList={adminState.isLoading.sessionsList}
+                onRefreshSessions={fetchActiveSessions}
               />
             )}
             {activeTab === "new-session" && adminState.currentSession && (

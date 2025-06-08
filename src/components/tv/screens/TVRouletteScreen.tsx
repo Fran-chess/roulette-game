@@ -121,75 +121,65 @@ export default function TVRouletteScreen() {
     setGameState,
   ]);
 
-  // [modificación] Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
+  // [SOLUCIONADO] Combinado en un solo useEffect para evitar ciclo infinito
+  // Asegurar que el gameState sea 'roulette' cuando hay un participante registrado
   // PERO NO interferir con el estado 'prize' cuando hay feedback válido
   useEffect(() => {
-    console.log('🔍 TV: Evaluando segundo useEffect con condiciones:'); // [modificación] Agregado para debugging
-    console.log('  - currentParticipant:', !!currentParticipant, currentParticipant ? `(${currentParticipant.nombre})` : ''); // [modificación] Agregado para debugging
-    console.log('  - gameSession:', !!gameSession); // [modificación] Agregado para debugging
-    console.log('  - gameSession.status:', gameSession?.status); // [modificación] Agregado para debugging
-    console.log('  - gameState:', gameState); // [modificación] Agregado para debugging
-    console.log('  - prizeFeedback.answeredCorrectly:', prizeFeedback.answeredCorrectly); // [modificación] Agregado para debugging
+    console.log('🔍 TV: Evaluando useEffect UNIFICADO con condiciones:');
+    console.log('  - currentParticipant:', !!currentParticipant, currentParticipant ? `(${currentParticipant.nombre})` : '');
+    console.log('  - gameSession:', !!gameSession);
+    console.log('  - gameSession.status:', gameSession?.status);
+    console.log('  - gameState:', gameState);
+    console.log('  - prizeFeedback.answeredCorrectly:', prizeFeedback.answeredCorrectly);
     
+    // Caso 1: Asegurar gameState 'roulette' cuando hay participante registrado
     if (
       currentParticipant &&
       gameSession &&
       (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
       gameState !== 'roulette' &&
       gameState !== 'question' &&
-      gameState !== 'screensaver' && // [modificación] NO forzar a roulette si está en screensaver (volver al inicio)
-      // [modificación] NO forzar a roulette si estamos en estado 'prize' con feedback válido
+      gameState !== 'screensaver' && 
       !(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)
     ) {
-      console.log(`🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`); // [modificación] Descomentado para debugging
-      // [modificación] Solo limpiar estado de premio si NO tiene feedback válido (estado residual)
+      console.log(`🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`);
+      
+      // Limpiar estado residual si es necesario
       if (gameState === 'prize' && prizeFeedback.answeredCorrectly === null) {
-        console.log(`🎮 TV: Limpiando estado residual de premio SIN feedback válido`); // [modificación] Descomentado para debugging
+        console.log(`🎮 TV: Limpiando estado residual de premio SIN feedback válido`);
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
       }
       setGameState('roulette');
-    } else {
-      console.log('🔍 TV: Segundo useEffect NO ejecutará cambio de estado'); // [modificación] Agregado para debugging
+      return; // Evitar ejecutar el segundo caso en el mismo render
     }
-  }, [
-    currentParticipant,
-    gameSession,
-    gameState,
-    prizeFeedback.answeredCorrectly, // [modificación] Agregado para monitorear el feedback
-    resetPrizeFeedback,
-    setCurrentQuestion,
-    setLastSpinResultIndex,
-    setGameState,
-  ]);
 
-  // [modificación] Cuando cambia el participante, limpiar estados residuales
-  // PERO NO interferir si el participante actual está en estado 'prize' válido
-  useEffect(() => {
+    // Caso 2: Cuando cambia el participante, limpiar estados residuales
     if (currentParticipant && currentParticipant.nombre !== 'Pendiente') {
-      console.log(`🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, limpiando estados residuales...`); // [modificación] Descomentado para debugging
+      console.log(`🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, evaluando limpieza...`);
       
-      // [modificación] Solo limpiar estados si NO estamos en un premio válido Y NO estamos en pregunta activa
+      // Solo limpiar estados si NO estamos en un premio válido Y NO estamos en pregunta activa
       if (!(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null) &&
-          gameState !== 'question') { // [modificación] AGREGADO: No limpiar cuando estamos en estado "question"
-        console.log(`🎮 TV: Limpiando estados residuales para participante: ${currentParticipant.nombre}`); // [modificación] Agregado para debugging
+          gameState !== 'question') {
+        console.log(`🎮 TV: Limpiando estados residuales para participante: ${currentParticipant.nombre}`);
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
 
         if (gameState !== 'roulette') {
-          console.log(`🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`); // [modificación] Descomentado para debugging
+          console.log(`🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`);
           setGameState('roulette');
         }
       } else {
-        console.log(`🎮 TV: Participante ${currentParticipant.nombre} está en estado válido (${gameState}), NO limpiando estados`); // [modificación] Mejorado para debugging
+        console.log(`🎮 TV: Participante ${currentParticipant.nombre} está en estado válido (${gameState}), NO limpiando estados`);
       }
     }
   }, [
     currentParticipant,
+    gameSession,
     gameState,
-    prizeFeedback.answeredCorrectly, // [modificación] Agregado para monitorear el feedback
+    prizeFeedback.answeredCorrectly,
     resetPrizeFeedback,
     setCurrentQuestion,
     setLastSpinResultIndex,

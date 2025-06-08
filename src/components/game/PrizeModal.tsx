@@ -4,10 +4,35 @@ import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
 // [modificación] Eliminación del import de Image ya que no mostraremos imágenes de premios
 // import Image from "next/image";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/24/solid";
+import { 
+  CheckCircleIcon, 
+  XCircleIcon,
+  // [modificación] Iconos específicos para los 3 premios únicos
+  BookOpenIcon,
+  BriefcaseIcon,
+  BeakerIcon
+} from "@heroicons/react/24/solid";
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
+
+// [modificación] Función para obtener el icono correcto según el premio (solo 3 premios específicos)
+const getPrizeIcon = (prizeName: string | undefined) => {
+  if (!prizeName) return BeakerIcon; // Fallback por si no hay nombre de premio
+  
+  const prizeNameLower = prizeName.toLowerCase();
+  
+  if (prizeNameLower.includes('taza') || prizeNameLower.includes('mug') || prizeNameLower.includes('cup')) {
+    return BeakerIcon; // BeakerIcon para taza/mug
+  } else if (prizeNameLower.includes('neceser') || prizeNameLower.includes('estuche') || prizeNameLower.includes('maletín')) {
+    return BriefcaseIcon; // BriefcaseIcon para neceser
+  } else if (prizeNameLower.includes('libreta') || prizeNameLower.includes('cuaderno') || prizeNameLower.includes('agenda') || prizeNameLower.includes('notebook')) {
+    return BookOpenIcon; // BookOpenIcon para libreta
+  }
+  
+  // Si no coincide con ninguno de los 3 premios, usar BeakerIcon como fallback
+  return BeakerIcon;
+};
 
 export default function PrizeModal() {
   const router = useRouter();
@@ -82,6 +107,18 @@ export default function PrizeModal() {
     return "w-16 h-16 mx-auto mb-4";
   }, [isTV65, isTVTouch, isTablet]);
 
+  // [modificación] Icono específico para el premio
+  const prizeIconClasses = useMemo(() => {
+    if (isTV65) {
+      return "w-40 h-40 mx-auto mb-8";
+    } else if (isTVTouch) {
+      return "w-32 h-32 mx-auto mb-6";
+    } else if (isTablet) {
+      return "w-28 h-28 mx-auto mb-5";
+    }
+    return "w-20 h-20 mx-auto mb-4";
+  }, [isTV65, isTVTouch, isTablet]);
+
   const titleClasses = useMemo(() => {
     const baseClasses = "font-marineBlack text-white mb-6 leading-tight drop-shadow-2xl";
     
@@ -93,6 +130,20 @@ export default function PrizeModal() {
       return `${baseClasses} text-[3.5rem] lg:text-[4.5rem] mb-6`;
     }
     return `${baseClasses} text-3xl md:text-4xl`;
+  }, [isTV65, isTVTouch, isTablet]);
+
+  // [modificación] Mejorar el tamaño de "¡Respuesta correcta!"
+  const correctAnswerTitleClasses = useMemo(() => {
+    const baseClasses = "text-verde-salud font-marineBlack mb-4 leading-tight drop-shadow-2xl";
+    
+    if (isTV65) {
+      return `${baseClasses} text-[8rem] font-extrabold mb-10 text-shadow-ultra-strong`;
+    } else if (isTVTouch) {
+      return `${baseClasses} text-[4.5rem] lg:text-[5rem] mb-6`;
+    } else if (isTablet) {
+      return `${baseClasses} text-[3rem] lg:text-[3.5rem] mb-4`;
+    }
+    return `${baseClasses} text-2xl md:text-3xl`;
   }, [isTV65, isTVTouch, isTablet]);
 
   const subtitleClasses = useMemo(() => {
@@ -160,6 +211,20 @@ export default function PrizeModal() {
     return `${baseClasses} text-lg`;
   }, [isTV65, isTVTouch, isTablet]);
 
+  // [modificación] Mejorar el tamaño de "Has ganado:"
+  const hasGanadoClasses = useMemo(() => {
+    const baseClasses = "font-marineBold text-white mb-3";
+    
+    if (isTV65) {
+      return `${baseClasses} text-[6.5rem] mb-8 text-shadow-strong`;
+    } else if (isTVTouch) {
+      return `${baseClasses} text-[3.2rem] lg:text-[3.8rem] mb-5`;
+    } else if (isTablet) {
+      return `${baseClasses} text-[2.6rem] lg:text-[3rem] mb-4`;
+    }
+    return `${baseClasses} text-xl md:text-2xl`;
+  }, [isTV65, isTVTouch, isTablet]);
+
   const prizeNameClasses = useMemo(() => {
     const baseClasses = "font-marineBold text-white";
     
@@ -173,18 +238,19 @@ export default function PrizeModal() {
     return `${baseClasses} text-2xl md:text-3xl mb-5`;
   }, [isTV65, isTVTouch, isTablet]);
 
-  const prizeInstructionsClasses = useMemo(() => {
-    const baseClasses = "bg-black/5 border border-white/30 text-white p-4 rounded-xl mt-4 mb-8 font-marineRegular shadow-md";
-    
-    if (isTV65) {
-      return `${baseClasses} p-16 rounded-2xl mt-12 mb-16 text-[4.2rem] leading-relaxed text-shadow-soft`;
-    } else if (isTVTouch) {
-      return `${baseClasses} p-10 rounded-xl mt-8 mb-12 text-[2.1rem] lg:text-[2.5rem] leading-relaxed`;
-    } else if (isTablet) {
-      return `${baseClasses} p-6 rounded-lg mt-6 mb-10 text-[1.6rem] lg:text-[2rem] leading-relaxed`;
-    }
-    return `${baseClasses} text-base md:text-lg`;
-  }, [isTV65, isTVTouch, isTablet]);
+  // [modificación] Eliminar prizeInstructionsClasses ya que no mostraremos las instrucciones del mostrador
+  // const prizeInstructionsClasses = useMemo(() => {
+  //   const baseClasses = "bg-black/5 border border-white/30 text-white p-4 rounded-xl mt-4 mb-8 font-marineRegular shadow-md";
+  //   
+  //   if (isTV65) {
+  //     return `${baseClasses} p-16 rounded-2xl mt-12 mb-16 text-[4.2rem] leading-relaxed text-shadow-soft`;
+  //   } else if (isTVTouch) {
+  //     return `${baseClasses} p-10 rounded-xl mt-8 mb-12 text-[2.1rem] lg:text-[2.5rem] leading-relaxed`;
+  //   } else if (isTablet) {
+  //     return `${baseClasses} p-6 rounded-lg mt-6 mb-10 text-[1.6rem] lg:text-[2rem] leading-relaxed`;
+  //   }
+  //   return `${baseClasses} text-base md:text-lg`;
+  // }, [isTV65, isTVTouch, isTablet]);
 
   const buttonContainerClasses = useMemo(() => {
     if (isTV65) {
@@ -223,18 +289,6 @@ export default function PrizeModal() {
     return `${baseClasses} text-xl py-3`;
   }, [isTV65, isTVTouch, isTablet]);
 
-  // [modificación] Eliminación de prizeImageClasses ya que no mostraremos imágenes de premios
-  // const prizeImageClasses = useMemo(() => {
-  //   if (isTV65) {
-  //     return "w-96 h-96 object-contain rounded-2xl shadow-md bg-black/15 p-8 border-4 border-white/40";
-  //   } else if (isTVTouch) {
-  //     return "w-60 h-60 object-contain rounded-xl shadow-md bg-black/15 p-6 border-2 border-white/35";
-  //   } else if (isTablet) {
-  //     return "w-48 h-48 object-contain rounded-lg shadow-md bg-black/15 p-4 border-2 border-white/30";
-  //   }
-  //   return "w-[120px] h-[120px] object-contain rounded-lg shadow-md bg-black/15 p-2 border border-white/30";
-  // }, [isTV65, isTVTouch, isTablet]);
-    
   // [modificación] useEffect para tracking de montaje/desmontaje - más eficiente
   useEffect(() => {
     // [modificación] Copiar la referencia para evitar warning de cleanup
@@ -495,31 +549,38 @@ export default function PrizeModal() {
             <h2 className={titleClasses}>
               ¡Felicitaciones {currentParticipant?.nombre}!
             </h2>
-            <p className={subtitleClasses}>
+            <h3 className={correctAnswerTitleClasses}>
               ¡Respuesta correcta!
-            </p>
+            </h3>
 
             {prizeName && (
               <>
-                <p className={explanationTextClasses}>
+                {/* [modificación] Mostrar icono específico del premio */}
+                {(() => {
+                  const PrizeIcon = getPrizeIcon(prizeName);
+                  return (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        transition: { delay: 0.3, duration: 0.4 },
+                      }}
+                      className="mb-6"
+                    >
+                      <PrizeIcon className={`${prizeIconClasses} text-yellow-400`} />
+                    </motion.div>
+                  );
+                })()}
+                
+                <p className={hasGanadoClasses}>
                   Has ganado:
                 </p>
                 <p className={prizeNameClasses}>
                   {prizeName}
                 </p>
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{
-                    opacity: 1,
-                    y: 0,
-                    transition: { delay: 0.5, duration: 0.4 },
-                  }}
-                  className={prizeInstructionsClasses}
-                >
-                  Por favor, acércate al mostrador principal para retirar tu
-                  premio: <span className="font-marineBold">{prizeName}</span>.
-                  ¡Gracias por participar!
-                </motion.div>
+                
+                {/* [modificación] Eliminar completamente el texto del mostrador */}
               </>
             )}
 
@@ -610,6 +671,10 @@ export default function PrizeModal() {
           font-size: 7rem !important;
         }
 
+        .text-\\[6\\.5rem\\] {
+          font-size: 6.5rem !important;
+        }
+
         .text-\\[6rem\\] {
           font-size: 6rem !important;
         }
@@ -636,6 +701,10 @@ export default function PrizeModal() {
 
         .text-\\[4rem\\] {
           font-size: 4rem !important;
+        }
+
+        .text-\\[3\\.8rem\\] {
+          font-size: 3.8rem !important;
         }
 
         .text-\\[3\\.5rem\\] {

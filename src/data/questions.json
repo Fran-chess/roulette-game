@@ -1,106 +1,210 @@
 [
   {
-    "id": "q1",
-    "category": "Epidemio",
-    "text": "¿Qué significa el término “R₀” (número reproductivo básico) en epidemiología?",
-    "options": [
-      { "text": "La duración promedio de la infección", "correct": false },
-      { "text": "El número de casos secundarios por cada caso primario en población susceptible", "correct": true },
-      { "text": "La tasa de mortalidad de la enfermedad", "correct": false },
-      { "text": "La concentración viral en sangre", "correct": false }
-    ],
-    "prize": "Bloc de Notas",
-    "explanation": "R₀ es el número promedio de casos secundarios que genera un caso primario en una población totalmente susceptible."
-  },
-  {
-    "id": "q2",
-    "category": "Esterilización",
-    "text": "¿Qué técnica de esterilización utiliza vapor a alta presión y temperatura para destruir gérmenes?",
-    "options": [
-      { "text": "Filtración de aire", "correct": false },
-      { "text": "Radiación UV", "correct": false },
-      { "text": "Autoclave", "correct": true },
-      { "text": "Gas óxido de etileno", "correct": false }
-    ],
-    "prize": "Marcador Permanente",
-    "explanation": "La autoclave utiliza vapor saturado a 121 °C durante al menos 15 minutos para desnaturalizar proteínas y matar microorganismos."
-  },
-  {
-    "id": "q3",
-    "category": "Zoonosis",
-    "text": "Menciona una zoonosis viral emergente y su reservorio animal más frecuentemente implicado.",
-    "options": [
-      { "text": "Zika – mosquitos Aedes", "correct": false },
-      { "text": "Ébola – murciélagos frugívoros", "correct": true },
-      { "text": "Rabia – perros", "correct": false },
-      { "text": "Gripe aviar – aves acuáticas", "correct": false }
-    ],
-    "prize": "Adhesivos Temáticos",
-    "explanation": "El virus de Ébola tiene como reservorio probable a murciélagos frugívoros de la familia Pteropodidae."
-  },
-  {
-    "id": "q4",
-    "category": "Control",
-    "text": "Nombra dos medidas básicas para prevenir infecciones nosocomiales en un hospital.",
-    "options": [
-      { "text": "Uso de antibióticos profilácticos y aislamiento prolongado", "correct": false },
-      { "text": "Higiene de manos y uso de barreras (guantes, mascarillas)", "correct": true },
-      { "text": "Administrar vacunas a todos los pacientes y visitantes", "correct": false },
-      { "text": "Ventilación natural y plantas en pasillos", "correct": false }
-    ],
-    "prize": "Botella de Agua",
-    "explanation": "La higiene de manos y el uso de barreras son medidas fundamentales para prevenir infecciones nosocomiales."
-  },
-  {
-    "id": "q5",
-    "category": "Vacunas",
-    "text": "¿Qué tipo de vacuna utiliza fragmentos de ARN mensajero para generar inmunidad?",
-    "options": [
-      { "text": "Vacuna inactivada", "correct": false },
-      { "text": "Vacuna de subunidades proteicas", "correct": false },
-      { "text": "Vacuna ARNm", "correct": true },
-      { "text": "Vacuna vector viral atenuado", "correct": false }
-    ],
-    "prize": "Llavero Temático",
-    "explanation": "Las vacunas ARNm instruyen a nuestras células para producir la proteína “Spike” y generar respuesta inmune."
-  },
-  {
-    "id": "q6",
-    "category": "Diagnóstico",
-    "text": "¿Cuál es la prueba estándar para detectar infección activa por SARS‑CoV‑2?",
-    "options": [
-      { "text": "Prueba serológica IgG/IgM", "correct": false },
-      { "text": "PCR en tiempo real (RT‑PCR)", "correct": true },
-      { "text": "ELISA para antígenos", "correct": false },
-      { "text": "Hemocultivo", "correct": false }
-    ],
-    "prize": "Mascarilla Reutilizable",
-    "explanation": "La RT‑PCR detecta directamente el ARN viral y es el método de referencia para diagnóstico de COVID‑19."
-  },
-  {
-    "id": "q7",
+    "id": "bact1",
     "category": "Bacterias",
-    "text": "¿Cuál es la principal vía de transmisión de Salmonella en humanos?",
+    "text": "¿Cuál de las siguientes bacterias es una de las principales causas de infecciones asociadas a cuidados de salud en pacientes con internación domiciliaria prolongada?",
     "options": [
-      { "text": "Transmisión aérea", "correct": false },
-      { "text": "Contacto piel a piel", "correct": false },
-      { "text": "Ingestión de alimentos o agua contaminados", "correct": true },
-      { "text": "Picadura de insectos", "correct": false }
+      { "text": "Escherichia coli", "correct": false },
+      { "text": "Klebsiella pneumoniae BLEE", "correct": true },
+      { "text": "Streptococcus pyogenes", "correct": false },
+      { "text": "Salmonella typhi", "correct": false }
     ],
-    "prize": "Bolígrafo Antibacterial",
-    "explanation": "Salmonella se transmite principalmente por el consumo de alimentos o agua contaminados con heces infectadas."
+    "prize": "Libreta",
+    "explanation": "Klebsiella pneumoniae BLEE es una de las bacterias más relevantes en infecciones asociadas a cuidados de salud prolongados en domicilio."
   },
   {
-    "id": "q8",
-    "category": "Hongos",
-    "text": "¿Qué coloración se utiliza para identificar hongos en muestras clínicas?",
+    "id": "bact2",
+    "category": "Bacterias",
+    "text": "¿Cuál de las siguientes prácticas contribuye significativamente al desarrollo de bacterias multirresistentes en el ámbito domiciliario?",
     "options": [
-      { "text": "Gram", "correct": false },
-      { "text": "Ziehl‑Neelsen", "correct": false },
-      { "text": "Lactofenol‑coton azul", "correct": true },
-      { "text": "Wright", "correct": false }
+      { "text": "Finalizar el tratamiento antibiótico según indicación médica", "correct": false },
+      { "text": "Uso adecuado de elementos de protección personal", "correct": false },
+      { "text": "Automedicación con antibióticos sin diagnóstico", "correct": true },
+      { "text": "Aislamiento respiratorio en pacientes con infecciones virales", "correct": false }
     ],
-    "prize": "Lupa de Mano",
-    "explanation": "La preparación con lactofenol‑coton azul tiñe la pared celular de los hongos, facilitando su observación."
+    "prize": "Taza",
+    "explanation": "La automedicación con antibióticos promueve la selección y proliferación de bacterias resistentes en el hogar."
+  },
+  {
+    "id": "vac1",
+    "category": "Vacunación",
+    "text": "¿Cuál de estas vacunas está especialmente recomendada para mayores de 65 años que reciben atención domiciliaria?",
+    "options": [
+      { "text": "Triple viral", "correct": false },
+      { "text": "Antitetánica", "correct": false },
+      { "text": "Antineumocócica conjugada", "correct": true },
+      { "text": "Varicela", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "La vacuna antineumocócica conjugada es clave en la prevención de neumonía en adultos mayores con internación domiciliaria."
+  },
+  {
+    "id": "vac2",
+    "category": "Vacunación",
+    "text": "¿Cuál de estas vacunas es prioritaria en pacientes pediátricos con internación domiciliaria para prevenir infecciones respiratorias graves?",
+    "options": [
+      { "text": "Hepatitis A", "correct": false },
+      { "text": "Neumococo conjugada", "correct": true },
+      { "text": "Triple viral", "correct": false },
+      { "text": "Varicela", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "La vacuna contra el neumococo es esencial para prevenir infecciones respiratorias graves en niños bajo cuidado domiciliario."
+  },
+  {
+    "id": "prev1",
+    "category": "Prevención",
+    "text": "¿Cuál de las siguientes medidas es fundamental para prevenir infecciones asociadas al cuidado de la salud (IAAS) en internación domiciliaria?",
+    "options": [
+      { "text": "Uso de guantes todo el tiempo", "correct": false },
+      { "text": "Lavado de manos según protocolo OMS", "correct": true },
+      { "text": "Ventilación cruzada constante", "correct": false },
+      { "text": "Uso de desinfectante en el calzado", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "El lavado de manos siguiendo las recomendaciones de la OMS es la medida más efectiva para prevenir infecciones."
+  },
+  {
+    "id": "prev2",
+    "category": "Prevención",
+    "text": "En un contexto de internación domiciliaria, ¿qué acción del entorno familiar puede reforzar la prevención de infecciones?",
+    "options": [
+      { "text": "Uso exclusivo de utensilios descartables", "correct": false },
+      { "text": "Ventilar los ambientes al menos dos veces al día", "correct": true },
+      { "text": "Colocar cortinas oscuras para limitar la luz", "correct": false },
+      { "text": "Usar alcohol en gel solo al finalizar cada visita", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "Ventilar ambientes con frecuencia reduce la concentración de patógenos y mejora la calidad del aire."
+  },
+  {
+    "id": "anti1",
+    "category": "Antibióticos",
+    "text": "¿Cuál de estos antibióticos puede administrarse por vía oral en tratamientos domiciliarios de infecciones urinarias no complicadas?",
+    "options": [
+      { "text": "Meropenem", "correct": false },
+      { "text": "Ciprofloxacina", "correct": true },
+      { "text": "Vancomicina", "correct": false },
+      { "text": "Imipenem", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "Ciprofloxacina es un antibiótico eficaz y disponible en formulación oral para uso domiciliario."
+  },
+  {
+    "id": "anti2",
+    "category": "Antibióticos",
+    "text": "¿Qué indica la sigla ESBL (BLEE en español), comúnmente asociada a ciertas bacterias resistentes?",
+    "options": [
+      { "text": "Estructura Suplementaria de Bacterias Locales", "correct": false },
+      { "text": "Enzimas Sintéticas de Bajo Límite", "correct": false },
+      { "text": "Bacterias de Lenta Evolución", "correct": false },
+      { "text": "Beta-lactamasas de espectro extendido", "correct": true }
+    ],
+    "prize": "Taza",
+    "explanation": "Las beta-lactamasas de espectro extendido son enzimas que otorgan resistencia a numerosos antibióticos."
+  },
+  {
+    "id": "fiebre1",
+    "category": "Fiebre",
+    "text": "¿Qué signo requiere derivación inmediata a un centro hospitalario en un paciente febril atendido en domicilio?",
+    "options": [
+      { "text": "Fiebre persistente por más de 3 días", "correct": false },
+      { "text": "Deshidratación leve", "correct": false },
+      { "text": "Signos de sepsis como hipotensión o taquicardia", "correct": true },
+      { "text": "Sudoración nocturna", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "La presencia de sepsis requiere intervención urgente en un centro hospitalario."
+  },
+  {
+    "id": "fiebre2",
+    "category": "Fiebre",
+    "text": "¿Cuál de los siguientes signos en un niño con fiebre bajo internación domiciliaria requiere evaluación médica urgente?",
+    "options": [
+      { "text": "Fiebre de 38°C con buen estado general", "correct": false },
+      { "text": "Irritabilidad leve y apetito reducido", "correct": false },
+      { "text": "Somnolencia excesiva, decaimiento y piel moteada", "correct": true },
+      { "text": "Tos seca con temperatura de 37,8°C", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "Somnolencia, decaimiento y piel moteada son signos de alarma que requieren evaluación médica inmediata."
+  },
+  {
+    "id": "factor1",
+    "category": "Factores de riesgo",
+    "text": "¿Cuál de los siguientes factores aumenta el riesgo de infecciones por hongos oportunistas en internación domiciliaria?",
+    "options": [
+      { "text": "Uso prolongado de corticoides", "correct": true },
+      { "text": "Contacto con mascotas", "correct": false },
+      { "text": "Cambios de estación", "correct": false },
+      { "text": "Uso de ventiladores", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "El uso prolongado de corticoides suprime el sistema inmune y favorece infecciones por hongos."
+  },
+  {
+    "id": "factor2",
+    "category": "Factores de riesgo",
+    "text": "¿Cuál de los siguientes pacientes presenta mayor riesgo de desarrollar infecciones asociadas al cuidado en salud en el domicilio?",
+    "options": [
+      { "text": "Paciente activo con diabetes controlada", "correct": false },
+      { "text": "Paciente joven con fractura ortopédica", "correct": false },
+      { "text": "Paciente con EPOC y oxigenoterapia domiciliaria", "correct": true },
+      { "text": "Paciente en seguimiento psicológico", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "Pacientes con EPOC y oxigenoterapia domiciliaria tienen inmunosupresión y mayor riesgo de infecciones."
+  },
+  {
+    "id": "dar1",
+    "category": "Dar Salud",
+    "text": "¿Cuál de los siguientes servicios forma parte de la propuesta de Dar Salud?",
+    "options": [
+      { "text": "Cirugías programadas en domicilio", "correct": false },
+      { "text": "Nutrición parenteral y enteral", "correct": true },
+      { "text": "Internación psiquiátrica involuntaria", "correct": false },
+      { "text": "Traslados de alta complejidad", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "Dar Salud incluye la provisión de nutrición parenteral y enteral como parte de su servicio domiciliario."
+  },
+  {
+    "id": "dar2",
+    "category": "Dar Salud",
+    "text": "¿Cuántas sucursales tiene Dar Salud en el país?",
+    "options": [
+      { "text": "1", "correct": false },
+      { "text": "5", "correct": false },
+      { "text": "6", "correct": false },
+      { "text": "12", "correct": true }
+    ],
+    "prize": "Taza",
+    "explanation": "Dar Salud cuenta con 12 sucursales distribuidas en todo el país."
+  },
+  {
+    "id": "dar3",
+    "category": "Dar Salud II",
+    "text": "¿Qué caracteriza al equipo de Dar Salud?",
+    "options": [
+      { "text": "Está conformado solo por enfermeros y técnicos", "correct": false },
+      { "text": "Tiene base exclusiva en hospitales públicos", "correct": false },
+      { "text": "Es un equipo profesional y multidisciplinario", "correct": true },
+      { "text": "Está enfocado solo en urgencias domiciliarias", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "El equipo de Dar Salud es profesional y multidisciplinario, cubriendo diversas áreas de atención."
+  },
+  {
+    "id": "dar4",
+    "category": "Dar Salud II",
+    "text": "Además de la atención profesional, ¿qué otro aspecto incluye el servicio de Dar Salud según su propuesta institucional?",
+    "options": [
+      { "text": "Traslados en ambulancia aérea", "correct": false },
+      { "text": "Equipamiento y elementos necesarios para la atención en domicilio", "correct": true },
+      { "text": "Internación en clínicas privadas", "correct": false },
+      { "text": "Internación domiciliaria sin supervisión médica", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "Dar Salud provee equipamiento y elementos necesarios para garantizar una atención completa en domicilio."
   }
 ]

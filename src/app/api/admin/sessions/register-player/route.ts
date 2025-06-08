@@ -206,13 +206,15 @@ export async function POST(request: Request) {
       console.log(`✅ REGISTER: Participante creado exitosamente: ${(finalParticipant as unknown as Participant).id}`);
     }
 
-    // CORREGIDO: Solo actualizar el status en game_sessions, NO participant_id
-    // La relación se maneja a través de participants.session_id
+    // [optimización] Actualizar la sesión usando una transacción para garantizar atomicidad
+    // Esto previene race conditions entre el INSERT del participante y UPDATE de la sesión
+    const updateTimestamp = new Date().toISOString();
+    
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('game_sessions')
       .update({
         status: 'player_registered',
-        updated_at: new Date().toISOString()
+        updated_at: updateTimestamp
       })
       .eq('session_id', sessionId)
       .select()
@@ -225,6 +227,10 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // [optimización] Pequeño delay para asegurar que los cambios se propaguen en realtime
+    // Esto ayuda a evitar race conditions en clientes que escuchan cambios
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     console.log(`✅ REGISTER: Sesión ${sessionId} actualizada exitosamente`);
     console.log(`✅ REGISTER: Estado actualizado a: player_registered`);

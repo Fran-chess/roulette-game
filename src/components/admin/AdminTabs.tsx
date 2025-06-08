@@ -19,7 +19,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
 
   return (
     // Contenedor principal con esquema oscuro
-    <div className="relative border-b border-white/20">
+    <div className="relative border-b border-white/20 admin-panel-tabs">
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}

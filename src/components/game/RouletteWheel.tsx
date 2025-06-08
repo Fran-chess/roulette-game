@@ -19,39 +19,100 @@ import { useDOMSafe } from "@/lib/hooks/useSSRSafe";
 interface WheelSegment {
   text: string;
   color: string;
-  question: Question;
+  questions: Question[]; // Ahora contiene múltiples preguntas de la misma categoría
 }
 
 // --- Funciones Helper ---
-const baseColors = [
-  "#192A6E", // azul-intenso
+// [modificación] Paleta de colores oficial de DarSalud (exactamente 5 colores)
+const rouletteColors = [
+  "#192A6E", // azul-intenso (reservado para "Dar Salud")
   "#5ACCC1", // verde-salud
   "#40C0EF", // celeste-medio
   "#F2BD35", // amarillo-ds
-  "#D5A7CD", // Rosado-lila
-  "#5ACCC1",
-  "#192A6E",
-  "#F2BD35",
-  "#40C0EF",
-  "#D5A7CD",
+  "#D5A7CD", // rosado-lila
 ];
 
-let colorIndexGlobal = 0;
+// [modificación] Mapeo específico para categorías solicitadas
+const specificCategoryColors: { [key: string]: string } = {
+  "Dar Salud": "#192A6E",          // azul-intenso (EXCLUSIVO para Dar Salud)
+  "Bacterias": "#40C0EF",          // celeste-medio
+  "Factores de riesgo": "#F2BD35", // amarillo-ds
+  // Todas las demás categorías usan los otros colores distribuidos automáticamente
+};
 
-function getRandomColor() {
-  const previousColorIndex =
-    (colorIndexGlobal - 1 + baseColors.length) % baseColors.length;
-  let nextColorIndex = colorIndexGlobal % baseColors.length;
-  if (baseColors.length <= 1) {
-    colorIndexGlobal++;
-    return baseColors[0];
-  }
-  if (baseColors.length > 1 && nextColorIndex === previousColorIndex) {
-    nextColorIndex = (nextColorIndex + 1) % baseColors.length;
-  }
-  const color = baseColors[nextColorIndex];
-  colorIndexGlobal++;
-  return color;
+// [modificación] Función mejorada para asignar colores evitando adyacencia repetida
+function assignColorsToSegments(segments: { text: string; questions: Question[] }[]): WheelSegment[] {
+  if (!segments || segments.length === 0) return [];
+  
+  const result: WheelSegment[] = [];
+  const usedColors: string[] = [];
+  
+  // Colores disponibles (excluyendo azul intenso que es exclusivo de "Dar Salud")
+  const availableColorsForOthers = rouletteColors.filter(color => color !== "#192A6E");
+  
+      segments.forEach((segment, index) => {
+      const normalizedCategory = segment.text === "Dar Salud II" ? "Dar Salud" : segment.text;
+      
+      // Si tiene color específico definido, usarlo
+      if (specificCategoryColors[normalizedCategory]) {
+        result.push({
+          text: segment.text,
+          color: specificCategoryColors[normalizedCategory],
+          questions: segment.questions
+        });
+        usedColors.push(specificCategoryColors[normalizedCategory]);
+        return;
+      }
+    
+           // Para todas las demás categorías, usar los otros colores evitando adyacencia
+       let availableColors = availableColorsForOthers.filter(color => {
+         // Evitar el color del segmento anterior
+         const prevColor = index > 0 ? usedColors[index - 1] : null;
+         // Evitar el color del siguiente segmento si tiene color específico
+         const nextSegment = segments[index + 1];
+         const nextNormalizedCategory = nextSegment ? (nextSegment.text === "Dar Salud II" ? "Dar Salud" : nextSegment.text) : null;
+         const nextColor = nextNormalizedCategory && specificCategoryColors[nextNormalizedCategory] ? specificCategoryColors[nextNormalizedCategory] : null;
+         
+         // También verificar el color del segmento que vendrá después del siguiente (para mejor distribución)
+         const nextNextSegment = segments[index + 2];
+         const nextNextColor = nextNextSegment && usedColors.length > index + 1 ? usedColors[index + 1] : null;
+         
+         return color !== prevColor && color !== nextColor && color !== nextNextColor;
+       });
+    
+    // Si no hay colores disponibles, relajar restricciones gradualmente
+    if (availableColors.length === 0) {
+      availableColors = availableColorsForOthers.filter(color => {
+        const prevColor = index > 0 ? usedColors[index - 1] : null;
+        return color !== prevColor;
+      });
+    }
+    
+    // En último caso, usar cualquier color excepto azul intenso
+    if (availableColors.length === 0) {
+      availableColors = availableColorsForOthers;
+    }
+    
+    // Seleccionar color de manera más inteligente para mejor distribución
+    let selectedColor: string;
+    
+    if (availableColors.length === 1) {
+      selectedColor = availableColors[0];
+    } else {
+      // Usar índice del segmento para mejor distribución circular
+      const colorIndex = index % availableColors.length;
+      selectedColor = availableColors[colorIndex];
+    }
+    
+    result.push({
+      text: segment.text,
+      color: selectedColor,
+      questions: segment.questions
+    });
+    usedColors.push(selectedColor);
+  });
+  
+  return result;
 }
 
 function getContrastYIQ(hexcolor: string): string {
@@ -70,14 +131,65 @@ function customEasingFunction(t: number): number {
   return 1 - Math.pow(1 - t, 3.5);
 }
 
-// [modificación] Función para mapear preguntas a segmentos de la ruleta
-function mapQuestionsToSegments(questions: Question[]): WheelSegment[] {
-  return questions.map((question) => ({
-    text: question.category,
-    color: getRandomColor(),
-    question: question,
-  }));
+// [modificación] Nueva función para agrupar preguntas por categoría y crear configuración de ruleta
+function createRouletteSegments(questions: Question[]): WheelSegment[] {
+  if (!questions || questions.length === 0) return [];
+
+  // Agrupar preguntas por categoría
+  const groupedQuestions: { [key: string]: Question[] } = {};
+  
+  questions.forEach(question => {
+    // Normalizar "Dar Salud II" a "Dar Salud" para agruparlos
+    const normalizedCategory = question.category === "Dar Salud II" ? "Dar Salud" : question.category;
+    
+    if (!groupedQuestions[normalizedCategory]) {
+      groupedQuestions[normalizedCategory] = [];
+    }
+    groupedQuestions[normalizedCategory].push(question);
+  });
+
+  // Crear array de categorías únicas (sin "Dar Salud II" ya que se normalizó)
+  const categories = Object.keys(groupedQuestions);
+  
+  // Crear lista de segmentos sin colores asignados
+  const segmentsWithoutColors: { text: string; questions: Question[] }[] = [];
+  
+  // [modificación] Primero agregar todas las categorías normales
+  categories.forEach(category => {
+    if (category !== "Dar Salud") {
+      segmentsWithoutColors.push({
+        text: category,
+        questions: groupedQuestions[category]
+      });
+    }
+  });
+
+  // [modificación] Agregar "Dar Salud" dos veces en posiciones no consecutivas
+  if (groupedQuestions["Dar Salud"]) {
+    const darSaludQuestions = groupedQuestions["Dar Salud"];
+    
+    // Calcular posiciones no consecutivas para "Dar Salud"
+    const totalSegments = segmentsWithoutColors.length + 2; // +2 por los dos "Dar Salud"
+    const firstPosition = Math.floor(totalSegments / 3); // Aproximadamente en el primer tercio
+    const secondPosition = Math.floor((totalSegments * 2) / 3); // Aproximadamente en el segundo tercio
+    
+    // Insertar "Dar Salud" en posiciones calculadas
+    segmentsWithoutColors.splice(firstPosition, 0, {
+      text: "Dar Salud",
+      questions: darSaludQuestions
+    });
+    
+    segmentsWithoutColors.splice(secondPosition + 1, 0, {
+      text: "Dar Salud",
+      questions: darSaludQuestions
+    });
+  }
+
+  // [modificación] Asignar colores evitando adyacencia repetida
+  return assignColorsToSegments(segmentsWithoutColors);
 }
+
+
 
 // --- Componente principal ---
 const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
@@ -113,7 +225,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       if (!questions || questions.length === 0) {
         return [];
       }
-      const segments = mapQuestionsToSegments(questions);
+      const segments = createRouletteSegments(questions);
       return segments;
     }, [questions]);
     const numSegments = wheelSegments.length;
@@ -429,9 +541,9 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           setCurrentAngle(finalEffectiveAngle);
           let winningAngle = 2 * Math.PI - (config.targetAngle % (2 * Math.PI));
           if (winningAngle >= 2 * Math.PI - 0.0001) winningAngle = 0;
-          const winningIndex =
+          const winningSegmentIndex =
             Math.floor(winningAngle / anglePerSegment) % numSegments;
-          setHighlightedSegment(winningIndex);
+          setHighlightedSegment(winningSegmentIndex);
           
           if (canUseDOM && "vibrate" in navigator) {
             try {
@@ -440,9 +552,21 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           }
           
           setTimeout(() => {
-            // [modificación] Log para verificar el índice del resultado del giro
-            console.log("[RouletteWheel] spinAnimation finished. Setting lastSpinResultIndex:", winningIndex);
-            setLastSpinResultIndex(winningIndex);
+            // [modificación] Seleccionar una pregunta aleatoria del segmento ganador
+            const winningSegment = wheelSegments[winningSegmentIndex];
+            if (winningSegment && winningSegment.questions.length > 0) {
+              const randomQuestionIndex = Math.floor(Math.random() * winningSegment.questions.length);
+              const selectedQuestion = winningSegment.questions[randomQuestionIndex];
+              
+              // Encontrar el índice de esta pregunta en el array original de preguntas
+              const questionIndex = questions?.findIndex(q => q.id === selectedQuestion.id) ?? -1;
+              
+              console.log("[RouletteWheel] Segmento ganador:", winningSegment.text);
+              console.log("[RouletteWheel] Pregunta seleccionada:", selectedQuestion.category, "ID:", selectedQuestion.id);
+              console.log("[RouletteWheel] Índice de pregunta en array original:", questionIndex);
+              
+              setLastSpinResultIndex(questionIndex);
+            }
           }, 800);
           setIsSpinning(false);
           return;
@@ -456,7 +580,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       };
       animationConfigRef.current.animationFrameId =
         requestAnimationFrame(spinAnimation);
-    }, [isSpinning, numSegments, isDOMReady, canUseDOM, anglePerSegment, setLastSpinResultIndex, drawRoulette]);
+    }, [isSpinning, numSegments, isDOMReady, canUseDOM, anglePerSegment, setLastSpinResultIndex, drawRoulette, wheelSegments, questions]);
 
     // Exponer método spin al padre
     useImperativeHandle(ref, () => ({

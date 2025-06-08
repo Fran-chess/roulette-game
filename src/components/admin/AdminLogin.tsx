@@ -131,7 +131,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="relative z-10 w-full max-w-md mx-auto"
+        className="relative z-10 w-full max-w-md mx-auto admin-login-container"
       >
         {/* [modificación] - Contenedor principal mejorado con mejor glassmorphism */}
         <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl p-8 space-y-6">
@@ -139,9 +139,9 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
           {/* [modificación] - Header mejorado con iconos y mejor tipografía */}
           <motion.div
             variants={fieldItemVariants}
-            className="text-center space-y-4"
+            className="text-center space-y-4 admin-login-header"
           >
-            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+            <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg admin-login-icon">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
@@ -156,12 +156,12 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
             </div>
           </motion.div>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-6 admin-login-form">
             <motion.div
               variants={fieldsetVariants}
               initial="hidden"
               animate="visible"
-              className="space-y-4"
+              className="space-y-4 admin-login-form-fields"
             >
               {/* Campo Email */}
               <motion.div variants={fieldItemVariants}>
@@ -173,8 +173,8 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   aria-required="true"
                   containerClassName="w-full"
-                  labelClassName="text-slate-200 text-sm font-marineBold mb-2 block"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans"
+                  labelClassName="text-slate-200 text-sm font-marineBold mb-2 block admin-login-label"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans admin-login-input"
                   autoComplete="email"
                   required
                   disabled={isLoading}
@@ -191,8 +191,8 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   aria-required="true"
                   containerClassName="w-full"
-                  labelClassName="text-slate-200 text-sm font-marineBold mb-2 block"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans"
+                  labelClassName="text-slate-200 text-sm font-marineBold mb-2 block admin-login-label"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans admin-login-input"
                   autoComplete="current-password"
                   required
                   disabled={isLoading}
@@ -204,7 +204,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                 <motion.div 
                   initial={{ opacity: 0, y: -10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="flex items-center space-x-2 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm backdrop-blur-sm font-sans"
+                  className="flex items-center space-x-2 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-sm backdrop-blur-sm font-sans admin-login-error"
                 >
                   <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -223,7 +223,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   <Button
                     type="submit"
                     disabled={isLoading || !email || !password}
-                    className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-transparent"
+                    className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-transparent admin-login-button"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-2">
@@ -250,7 +250,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
           {/* [modificación] - Footer con información adicional */}
           <motion.div 
             variants={fieldItemVariants}
-            className="text-center pt-4 border-t border-white/10"
+            className="text-center pt-4 border-t border-white/10 admin-login-footer"
           >
             <p className="text-slate-400 text-xs font-sans">
               Acceso seguro protegido • Solo personal autorizado

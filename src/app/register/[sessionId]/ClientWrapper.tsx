@@ -8,6 +8,7 @@ import { useGameStore } from '@/store/gameStore';
 import { isPlayerRegistered, isSessionInProgress, isSessionPendingRegistration } from '@/utils/session';
 import { useNavigationStore } from '@/store/navigationStore';
 import Logo from '@/components/ui/Logo';
+import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 
 // Interface para props
 interface ClientWrapperProps {
@@ -177,7 +178,19 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-azul-intenso">
+    <div className="flex flex-col min-h-screen bg-azul-intenso relative">
+      {/* Botón de regreso fijo en esquina superior izquierda */}
+      <button
+        onClick={() => router.push('/admin')}
+        className="fixed top-4 left-4 z-50 p-3 rounded-lg bg-black/30 hover:bg-black/50 
+                   border border-white/20 hover:border-white/40 transition-all duration-200
+                   flex items-center justify-center group backdrop-blur-sm shadow-lg"
+        title="Volver al panel de administración"
+        type="button"
+      >
+        <ArrowLeftIcon className="w-6 h-6 text-gray-300 group-hover:text-white transition-colors duration-200" />
+      </button>
+
       {/* Header - Logo */}
       <header className="w-full flex justify-center items-center min-h-[65px] border-b border-white/10 bg-azul-intenso/90 backdrop-blur-sm">
         {/* [modificación] Contenedor con tamaño máximo consistente con GameLayout */}
@@ -201,7 +214,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
       {/* Main Content - Formulario o mensaje de éxito */}
       <main className="flex-1 flex items-center justify-center w-full px-4 py-6 overflow-y-auto">
         <motion.div 
-          className="w-full max-w-md sm:max-w-lg z-10"
+          className="w-full max-w-md sm:max-w-lg lg:max-w-4xl z-10"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}

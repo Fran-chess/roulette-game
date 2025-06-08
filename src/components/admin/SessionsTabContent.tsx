@@ -1,6 +1,7 @@
 // src/components/admin/SessionsTabContent.tsx
+import React from 'react';
 import { motion} from 'framer-motion';
-import { FiCalendar, FiPlusCircle, FiClock, FiUser, FiPlay, FiX, FiInfo } from 'react-icons/fi';
+import { FiCalendar, FiPlusCircle, FiClock, FiUser } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 // [modificación] Importar el modal de confirmación
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -12,6 +13,8 @@ import { useRef, useState, useEffect } from 'react';
 import { useNavigationStore } from '@/store/navigationStore';
 // [modificación] Importar PlaySession para usar la interfaz directamente
 import { PlaySession, Participant } from '@/types';
+// [modificación] Importar SnackbarNotification para mostrar mensajes de estado
+import SnackbarNotification from '@/components/ui/SnackbarNotification';
 
 interface SessionsTabContentProps {
   activeSessions: PlaySession[];
@@ -35,25 +38,29 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
   // Estado para seguimiento de la sesión que se está cerrando
   const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
-  // [modificación] Estados para los modales
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    session: PlaySession | null;
-    type: 'confirm' | 'info';
-  }>({
-    isOpen: false,
-    session: null,
-    type: 'confirm'
-  });
-  // [modificación] Estado para almacenar los participantes activos de cada sesión
-  const [sessionParticipants, setSessionParticipants] = useState<Map<string, Participant | null>>(new Map());
+  // Estado para seguimiento de la sesión que se está finalizando
+  const [finalizingSessionId, setFinalizingSessionId] = useState<string | null>(null);
+  // [modificación] Estados para el modal de cancelación
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [sessionToCancel, setSessionToCancel] = useState<string | null>(null);
+  // Estados para el modal de finalización
+  const [showFinishModal, setShowFinishModal] = useState(false);
+  const [sessionToFinish, setSessionToFinish] = useState<string | null>(null);
+  // [modificación] Estado para almacenar los participantes de cada sesión
+  const [sessionParticipants, setSessionParticipants] = useState<Map<string, Participant[]>>(new Map());
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
+  
+  // [modificación] Estados para notificaciones mejoradas
+  const [notification, setNotification] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
-  // [modificación] Función para obtener el participante activo de una sesión
-  const fetchSessionParticipant = async (session: PlaySession) => {
+  // [modificación] Función para obtener TODOS los participantes de una sesión
+  const fetchSessionParticipants = async (session: PlaySession) => {
     if (!session.session_id) {
-      return null;
+      return [];
     }
 
     try {
@@ -61,33 +68,27 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
       const data = await response.json();
       
       if (response.ok && data.participants && data.participants.length > 0) {
-        // Buscar el participante más reciente o activo
-        const activeParticipant = data.participants
-          .sort((a: Participant, b: Participant) => 
-            new Date(b.created_at || '').getTime() - new Date(a.created_at || '').getTime()
-          )[0];
-        
-        return activeParticipant;
+        return data.participants;
       }
     } catch (error) {
-      console.error(`Error al obtener participante para sesión ${session.session_id}:`, error);
+      console.error(`Error al obtener participantes para sesión ${session.session_id}:`, error);
     }
     
-    return null;
+    return [];
   };
 
   // [modificación] Effect para cargar los participantes de todas las sesiones activas
   useEffect(() => {
     const loadParticipants = async () => {
-      const newParticipantsMap = new Map<string, Participant | null>();
+      const newParticipantsMap = new Map<string, Participant[]>();
       
       // Cargar participantes para cada sesión
       for (const session of activeSessions) {
         if (session.session_id) {
-          const participant = await fetchSessionParticipant(session);
-          newParticipantsMap.set(session.session_id, participant);
+          const participants = await fetchSessionParticipants(session);
+          newParticipantsMap.set(session.session_id, participants);
         } else {
-          newParticipantsMap.set(session.session_id, null);
+          newParticipantsMap.set(session.session_id, []);
         }
       }
       
@@ -99,65 +100,186 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     }
   }, [activeSessions]);
 
-  // [modificación] Función helper para obtener el participante de una sesión
-  const getSessionParticipant = (sessionId: string): Participant | null => {
-    return sessionParticipants.get(sessionId) || null;
+  // [modificación] Función helper para obtener los participantes de una sesión
+  const getSessionParticipants = (sessionId: string): Participant[] => {
+    return sessionParticipants.get(sessionId) || [];
   };
 
   // [modificación] Función para mostrar el modal de confirmación antes de cerrar la sesión
   const handleCloseSession = (session: PlaySession, e: React.MouseEvent) => {
     e.stopPropagation();
-    setConfirmModal({
-      isOpen: true,
-      session,
-      type: 'confirm'
-    });
+    setSessionToCancel(session.session_id);
+    setShowCancelModal(true);
   };
 
-  // [modificación] Función para ejecutar el cierre de sesión después de la confirmación
-  const executeCloseSession = async () => {
-    if (!confirmModal.session) return;
 
-    setClosingSessionId(confirmModal.session.session_id);
+
+
+
+  // [modificación] Función para contar participantes de una sesión
+  const getParticipantCount = (sessionId: string): number => {
+    // Contar basándose en los participantes cargados
+    const participants = sessionParticipants.get(sessionId) || [];
+    return participants.length;
+  };
+
+  // [modificación] Función para formatear fechas
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  // [modificación] Función para confirmar cancelación de sesión
+  const confirmCancelSession = async () => {
+    if (!sessionToCancel) return;
+
+    setClosingSessionId(sessionToCancel);
+    
+    // [modificación] Mostrar notificación de progreso
+    setNotification({
+      type: 'success',
+      message: 'Cancelando sesión...'
+    });
+
     try {
       const response = await fetch('/api/admin/sessions/close', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ sessionId: confirmModal.session.session_id }),
+        body: JSON.stringify({ sessionId: sessionToCancel }),
       });
 
       if (response.ok) {
-// //         console.log('Sesión cerrada exitosamente');
+        // [modificación] Mostrar notificación de éxito inmediato
+        setNotification({
+          type: 'success',
+          message: 'Sesión cancelada exitosamente'
+        });
+        
+        // [modificación] Actualizar la lista inmediatamente
         if (onRefreshSessions) {
-          onRefreshSessions();
+          await onRefreshSessions();
         }
+        
+        // [modificación] Limpiar la notificación después de 3 segundos
+        setTimeout(() => {
+          setNotification(null);
+        }, 3000);
       } else {
-        console.error('Error al cerrar la sesión');
+        const errorData = await response.json();
+        const errorMessage = errorData.message || 'Error al cancelar la sesión';
+        
+        // [modificación] Mostrar notificación de error específico
+        setNotification({
+          type: 'error',
+          message: errorMessage
+        });
+        
+        console.error('Error al cancelar la sesión:', errorMessage);
+        
+        // [modificación] Limpiar la notificación de error después de 5 segundos
+        setTimeout(() => {
+          setNotification(null);
+        }, 5000);
       }
     } catch (error) {
-      console.error('Error de red al cerrar la sesión:', error);
+      console.error('Error de red al cancelar la sesión:', error);
+      
+      // [modificación] Mostrar notificación de error de conexión
+      setNotification({
+        type: 'error',
+        message: 'Error de conexión. Inténtalo nuevamente.'
+      });
+      
+      setTimeout(() => {
+        setNotification(null);
+      }, 5000);
     } finally {
       setClosingSessionId(null);
+      setShowCancelModal(false);
+      setSessionToCancel(null);
     }
   };
 
-  // [modificación] Función para mostrar información de la partida
-  const handleShowGameInfo = (session: PlaySession, e: React.MouseEvent) => {
+  // Función para mostrar el modal de finalización
+  const handleFinishSession = (session: PlaySession, e: React.MouseEvent) => {
     e.stopPropagation();
-    setConfirmModal({
-      isOpen: true,
-      session,
-      type: 'info'
-    });
+    setSessionToFinish(session.session_id);
+    setShowFinishModal(true);
   };
 
-  // [modificación] Función para contar participantes de una sesión
-  const getParticipantCount = (sessionId: string): number => {
-    // Contar basándose en los participantes cargados
-    const participant = sessionParticipants.get(sessionId);
-    return participant ? 1 : 0;
+  // Función para confirmar finalización de sesión
+  const confirmFinishSession = async () => {
+    if (!sessionToFinish) return;
+
+    setFinalizingSessionId(sessionToFinish);
+    
+    // [modificación] Mostrar notificación de progreso
+    setNotification({
+      type: 'success',
+      message: 'Finalizando sesión...'
+    });
+
+    try {
+      const response = await fetch('/api/admin/sessions/finish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sessionId: sessionToFinish }),
+      });
+
+      if (response.ok) {
+        // [modificación] Mostrar notificación de éxito inmediato
+        setNotification({
+          type: 'success',
+          message: 'Sesión finalizada exitosamente'
+        });
+        
+        // [modificación] Actualizar la lista inmediatamente
+        if (onRefreshSessions) {
+          await onRefreshSessions();
+        }
+        
+        // [modificación] Limpiar la notificación después de 3 segundos
+        setTimeout(() => {
+          setNotification(null);
+        }, 3000);
+      } else {
+        const errorData = await response.json();
+        const errorMessage = errorData.message || 'Error al finalizar la sesión';
+        
+        // [modificación] Mostrar notificación de error específico
+        setNotification({
+          type: 'error',
+          message: errorMessage
+        });
+        
+        console.error('Error al finalizar la sesión:', errorMessage);
+        
+        // [modificación] Limpiar la notificación de error después de 5 segundos
+        setTimeout(() => {
+          setNotification(null);
+        }, 5000);
+      }
+    } catch (error) {
+      console.error('Error de red al finalizar la sesión:', error);
+      
+      // [modificación] Mostrar notificación de error de conexión
+      setNotification({
+        type: 'error',
+        message: 'Error de conexión. Inténtalo nuevamente.'
+      });
+      
+      setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+    } finally {
+      setFinalizingSessionId(null);
+      setShowFinishModal(false);
+      setSessionToFinish(null);
+    }
   };
 
   // [modificación] Función para activar la partida usando el overlay global
@@ -174,11 +296,26 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     setActivatingSession(session.session_id);
     navigationInProgress.current = true;
     
-    // [modificación] Usar el overlay global para la navegación
-    const targetPath = `/register/${session.session_id}`;
+    // [modificación] Determinar la ruta según el estado de la sesión
+    let targetPath: string;
+    let loadingMessage: string;
+    
+    switch (session.status) {
+      case 'player_registered':
+      case 'playing':
+        targetPath = `/game/${session.session_id}`;
+        loadingMessage = 'Accediendo al juego...';
+        break;
+      case 'pending_player_registration':
+      default:
+        targetPath = `/register/${session.session_id}`;
+        loadingMessage = 'Activando sesión de juego...';
+        break;
+    }
+
 // //     console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
 
-    startNavigation(targetPath, 'Activando sesión de juego...');
+    startNavigation(targetPath, loadingMessage);
     
     // Restablecer el estado local después de un tiempo
     setTimeout(() => {
@@ -188,12 +325,27 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   };
 
   // [modificación] Función para obtener clases de estado según el status de la sesión con estilos actualizados
-  const getStatusClasses = (status: string) => {
+  const getStatusClasses = (status: string, sessionId: string) => {
+    const participantCount = getParticipantCount(sessionId);
+    
+    // [modificación] Agregar estado visual especial para sesiones siendo finalizadas
+    if (finalizingSessionId === sessionId) {
+      return 'bg-orange-100 text-orange-800 border-orange-300 animate-pulse';
+    }
+    
+    // [modificación] Agregar estado visual especial para sesiones siendo canceladas
+    if (closingSessionId === sessionId) {
+      return 'bg-red-100 text-red-800 border-red-300 animate-pulse';
+    }
+    
     switch (status) {
       case 'pending_player_registration':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+        // [modificación] Si hay participantes, usar el mismo color que sesiones activas, sino amarillo
+        return participantCount > 0 
+          ? 'bg-blue-100 text-blue-800 border-blue-300'
+          : 'bg-yellow-100 text-yellow-800 border-yellow-300';
       case 'player_registered':
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'playing':
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'completed':
@@ -206,22 +358,77 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   };
 
   // [modificación] Función para obtener el texto del estado según el status de la sesión
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string, sessionId?: string) => {
+    // [modificación] Mostrar estado especial para sesiones siendo finalizadas
+    if (sessionId && finalizingSessionId === sessionId) {
+      return 'Finalizando...';
+    }
+    
+    // [modificación] Mostrar estado especial para sesiones siendo canceladas
+    if (sessionId && closingSessionId === sessionId) {
+      return 'Cancelando...';
+    }
+    
     switch (status) {
       case 'pending_player_registration':
-        return 'Pendiente Registro';
+        // [modificación] Si hay participantes, la sesión está activa, sino está pendiente
+        if (sessionId) {
+          const participantCount = getParticipantCount(sessionId);
+          return participantCount > 0 ? 'Activa' : 'Pendiente';
+        }
+        return 'Pendiente';
       case 'player_registered':
-        return 'Jugador Registrado';
+        return 'Activa';
       case 'in_progress':
-        return 'En Progreso';
+        return 'Activa';
+      case 'playing':
+        return 'Activa';
       case 'completed':
-        return 'Completado';
+        return 'Finalizada';
       case 'archived':
-        return 'Archivado';
+        return 'Finalizada';
       default:
-        return status;
+        return 'Pendiente';
     }
   };
+
+  // [modificación] Función para obtener el texto del botón según el contexto de la sesión
+  const getButtonText = (session: PlaySession) => {
+    const participants = getSessionParticipants(session.session_id);
+    const hasParticipants = participants.length > 0;
+    
+    switch (session.status) {
+      case 'pending_player_registration':
+        return hasParticipants ? 'Continuar' : 'Activar';
+      case 'player_registered':
+        return 'Ir a Juego';
+      case 'playing':
+        return 'Ver Juego';
+      default:
+        return 'Activar';
+    }
+  };
+
+  // [modificación] Función para obtener los estilos del botón según el contexto de la sesión
+  const getButtonStyles = (session: PlaySession) => {
+    const participants = getSessionParticipants(session.session_id);
+    const hasParticipants = participants.length > 0;
+    
+    switch (session.status) {
+      case 'pending_player_registration':
+        return hasParticipants 
+          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-blue-400/50'
+          : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-green-400/50';
+      case 'player_registered':
+        return 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 border-purple-400/50';
+      case 'playing':
+        return 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 border-orange-400/50';
+      default:
+        return 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-green-400/50';
+    }
+  };
+
+
 
   // Ya no se utiliza modal para mostrar opciones
 
@@ -236,47 +443,46 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
       exit="exit"
       variants={staggerContainer}
     >
-      <div className="p-4 md:p-6">
-        <div className="flex justify-between items-center mb-4">
-          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold text-white">
+      <div className="p-4 md:p-6 admin-content-spacing">
+        <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6">
+          <h3 className="text-xl md:text-2xl font-marineBold text-white mb-3 sm:mb-0 admin-dashboard-title">
             Gestión de Juegos
-          </motion.h3>
+          </h3>
           <Button
             onClick={onCreateNewSession}
             variant="custom"
-            className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-3 rounded-lg shadow-md text-sm flex items-center border border-blue-400/50 transition-colors duration-300"
+            className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
             disabled={isLoadingCreation}
           >
-            <FiPlusCircle className="mr-1.5" size={16} />
+            <FiPlusCircle className="mr-2" size={16} />
             {isLoadingCreation ? 'Creando...' : 'Nuevo Juego'}
           </Button>
-        </div>
+        </motion.div>
 
-        {isLoadingList && activeSessions.length === 0 && (
-          <p className="text-center text-slate-300 py-8 font-sans">Cargando juegos...</p>
-        )}
-        
-        {!isLoadingList && activeSessions.length === 0 ? (
-          <motion.div
-            variants={fadeInUp}
-            className="bg-white/10 backdrop-blur-sm rounded-xl shadow-lg p-6 text-center my-4 border border-white/20"
-            whileHover={{ scale: 1.01, backgroundColor: "rgba(255, 255, 255, 0.15)" }}
-          >
-            <FiCalendar className="text-slate-300 mb-3 mx-auto" size={40} />
-            <p className="text-white font-marineBold mb-4 text-base md:text-lg">
-              Aún no hay juegos registrados.
-            </p>
+        {isLoadingList ? (
+          <motion.div variants={fadeInUp} className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-3 text-slate-300">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
+              <span className="font-marineBold">Cargando juegos...</span>
+            </div>
+          </motion.div>
+        ) : activeSessions.length === 0 ? (
+          <motion.div variants={fadeInUp} className="text-center py-8">
+            <FiCalendar className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+            <h4 className="text-lg font-marineBold text-slate-300 mb-2">No hay juegos creados</h4>
+            <p className="text-slate-400 mb-4 font-sans">Crea tu primer juego para comenzar</p>
             <Button
               onClick={onCreateNewSession}
               variant="custom"
-              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-blue-400/50 transition-colors duration-300"
+              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 mx-auto admin-dashboard-button"
               disabled={isLoadingCreation}
             >
-              {isLoadingCreation ? 'Creando...' : 'Crear el Primer Juego'}
+              <FiPlusCircle className="mr-2" size={16} />
+              {isLoadingCreation ? 'Creando...' : 'Crear Primer Juego'}
             </Button>
           </motion.div>
         ) : (
-          <motion.div variants={fadeInUp} className="grid gap-3">
+          <motion.div variants={fadeInUp} className="grid gap-3 admin-sessions-list">
             {activeSessions.map((session) => (
               <motion.div
                 key={session.id || session.session_id}
@@ -286,86 +492,73 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                   backgroundColor: "rgba(255, 255, 255, 0.15)",
                   boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)"
                 }}
-                className="bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg p-3 transition-all shadow-md"
+                className={`bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg p-4 transition-all shadow-md admin-session-item ${
+                  finalizingSessionId === session.session_id ? 'opacity-75' : ''
+                }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-marineBold ${getStatusClasses(session.status)}`}>
-                        {getStatusText(session.status)}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex items-center">
+                      <span className={`px-4 py-2 rounded-full text-base font-marineBold ${getStatusClasses(session.status, session.session_id)}`}>
+                        {getStatusText(session.status, session.session_id)}
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs mt-2">
-                      <div className="flex items-center gap-1.5 text-slate-200">
-                        <FiUser className="text-slate-300" size={12} />
-                        <span className="font-sans">
-                          {(() => {
-                            // [modificación] Obtener el participante activo de la sesión
-                            const participant = getSessionParticipant(session.session_id);
-                            return participant 
-                              ? `${participant.nombre} ${participant.apellido || ''}` 
-                              : 'Sin participante activo';
-                          })()}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-slate-300">
-                        <FiClock className="text-slate-400" size={12} />
-                        <span className="font-sans">
-                          {new Date(session.created_at).toLocaleDateString()} {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-3 text-base text-slate-200">
+                      <FiUser size={18} />
+                      <span className="font-marineBold">{getParticipantCount(session.session_id)} participante{getParticipantCount(session.session_id) !== 1 ? 's' : ''}</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 text-base text-slate-300">
+                      <FiClock size={18} />
+                      <span className="font-marineRegular">{formatDate(session.created_at)}</span>
                     </div>
                   </div>
                   
-                  {/* [modificación] Actualizar los botones según el estado de la sesión */}
-                  <div className="flex gap-2 mt-2 sm:mt-0">
-                    {/* [modificación] Solo mostrar botón Activar si la sesión NO está completada */}
+                  <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                    {/* Solo mostrar botones si la sesión no está finalizada */}
                     {session.status !== 'completed' && session.status !== 'archived' && (
-                      <Button
-                        onClick={(e) => handleActivateGame(session, e)}
-                        variant="custom"
-                        disabled={activatingSession === session.session_id}
-                        className={`${
-                          activatingSession === session.session_id
-                            ? 'bg-blue-500/90 text-white/80 cursor-wait'
-                            : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
-                        } text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-green-400/50 transition-colors duration-300 font-marineBold`}
-                      >
-                        {activatingSession === session.session_id ? (
-                          <>
-                            <span className="w-3 h-3 mr-2 rounded-full bg-white/80 animate-pulse"></span>
-                            Activando...
-                          </>
-                        ) : (
-                          <>
-                            <FiPlay className="mr-1" size={12} />
-                            Activar
-                          </>
+                      <>
+                        <Button
+                          onClick={(e) => handleActivateGame(session, e)}
+                          variant="custom"
+                          disabled={activatingSession === session.session_id || finalizingSessionId === session.session_id}
+                          className={`text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button ${getButtonStyles(session)}`}
+                        >
+                          {getButtonText(session)}
+                        </Button>
+                        
+                        {/* Botón Cancelar para sesiones pendientes */}
+                        {session.status === 'pending_player_registration' && (
+                          <Button
+                            onClick={(e) => handleCloseSession(session, e)}
+                            variant="custom"
+                            disabled={closingSessionId === session.session_id || finalizingSessionId === session.session_id}
+                            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
+                          >
+                            {closingSessionId === session.session_id ? 'Cancelando...' : 'Cancelar'}
+                          </Button>
                         )}
-                      </Button>
-                    )}
-                    
-                    {/* [modificación] Mostrar botón de información para sesiones completadas, cerrar para activas */}
-                    {session.status === 'completed' || session.status === 'archived' ? (
-                      <Button
-                        onClick={(e) => handleShowGameInfo(session, e)}
-                        variant="custom"
-                        className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-blue-500/50 transition-colors duration-300 font-marineBold"
-                      >
-                        <FiInfo className="mr-1" size={12} />
-                        Info
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={(e) => handleCloseSession(session, e)}
-                        variant="custom"
-                        disabled={closingSessionId === session.session_id}
-                        className="bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white text-xs py-1.5 px-3 rounded-md shadow-sm flex items-center border border-red-600/50 transition-colors duration-300 font-marineBold"
-                      >
-                        <FiX className="mr-1" size={12} />
-                        Cerrar
-                      </Button>
+                        
+                        {/* Botón Finalizar para sesiones activas */}
+                        {(session.status === 'player_registered' || session.status === 'playing') && (
+                          <Button
+                            onClick={(e) => handleFinishSession(session, e)}
+                            variant="custom"
+                            disabled={finalizingSessionId === session.session_id}
+                            className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
+                          >
+                            {finalizingSessionId === session.session_id ? (
+                              <div className="flex items-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Finalizando...
+                              </div>
+                            ) : (
+                              'Finalizar'
+                            )}
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
@@ -375,29 +568,38 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         )}
       </div>
       
-      {/* [modificación] Modal de confirmación e información */}
+      {/* [modificación] Modal de confirmación para cancelar sesión */}
       <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
-        onConfirm={confirmModal.type === 'confirm' ? executeCloseSession : undefined}
-        title={confirmModal.type === 'confirm' ? 'Cerrar Sesión' : 'Información de la Partida'}
-        message={
-          confirmModal.type === 'confirm' 
-            ? '¿Estás seguro de que deseas cerrar esta sesión de juego? Esta acción no se puede deshacer.'
-            : 'Detalles de la partida finalizada:'
-        }
-        type={confirmModal.type}
-        confirmText="Cerrar Sesión"
-        cancelText="Cancelar"
-        gameInfo={
-          confirmModal.type === 'info' && confirmModal.session 
-            ? {
-                createdAt: confirmModal.session.created_at,
-                participantCount: getParticipantCount(confirmModal.session.session_id)
-              }
-            : undefined
-        }
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={confirmCancelSession}
+        title="Cancelar Juego"
+        message="¿Estás seguro de que deseas cancelar este juego? Esta acción no se puede deshacer."
+        confirmText="Sí, Cancelar"
+        cancelText="No, Mantener"
+        type="confirm"
       />
+      
+      {/* Modal de confirmación para finalizar sesión */}
+      <ConfirmModal
+        isOpen={showFinishModal}
+        onClose={() => setShowFinishModal(false)}
+        onConfirm={confirmFinishSession}
+        title="Finalizar Juego"
+        message="¿Estás seguro de que deseas finalizar este juego? Una vez finalizado no se podrá continuar."
+        confirmText="Sí, Finalizar"
+        cancelText="No, Continuar"
+        type="confirm"
+      />
+      
+      {/* [modificación] Notificación de estado mejorada */}
+      {notification && (
+        <SnackbarNotification
+          type={notification.type}
+          message={notification.message}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </motion.div>
   );
 };
