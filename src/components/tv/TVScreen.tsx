@@ -496,8 +496,8 @@ export default function TVScreen() {
         )}
       </div>
 
-      {/* [modificación] Información del usuario optimizada para TV 4K */}
-      {user && isMounted && (
+      {/* [modificación] Información del usuario optimizada para TV 4K - Solo en desarrollo */}
+      {process.env.NODE_ENV === 'development' && user && isMounted && (
         <div className="absolute top-6 right-6 text-white/70 text-lg"> {/* [modificación] Texto más grande y mejor posicionamiento */}
           <p>Usuario: {user.email}</p>
           <p>Rol: {user.role === 'viewer' ? 'TV' : 'Admin'}</p>
