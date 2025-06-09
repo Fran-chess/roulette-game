@@ -36,9 +36,10 @@ export default function HomePage() {
     try {
       await logout();
       setCurrentView('login');
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-    }
+          } catch {
+        // Error al cerrar sesión - no es crítico, solo log de debug
+        // No usar tvProdLogger ya que no es un error crítico de producción
+      }
   }, [logout, setCurrentView]);
 
   if (!isInitialized || isLoading) {

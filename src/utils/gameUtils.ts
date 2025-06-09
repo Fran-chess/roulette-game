@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
+import { tvProdLogger } from '@/utils/tvLogger';
 
 /**
  * Verifica si un participante ya ganó un premio en cualquier sesión
@@ -8,7 +9,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 export async function hasParticipantWonPrize(participantId: string): Promise<boolean> {
   try {
     if (!supabaseAdmin) {
-      console.error('hasParticipantWonPrize: supabaseAdmin no disponible');
+      tvProdLogger.error('hasParticipantWonPrize: supabaseAdmin no disponible');
       return false;
     }
 
@@ -21,13 +22,13 @@ export async function hasParticipantWonPrize(participantId: string): Promise<boo
       .limit(1);
 
     if (error) {
-      console.error('hasParticipantWonPrize: Error consultando premios:', error);
+      tvProdLogger.error('hasParticipantWonPrize: Error consultando premios:', error);
       return false;
     }
 
     return previousWins && previousWins.length > 0;
   } catch (error) {
-    console.error('hasParticipantWonPrize: Error:', error);
+    tvProdLogger.error('hasParticipantWonPrize: Error:', error);
     return false;
   }
 }
@@ -40,7 +41,7 @@ export async function hasParticipantWonPrize(participantId: string): Promise<boo
 export async function getParticipantFirstPrize(participantId: string): Promise<{ prize: string; date: string } | null> {
   try {
     if (!supabaseAdmin) {
-      console.error('getParticipantFirstPrize: supabaseAdmin no disponible');
+      tvProdLogger.error('getParticipantFirstPrize: supabaseAdmin no disponible');
       return null;
     }
 
@@ -63,7 +64,7 @@ export async function getParticipantFirstPrize(participantId: string): Promise<{
       date: firstWin.created_at as string
     };
   } catch (error) {
-    console.error('getParticipantFirstPrize: Error:', error);
+    tvProdLogger.error('getParticipantFirstPrize: Error:', error);
     return null;
   }
 }
@@ -76,7 +77,7 @@ export async function getParticipantFirstPrize(participantId: string): Promise<{
 export async function getParticipantPlaysCount(participantId: string): Promise<number> {
   try {
     if (!supabaseAdmin) {
-      console.error('getParticipantPlaysCount: supabaseAdmin no disponible');
+      tvProdLogger.error('getParticipantPlaysCount: supabaseAdmin no disponible');
       return 0;
     }
 
@@ -86,13 +87,13 @@ export async function getParticipantPlaysCount(participantId: string): Promise<n
       .eq('participant_id', participantId);
 
     if (error) {
-      console.error('getParticipantPlaysCount: Error:', error);
+      tvProdLogger.error('getParticipantPlaysCount: Error:', error);
       return 0;
     }
 
     return count || 0;
   } catch (error) {
-    console.error('getParticipantPlaysCount: Error:', error);
+    tvProdLogger.error('getParticipantPlaysCount: Error:', error);
     return 0;
   }
 }
@@ -114,7 +115,7 @@ export interface ParticipantStats {
 export async function getParticipantStats(participantId: string): Promise<ParticipantStats> {
   try {
     if (!supabaseAdmin) {
-      console.error('getParticipantStats: supabaseAdmin no disponible');
+      tvProdLogger.error('getParticipantStats: supabaseAdmin no disponible');
       return {
         totalPlays: 0,
         correctAnswers: 0,
@@ -132,7 +133,7 @@ export async function getParticipantStats(participantId: string): Promise<Partic
       .order('created_at', { ascending: true });
 
     if (playsError) {
-      console.error('getParticipantStats: Error obteniendo jugadas:', playsError);
+      tvProdLogger.error('getParticipantStats: Error obteniendo jugadas:', playsError);
       return {
         totalPlays: 0,
         correctAnswers: 0,
@@ -168,7 +169,7 @@ export async function getParticipantStats(participantId: string): Promise<Partic
       successRate: Math.round(successRate * 100) / 100 // Redondear a 2 decimales
     };
   } catch (error) {
-    console.error('getParticipantStats: Error:', error);
+    tvProdLogger.error('getParticipantStats: Error:', error);
     return {
       totalPlays: 0,
       correctAnswers: 0,

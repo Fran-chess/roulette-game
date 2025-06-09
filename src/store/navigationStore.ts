@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { tvLogger } from '@/utils/tvLogger';
 
 /**
  * @typedef NavigationState
@@ -44,7 +45,7 @@ export const useNavigationStore = create<NavigationStore>((set, get) => ({
   startNavigation: (target, message = null) => {
     const current = get();
     if (current.isNavigating && current.navigationTarget === target) {
-      console.warn(`Ya hay una navegación en curso hacia ${target}`);
+      tvLogger.warn(`Ya hay una navegación en curso hacia ${target}`);
       return;
     }
     

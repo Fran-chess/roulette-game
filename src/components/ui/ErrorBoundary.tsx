@@ -1,5 +1,6 @@
 // [modificación] Error Boundary especializado para problemas de DOM y SSR
 import React, { Component, ReactNode } from 'react';
+import { tvProdLogger } from '@/utils/tvLogger';
 
 interface Props {
   children: ReactNode;
@@ -20,13 +21,13 @@ class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     // [modificación] Actualizar el estado para mostrar la UI de error
-    console.error('ErrorBoundary: Error capturado:', error);
+    tvProdLogger.error('ErrorBoundary: Error capturado:', error);
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // [modificación] Log del error para debugging
-    console.error('ErrorBoundary: Error completo:', {
+    tvProdLogger.error('ErrorBoundary: Error completo:', {
       error: error.message,
       stack: error.stack,
       componentStack: errorInfo.componentStack,
@@ -45,7 +46,7 @@ class ErrorBoundary extends Component<Props, State> {
       error.message.includes('Cannot read properties of null') ||
       error.stack?.includes('framer-motion')
     ) {
-      console.warn('ErrorBoundary: Error relacionado con DOM/Framer Motion detectado, intentando recuperación automática');
+      tvProdLogger.warn('ErrorBoundary: Error relacionado con DOM/Framer Motion detectado, intentando recuperación automática');
       
       // [modificación] Intentar recuperación automática después de un delay
       setTimeout(() => {

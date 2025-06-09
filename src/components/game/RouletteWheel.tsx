@@ -14,6 +14,7 @@ import type { RouletteWheelProps, Question } from "@/types";
 import { motion } from "framer-motion";
 import React from "react";
 import { useDOMSafe } from "@/lib/hooks/useSSRSafe";
+import { tvLogger } from "@/utils/tvLogger";
 
 // Interfaz para segmentos de la ruleta
 interface WheelSegment {
@@ -248,7 +249,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         audio.preload = "auto";
         audio.addEventListener("error", () => {
           const mediaError = audio.error;
-          console.warn(
+          tvLogger.warn(
             "AUDIO: No se pudo cargar el audio de giro:",
             mediaError
               ? `${mediaError.code} - ${mediaError.message}`
@@ -257,7 +258,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         });
         audioRef.current = audio;
       } catch (error) {
-        console.warn("AUDIO: Error al inicializar el objeto Audio:", error);
+        tvLogger.warn("AUDIO: Error al inicializar el objeto Audio:", error);
       }
       return () => {};
     }, [canUseDOM]);
@@ -821,9 +822,9 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
               // Encontrar el índice de esta pregunta en el array original de preguntas
               const questionIndex = questions?.findIndex(q => q.id === selectedQuestion.id) ?? -1;
               
-              console.log("[RouletteWheel] Segmento ganador:", winningSegment.text);
-              console.log("[RouletteWheel] Pregunta seleccionada:", selectedQuestion.category, "ID:", selectedQuestion.id);
-              console.log("[RouletteWheel] Índice de pregunta en array original:", questionIndex);
+              tvLogger.game("[RouletteWheel] Segmento ganador:", winningSegment.text);
+              tvLogger.game("[RouletteWheel] Pregunta seleccionada:", selectedQuestion.category, "ID:", selectedQuestion.id);
+              tvLogger.game("[RouletteWheel] Índice de pregunta en array original:", questionIndex);
               
               setLastSpinResultIndex(questionIndex);
             }

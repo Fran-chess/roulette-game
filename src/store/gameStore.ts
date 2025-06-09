@@ -9,6 +9,7 @@ import type {
   ParticipantsStats
 } from '@/types';
 import { useSessionStore } from './sessionStore';
+import { tvLogger, tvProdLogger } from '@/utils/tvLogger';
 
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -193,7 +194,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const adminId = sessionState.user?.id;
     
     if (!adminId) {
-      console.warn("Store: fetchGameSessions - No adminId available.");
+      tvLogger.warn("Store: fetchGameSessions - No adminId available.");
       set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, sessionsList: false }, activeSessions: [] }}));
       return [];
     }
@@ -208,7 +209,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set(state => ({ adminState: { ...state.adminState, activeSessions: sessionsData || [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
       return sessionsData;
     } catch (error: Error | unknown) {
-      console.error("Store: fetchGameSessions error:", error);
+      tvProdLogger.error("Store: fetchGameSessions error:", error);
       set(state => ({ adminState: { ...state.adminState, error: error instanceof Error ? error.message : 'Error desconocido', activeSessions: [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
       return [];
     }
@@ -217,15 +218,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   fetchParticipantsStats: async () => {
     set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
     try {
-      console.log('🔍 Store: Iniciando fetchParticipantsStats...');
+      tvLogger.debug('Store: Iniciando fetchParticipantsStats...');
       const response = await fetch('/api/participants');
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('❌ Store: Error en fetchParticipantsStats response:', errorData);
+        tvProdLogger.error('Store: Error en fetchParticipantsStats response:', errorData);
         throw new Error(errorData.message || `Error ${response.status} al cargar estadísticas de participantes`);
       }
       const statsData: ParticipantsStats = await response.json();
-      console.log('✅ Store: fetchParticipantsStats datos recibidos:', statsData);
+      tvLogger.debug('Store: fetchParticipantsStats datos recibidos:', statsData);
       const stats = { count: statsData.count, participants: statsData.participants || [] };
       set(state => ({ 
         adminState: { 
@@ -234,10 +235,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           isLoading: { ...state.adminState.isLoading, participants: false } 
         } 
       }));
-      console.log('✅ Store: fetchParticipantsStats guardado en store:', stats);
+      tvLogger.debug('Store: fetchParticipantsStats guardado en store:', stats);
       return stats;
     } catch (error: Error | unknown) {
-      console.error("❌ Store: fetchParticipantsStats error:", error);
+      tvProdLogger.error("Store: fetchParticipantsStats error:", error);
       set(state => ({ 
         adminState: { 
           ...state.adminState, 
@@ -253,17 +254,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   fetchParticipantsList: async () => {
     set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
     try {
-      console.log('🔍 Store: Iniciando fetchParticipantsList...');
+      tvLogger.debug('Store: Iniciando fetchParticipantsList...');
       const response = await fetch('/api/participants?detail=true');
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('❌ Store: Error en fetchParticipantsList response:', errorData);
+        tvProdLogger.error('Store: Error en fetchParticipantsList response:', errorData);
         throw new Error(errorData.message || `Error ${response.status} al cargar lista de participantes`);
       }
       const data = await response.json();
-      console.log('✅ Store: fetchParticipantsList datos recibidos:', data);
+      tvLogger.debug('Store: fetchParticipantsList datos recibidos:', data);
       const participants = data.participants || [];
-      console.log('✅ Store: fetchParticipantsList participantes procesados:', participants);
+      tvLogger.debug('Store: fetchParticipantsList participantes procesados:', participants);
       set(state => ({ 
         adminState: { 
           ...state.adminState, 
@@ -271,10 +272,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           isLoading: { ...state.adminState.isLoading, participants: false } 
         } 
       }));
-      console.log('✅ Store: fetchParticipantsList guardado en store - count:', data.count, 'participants length:', participants.length);
+      tvLogger.debug('Store: fetchParticipantsList guardado en store - count:', data.count, 'participants length:', participants.length);
       return participants;
     } catch (error: Error | unknown) {
-      console.error("❌ Store: fetchParticipantsList error:", error);
+      tvProdLogger.error("Store: fetchParticipantsList error:", error);
       set(state => ({ 
         adminState: { 
           ...state.adminState, 
@@ -345,7 +346,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       await get().fetchGameSessions();
       return gameSessionUUID;
     } catch (error: Error | unknown) {
-      console.error("Store: createNewSession error:", error);
+      tvProdLogger.error("Store: createNewSession error:", error);
       get().setAdminNotification('error', error instanceof Error ? error.message : 'Error desconocido');
       return null;
     } finally {
@@ -371,7 +372,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       get().setAdminNotification('success', `Juego ${sessionId.substring(0,8)} actualizado a ${status}.`);
       return true;
     } catch (error: Error | unknown) {
-      console.error("Store: updateSessionStatus error:", error);
+      tvProdLogger.error("Store: updateSessionStatus error:", error);
       get().setAdminNotification('error', error instanceof Error ? error.message : 'Error desconocido');
       return false;
     } finally {
@@ -413,7 +414,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         throw new Error('Respuesta de registro inválida');
       }
     } catch (error: Error | unknown) {
-      console.error('Error en startPlaySession:', error);
+      tvProdLogger.error('Error en startPlaySession:', error);
       if (onError) onError(error);
     }
   },

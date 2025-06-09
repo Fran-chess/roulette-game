@@ -14,6 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
+import { tvLogger } from "@/utils/tvLogger";
 
 // [modificación] Función simplificada para obtener el icono: trofeo para premios, corazón para agradecimiento
 const getPrizeIcon = (prizeName: string | undefined) => {
@@ -297,115 +298,75 @@ export default function PrizeModal() {
     return `${baseClasses} text-xl py-3`;
   }, [isTV65, isTVTouch, isTablet]);
 
-  // [modificación] useEffect para tracking de montaje/desmontaje - más eficiente
+  // useEffect para tracking de montaje/desmontaje - usando tvLogger
   useEffect(() => {
-    // [modificación] Copiar la referencia para evitar warning de cleanup
     const componentIdValue = componentId.current;
     void componentIdValue;
-    console.log(`🎁 PrizeModal [${componentIdValue}]: Componente montado`);
-    console.log(
-      `🎁 PrizeModal [${componentIdValue}]: Estado inicial - gameState: ${gameState}, answeredCorrectly: ${answeredCorrectly}`
-    );
-    console.log(
-      `🎁 PrizeModal [${componentIdValue}]: gameSession disponible:`,
-      !!gameSession,
-      gameSession?.session_id
-    );
+    tvLogger.debug(`PrizeModal [${componentIdValue}]: Componente montado`);
+    tvLogger.debug(`Estado inicial - gameState: ${gameState}, answeredCorrectly: ${answeredCorrectly}`);
+    tvLogger.debug(`gameSession disponible: ${!!gameSession}, ID: ${gameSession?.session_id}`);
 
     return () => {
-      // [modificación] Usar variable copiada en cleanup
-      console.log(`🎁 PrizeModal [${componentIdValue}]: Componente DESMONTADO`);
+      tvLogger.debug(`PrizeModal [${componentIdValue}]: Componente DESMONTADO`);
     };
-  }, [answeredCorrectly, gameState, gameSession]); // [modificación] Agregar gameSession a las dependencias
+  }, [answeredCorrectly, gameState, gameSession]);
 
-  // [modificación] Logging adicional para debug de cambios de estado
+  // Logging adicional para debug de cambios de estado
   useEffect(() => {
     if (gameState === "prize") {
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: Estado 'prize' detectado, answeredCorrectly: ${answeredCorrectly}`
-      );
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: gameSession en estado prize:`,
-        gameSession
-      );
+      tvLogger.debug(`Estado 'prize' detectado, answeredCorrectly: ${answeredCorrectly}`);
+      tvLogger.debug(`gameSession en estado prize: ${gameSession?.session_id}`);
     }
   }, [gameState, answeredCorrectly, gameSession]);
 
-  // [modificación] Función para volver a jugar - mantiene el mismo participante y va a la ruleta
+  // Función para volver a jugar - mantiene el mismo participante y va a la ruleta
   const handlePlayAgain = async () => {
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: handlePlayAgain iniciado`
-    );
-    console.log(
-      "PrizeModal: Preparando para volver a jugar con el mismo participante..."
-    );
+    tvLogger.debug(`handlePlayAgain iniciado`);
+    tvLogger.info("Preparando para volver a jugar con el mismo participante...");
 
-    // [modificación] Orden optimizado para minimizar re-renders
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: Limpiando currentQuestion`
-    );
+    // Orden optimizado para minimizar re-renders
+    tvLogger.debug(`Limpiando currentQuestion`);
     setCurrentQuestion(null);
 
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: Limpiando lastSpinResultIndex`
-    );
+    tvLogger.debug(`Limpiando lastSpinResultIndex`);
     setLastSpinResultIndex(null);
 
-    // [modificación] NO limpiar confetti inmediatamente - dejarlo por más tiempo para una celebración completa
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: Confetti se mantendrá por 5 segundos más para celebración completa`
-    );
+    // NO limpiar confetti inmediatamente - dejarlo por más tiempo para una celebración completa
+    tvLogger.debug(`Confetti se mantendrá por 5 segundos más para celebración completa`);
     setTimeout(() => {
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti después de celebración extendida`
-      );
+      tvLogger.debug(`Limpiando showConfetti después de celebración extendida`);
       setShowConfetti(false);
-    }, 5000); // [modificación] - Extendido a 5 segundos para una celebración más larga
+    }, 5000);
 
-    // [modificación] Cambiar al estado de ruleta en setTimeout para evitar conflictos
+    // Cambiar al estado de ruleta en setTimeout para evitar conflictos
     setTimeout(() => {
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: Estableciendo gameState a 'roulette'`
-      );
+      tvLogger.debug(`Estableciendo gameState a 'roulette'`);
       setGameState("roulette");
 
-      // [modificación] Resetear prizeFeedback después del cambio de estado
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: Reseteando prizeFeedback`
-      );
+      // Resetear prizeFeedback después del cambio de estado
+      tvLogger.debug(`Reseteando prizeFeedback`);
       resetPrizeFeedback();
 
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: handlePlayAgain completado`
-      );
-    }, 50); // [modificación] Pequeño delay para evitar conflictos de estado
+      tvLogger.debug(`handlePlayAgain completado`);
+    }, 50);
 
-    console.log("PrizeModal: Volviendo a la ruleta con el mismo participante");
+    tvLogger.info("Volviendo a la ruleta con el mismo participante");
   };
 
-  // [modificación] Función corregida para volver al inicio - Resetear participante pero mantener sesión activa
+  // Función corregida para volver al inicio - Resetear participante pero mantener sesión activa
   const handleGoHome = async () => {
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: handleGoHome iniciado - preparando para siguiente participante`
-    );
-    console.log(
-      "PrizeModal: Preparando para siguiente participante en la misma sesión..."
-    );
+    tvLogger.debug(`handleGoHome iniciado - preparando para siguiente participante`);
+    tvLogger.info("Preparando para siguiente participante en la misma sesión...");
 
-    // [modificación] Preservar gameSession para mantener la sesión activa
+    // Preservar gameSession para mantener la sesión activa
     const sessionForNext = gameSession;
 
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: Manteniendo sesión activa para siguiente participante:`,
-      sessionForNext?.session_id
-    );
+    tvLogger.debug(`Manteniendo sesión activa para siguiente participante: ${sessionForNext?.session_id}`);
 
     try {
-      // [modificación] CRUCIAL: Llamar endpoint para resetear solo el participante y volver la sesión a estado 'pending_player_registration'
+      // CRUCIAL: Llamar endpoint para resetear solo el participante y volver la sesión a estado 'pending_player_registration'
       if (sessionForNext?.session_id) {
-        console.log(
-          "🎁 PrizeModal: Llamando API para resetear participante y preparar sesión para siguiente jugador..."
-        );
+        tvLogger.info("Llamando API para resetear participante y preparar sesión para siguiente jugador...");
 
         const response = await fetch(
           "/api/admin/sessions/prepare-next-player",
@@ -422,69 +383,48 @@ export default function PrizeModal() {
         const data = await response.json();
 
         if (!response.ok) {
-          console.error(
-            "🎁 PrizeModal: Error al preparar sesión para siguiente participante:",
-            data
-          );
+          tvLogger.error("Error al preparar sesión para siguiente participante:", data);
           throw new Error(
             data.message ||
               "Error al preparar sesión para siguiente participante"
           );
         }
 
-        console.log(
-          "✅ PrizeModal: Sesión preparada exitosamente para siguiente participante:",
-          data
-        );
-        console.log(
-          "✅ PrizeModal: La TV debería volver a WaitingScreen y estar lista para el próximo registro"
-        );
+        tvLogger.info("Sesión preparada exitosamente para siguiente participante:", data);
+        tvLogger.info("La TV debería volver a WaitingScreen y estar lista para el próximo registro");
       }
     } catch (error) {
-      console.error(
-        "🎁 PrizeModal: Error preparando sesión para siguiente participante:",
-        error
-      );
+      tvLogger.error("Error preparando sesión para siguiente participante:", error);
       // Continuar con limpieza local aunque falle la API
     }
 
-    // [modificación] Limpiar solo el estado del participante actual, NO la sesión
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: Limpiando estado del participante actual...`
-    );
+    // Limpiar solo el estado del participante actual, NO la sesión
+    tvLogger.debug(`Limpiando estado del participante actual...`);
 
     setCurrentParticipant(null);
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
 
-    // [modificación] Mantener confetti por un momento antes de limpiar
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: Confetti se mantendrá por 3 segundos más antes de ir al inicio`
-    );
+    // Mantener confetti por un momento antes de limpiar
+    tvLogger.debug(`Confetti se mantendrá por 3 segundos más antes de ir al inicio`);
     setTimeout(() => {
-      console.log(
-        `🎁 PrizeModal [${componentId.current}]: Limpiando showConfetti antes de ir al inicio`
-      );
+      tvLogger.debug(`Limpiando showConfetti antes de ir al inicio`);
       setShowConfetti(false);
     }, 3000);
 
-    // [modificación] Verificar si estamos en contexto de TV
+    // Verificar si estamos en contexto de TV
     const isTV = window.location.pathname.includes("/tv");
 
     if (isTV) {
-      console.log(
-        "PrizeModal: Estamos en TV, volviendo a WaitingScreen pero manteniendo sesión activa para siguiente participante"
-      );
-      // [modificación] En TV, NO limpiar gameSession - solo cambiar a estado de espera
+      tvLogger.info("Estamos en TV, volviendo a WaitingScreen pero manteniendo sesión activa para siguiente participante");
+      // En TV, NO limpiar gameSession - solo cambiar a estado de espera
       // La API ya habrá actualizado la base de datos, esto es solo UI local
-      setGameState("screensaver"); // [modificación] Usar 'screensaver' para volver a waiting
+      setGameState("screensaver"); // Usar 'screensaver' para volver a waiting
       // NO limpiar setGameSession(null) - mantener la sesión activa
     } else {
-      console.log(
-        `PrizeModal: Redirigiendo a pantalla de registro para siguiente participante en la misma sesión`
-      );
-      // [modificación] En tablet/admin, navegar de vuelta al formulario de registro
+      tvLogger.info(`Redirigiendo a pantalla de registro para siguiente participante en la misma sesión`);
+      // En tablet/admin, navegar de vuelta al formulario de registro
       // manteniendo la misma sessionId para permitir nuevo participante
       if (sessionForNext?.session_id) {
         router.push(`/register/${sessionForNext.session_id}`);
@@ -495,9 +435,7 @@ export default function PrizeModal() {
       // NO limpiar gameSession ni currentSession - mantener para siguiente participante
     }
 
-    console.log(
-      `🎁 PrizeModal [${componentId.current}]: handleGoHome completado - sesión mantenida activa para siguiente participante`
-    );
+    tvLogger.debug(`handleGoHome completado - sesión mantenida activa para siguiente participante`);
   };
 
   // [modificación] Verificación más estricta para evitar renders innecesarios
@@ -506,14 +444,12 @@ export default function PrizeModal() {
     answeredCorrectly === null ||
     typeof answeredCorrectly === "undefined"
   ) {
-    // [modificación] Si gameState es 'prize' pero answeredCorrectly es null, hay estado inconsistente - resetear
+    // Si gameState es 'prize' pero answeredCorrectly es null, hay estado inconsistente - resetear
     if (
       gameState === "prize" &&
       (answeredCorrectly === null || typeof answeredCorrectly === "undefined")
     ) {
-      console.warn(
-        `🎁 PrizeModal: Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a roulette`
-      );
+      tvLogger.warn(`Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a roulette`);
       // Reset automático para evitar loops
       setTimeout(() => {
         setGameState("roulette");

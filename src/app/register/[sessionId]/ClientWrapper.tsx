@@ -78,7 +78,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
             setError(`Esta sesión no está disponible para registro (estado: ${data.data.status})`);
           }
         } catch (error: Error | unknown) {
-          console.error('Error al verificar sesión:', error);
+          // Error al verificar sesión - removido log ya que se maneja en UI
           setError(error instanceof Error ? error.message : 'Error al conectar con el servidor');
         } finally {
           setIsLoading(false);

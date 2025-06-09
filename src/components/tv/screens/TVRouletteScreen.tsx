@@ -13,6 +13,7 @@ import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
 import MassiveConfetti from '@/components/ui/MassiveConfetti';
 import { useRouletteButton } from '@/hooks/useRouletteButton';
+import { tvLogger } from '@/utils/tvLogger';
 
 /**
  * Pantalla que muestra la ruleta en la TV cuando se registra un participante
@@ -58,11 +59,11 @@ export default function TVRouletteScreen() {
   // [modificación] - Agregar showConfetti del store
   const showConfetti = useGameStore((state) => state.showConfetti);
 
-  // [modificación] Log detallado para debugging del estado actual
+  // Log detallado para debugging del estado actual - usando tvLogger para desarrollo
   useEffect(() => {
-    console.log('🔄 TV: Estado actual del juego cambiado a:', gameState);
-    console.log('🔄 TV: Datos actuales - participante:', currentParticipant ? currentParticipant.nombre : 'undefined', 'sesión:', gameSession?.session_id);
-    console.log('🔄 TV: lastSpinResultIndex:', lastSpinResultIndex, 'currentQuestion:', currentQuestion ? currentQuestion.category : 'undefined');
+    tvLogger.game(`Estado del juego: ${gameState}`);
+    tvLogger.participant(`Participante: ${currentParticipant ? currentParticipant.nombre : 'undefined'}, Sesión: ${gameSession?.session_id}`);
+    tvLogger.debug(`lastSpinResultIndex: ${lastSpinResultIndex}, currentQuestion: ${currentQuestion ? currentQuestion.category : 'undefined'}`);
   }, [gameState, currentParticipant, gameSession, lastSpinResultIndex, currentQuestion]);
 
   // [modificación] - useEffect para detectar TV65 y configurar ventana para confetti
@@ -111,9 +112,9 @@ export default function TVRouletteScreen() {
     ) {
       const selectedQuestion = questions[lastSpinResultIndex % questions.length];
       if (selectedQuestion) {
-        console.log('🎯 TV: Ruleta se detuvo en índice:', lastSpinResultIndex);
-        console.log('🎯 TV: Pregunta seleccionada:', selectedQuestion.category);
-        console.log('🎯 TV: Cambiando gameState de "roulette" a "question"');
+        tvLogger.game(`Ruleta se detuvo en índice: ${lastSpinResultIndex}`);
+        tvLogger.game(`Pregunta seleccionada: ${selectedQuestion.category}`);
+        tvLogger.game('Cambiando gameState de "roulette" a "question"');
         setCurrentQuestion(selectedQuestion);
         setGameState('question');
       }
@@ -132,16 +133,15 @@ export default function TVRouletteScreen() {
   // PERO NO interferir con el estado 'prize' cuando hay feedback válido
   // [SOLUCIONADO] NO interferir con el estado 'screensaver' para evitar parpadeo al volver al inicio
   useEffect(() => {
-    console.log('🔍 TV: Evaluando useEffect UNIFICADO con condiciones:');
-    console.log('  - currentParticipant:', !!currentParticipant, currentParticipant ? `(${currentParticipant.nombre})` : '');
-    console.log('  - gameSession:', !!gameSession);
-    console.log('  - gameSession.status:', gameSession?.status);
-    console.log('  - gameState:', gameState);
-    console.log('  - prizeFeedback.answeredCorrectly:', prizeFeedback.answeredCorrectly);
+    tvLogger.debug('Evaluando useEffect UNIFICADO con condiciones:');
+    tvLogger.debug(`- currentParticipant: ${!!currentParticipant} ${currentParticipant ? `(${currentParticipant.nombre})` : ''}`);
+    tvLogger.debug(`- gameSession: ${!!gameSession}, status: ${gameSession?.status}`);
+    tvLogger.debug(`- gameState: ${gameState}`);
+    tvLogger.debug(`- prizeFeedback.answeredCorrectly: ${prizeFeedback.answeredCorrectly}`);
     
     // [SOLUCIONADO] Si gameState es 'screensaver', significa que se está volviendo al inicio - NO interferir
     if (gameState === 'screensaver') {
-      console.log('🔄 TV: Estado es "screensaver" - NO interferir, se está volviendo al inicio');
+      tvLogger.debug('Estado es "screensaver" - NO interferir, se está volviendo al inicio');
       return;
     }
     
@@ -154,11 +154,11 @@ export default function TVRouletteScreen() {
       gameState !== 'question' &&
       !(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)
     ) {
-      console.log(`🎮 TV: Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`);
+      tvLogger.game(`Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`);
       
       // Limpiar estado residual si es necesario
       if (gameState === 'prize' && prizeFeedback.answeredCorrectly === null) {
-        console.log(`🎮 TV: Limpiando estado residual de premio SIN feedback válido`);
+        tvLogger.debug(`Limpiando estado residual de premio SIN feedback válido`);
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
@@ -169,22 +169,22 @@ export default function TVRouletteScreen() {
 
     // Caso 2: Cuando cambia el participante, limpiar estados residuales
     if (currentParticipant && currentParticipant.nombre !== 'Pendiente') {
-      console.log(`🎮 TV: Nuevo participante detectado: ${currentParticipant.nombre}, evaluando limpieza...`);
+      tvLogger.participant(`Nuevo participante detectado: ${currentParticipant.nombre}, evaluando limpieza...`);
       
       // Solo limpiar estados si NO estamos en un premio válido Y NO estamos en pregunta activa
       if (!(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null) &&
           gameState !== 'question') {
-        console.log(`🎮 TV: Limpiando estados residuales para participante: ${currentParticipant.nombre}`);
+        tvLogger.debug(`Limpiando estados residuales para participante: ${currentParticipant.nombre}`);
         resetPrizeFeedback();
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
 
         if (gameState !== 'roulette') {
-          console.log(`🎮 TV: Estableciendo gameState a 'roulette' para nuevo participante`);
+          tvLogger.game(`Estableciendo gameState a 'roulette' para nuevo participante`);
           setGameState('roulette');
         }
       } else {
-        console.log(`🎮 TV: Participante ${currentParticipant.nombre} está en estado válido (${gameState}), NO limpiando estados`);
+        tvLogger.debug(`Participante ${currentParticipant.nombre} está en estado válido (${gameState}), NO limpiando estados`);
       }
     }
   }, [
@@ -201,11 +201,11 @@ export default function TVRouletteScreen() {
   // [modificación] Función para manejar el giro de la ruleta
   const handleSpin = () => {
     if (rouletteRef.current && !rouletteButtonState.isDisabled) {
-      console.log('📺 TV: Iniciando giro de ruleta desde TV...');
+      tvLogger.game('Iniciando giro de ruleta desde TV...');
       setGameState('roulette');
       rouletteRef.current.spin();
     } else {
-      console.warn('📺 TV: No se pudo acceder a la referencia de la ruleta o botón deshabilitado');
+      tvLogger.warn('No se pudo acceder a la referencia de la ruleta o botón deshabilitado');
     }
   };
   
@@ -226,7 +226,7 @@ export default function TVRouletteScreen() {
         setQuestions(loadedQuestions);
         setQuestionsInStore(loadedQuestions);
       } catch (error) {
-        console.error('TVRouletteScreen: Error al cargar preguntas:', error);
+        tvLogger.error('Error al cargar preguntas:', error);
         const fallbackQuestions: Question[] = [
           // ... (se mantienen los fallback questions if es necesario)
         ];
@@ -251,12 +251,7 @@ export default function TVRouletteScreen() {
     }
   }, [gameState, prizeFeedback, showConfetti]);
 
-  // [modificación] Logging adicional para debugging del flujo de estados
-  useEffect(() => {
-    console.log('🔄 TV: Estado actual del juego cambiado a:', gameState);
-    console.log('🔄 TV: Datos actuales - participante:', currentParticipant?.nombre, 'sesión:', gameSession?.id);
-    console.log('🔄 TV: lastSpinResultIndex:', lastSpinResultIndex, 'currentQuestion:', currentQuestion?.category);
-  }, [gameState, currentParticipant, gameSession, lastSpinResultIndex, currentQuestion]);
+  // [REMOVIDO] Logging duplicado ya que tenemos el mismo efecto arriba con tvLogger
 
   if (!isMounted || loadingQuestions) {
     return <LoadingScreen />;

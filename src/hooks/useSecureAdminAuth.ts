@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSessionStore } from '@/store/sessionStore';
 import type { AdminUser } from '@/types';
+import { tvLogger, tvProdLogger } from '@/utils/tvLogger';
 
 interface SecureAdminAuthState {
   isAuthenticated: boolean;
@@ -62,7 +63,7 @@ export function useSecureAdminAuth() {
 
           loginWithAdmin(adminData);
 
-          console.log('✅ Sesión de admin verificada correctamente');
+          tvLogger.info('Sesión de admin verificada correctamente');
         } else {
           throw new Error('Datos de admin incompletos');
         }
@@ -78,7 +79,7 @@ export function useSecureAdminAuth() {
         setUser(null);
       }
     } catch (error) {
-      console.error('❌ Error al verificar estado de autenticación:', error);
+      tvProdLogger.error('Error al verificar estado de autenticación:', error);
       
       setAuthState({
         isAuthenticated: false,
@@ -128,7 +129,7 @@ export function useSecureAdminAuth() {
 
         loginWithAdmin(adminData);
         
-        console.log('✅ Login de admin exitoso');
+        tvLogger.info('Login de admin exitoso');
         return true;
       } else {
         const { message } = await response.json();
@@ -140,7 +141,7 @@ export function useSecureAdminAuth() {
         return false;
       }
     } catch (error) {
-      console.error('❌ Error en login de admin:', error);
+      tvProdLogger.error('Error en login de admin:', error);
       setAuthState(prev => ({
         ...prev,
         isLoading: false,
@@ -172,9 +173,9 @@ export function useSecureAdminAuth() {
 
       await sessionLogout();
       
-      console.log('✅ Logout de admin exitoso');
+      tvLogger.info('Logout de admin exitoso');
     } catch (error) {
-      console.error('❌ Error en logout de admin:', error);
+      tvProdLogger.error('Error en logout de admin:', error);
       
       setAuthState({
         isAuthenticated: false,

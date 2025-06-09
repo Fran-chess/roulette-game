@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { tvLogger } from '@/utils/tvLogger';
 import { verifyAdminToken } from './lib/adminAuth';
 
 /**
@@ -39,7 +40,7 @@ export async function middleware(request: NextRequest) {
     const adminId = await verifyAdminToken(token);
     
     if (!adminId) {
-      console.log(`🔒 Acceso denegado a ${pathname} - Token inválido o expirado`);
+      tvLogger.warn(`Acceso denegado a ${pathname} - Token inválido o expirado`);
       return NextResponse.json(
         { message: 'No autorizado - Sesión expirada' },
         { status: 401 }
