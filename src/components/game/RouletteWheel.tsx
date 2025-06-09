@@ -122,9 +122,15 @@ function getContrastYIQ(hexcolor: string): string {
   return yiq >= 135 ? "#1E1E1E" : "#FFFFFF";
 }
 
-// Función de easing para simular desaceleración realista de ruleta
+// Función de easing para simular desaceleración realista de ruleta - MEJORADA para mayor fluidez
 function customEasingFunction(t: number): number {
-  return 1 - Math.pow(1 - t, 3.5);
+  // Curva de easing más suave y realista que simula mejor la física de una ruleta real
+  // Combina una función exponencial con una cúbica para transición ultra fluida
+  if (t < 0.5) {
+    return 2 * t * t * t; // Aceleración inicial suave
+  } else {
+    return 1 - Math.pow(-2 * t + 2, 4) / 2; // Desaceleración progresiva más realista
+  }
 }
 
 // Función para agrupar preguntas por categoría y crear configuración de ruleta
@@ -196,7 +202,6 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     const [isSpinning, setIsSpinning] = useState(false);
       const [currentAngle, setCurrentAngle] = useState(0);
   const [highlightedSegment, setHighlightedSegment] = useState<number | null>(null);
-  const [pointerBounce, setPointerBounce] = useState(0); // [NUEVO] Estado para animación de rebote del puntero
   // [NUEVO] Estado para animación suave del segmento ganador
   const [winnerGlowIntensity, setWinnerGlowIntensity] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -407,12 +412,11 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         });
         ctx.restore();
 
-        // [MEJORADO] Puntero ultra visible con glow y sombras múltiples
+        // [MEJORADO] Puntero ultra visible con glow y sombras múltiples - SIN animación de rebote para mayor fluidez
         ctx.save();
         const pointerBaseHalfHeight = radius * (isMobile ? 0.10 : 0.12);
-        const bounceOffset = pointerBounce * 3; // [NUEVO] Offset de animación de rebote
-        const pointerTipX = centerX + radius - radius * 0.02 + bounceOffset;
-        const pointerBaseX = centerX + radius + radius * 0.16 + bounceOffset;
+        const pointerTipX = centerX + radius - radius * 0.02;
+        const pointerBaseX = centerX + radius + radius * 0.16;
         
         // [NUEVO] Glow pulsante adicional cuando no está girando - MÁS LENTO Y SUAVE
         if (!isSpinning) {
@@ -625,7 +629,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
 
       },
-      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, pointerBounce, isSpinning, winnerGlowIntensity]
+      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, isSpinning, winnerGlowIntensity]
     );
 
     // Ajuste de tamaño del canvas optimizado para TV 4K
@@ -737,7 +741,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       }
     }, [highlightedSegment, isSpinning, currentAngle, drawRoulette]);
 
-    // Spin
+    // Spin - OPTIMIZADO para mayor fluidez: sin rebote del puntero, easing mejorado, duración variable
     const spin = useCallback(() => {
       if (isSpinning || numSegments === 0 || !isDOMReady) return;
       setIsSpinning(true);
@@ -753,14 +757,15 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       const randomStopSegment = Math.floor(Math.random() * numSegments);
       const stopAngleOnWheel = randomStopSegment * anglePerSegment;
       
-      // Duración fija de 2424ms para sincronizar con el audio
-      // El archivo wheel-spin.mp3 dura aproximadamente 2.42 segundos (2424ms)
-      // Esta sincronización asegura que la animación termine exactamente cuando termina el sonido
-      const AUDIO_DURATION_MS = 2424; // Duración exacta del archivo de audio
+      // Duración optimizada para mayor fluidez y realismo - ligera variabilidad para naturalidad
+      // Aumentada ligeramente para permitir una desaceleración más suave y realista
+      const BASE_DURATION_MS = 2800; // Duración base más larga para mayor fluidez
+      const DURATION_VARIATION = 400; // Variación aleatoria para mayor realismo
+      const finalDuration = BASE_DURATION_MS + (Math.random() * DURATION_VARIATION - DURATION_VARIATION / 2);
       
       animationConfigRef.current = {
         startTime: performance.now(),
-        duration: AUDIO_DURATION_MS, // Cambio de Math.random() * 2000 + 6000 a duración fija
+        duration: finalDuration, // Duración optimizada para mayor fluidez
         targetAngle: randomSpins * 2 * Math.PI + stopAngleOnWheel,
         animationFrameId: 0,
       };
@@ -783,35 +788,6 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             } catch {}
           }
           
-          // [NUEVO] Iniciar animación de rebote del puntero con efecto de redibujado
-          const bounceAnimation = () => {
-            const bounceFrames = [0, 4, 2, 0]; // Menos frames, rebote más simple y suave
-            let frameIndex = 0;
-            
-            const animateBounce = () => {
-              if (frameIndex < bounceFrames.length) {
-                setPointerBounce(bounceFrames[frameIndex]);
-                // Redibujar el canvas durante la animación de rebote
-                requestAnimationFrame(() => {
-                  drawRoulette(finalEffectiveAngle);
-                });
-                frameIndex++;
-                setTimeout(animateBounce, 200); // 200ms entre frames para un rebote más pausado
-              } else {
-                setPointerBounce(0); // Asegurar que termine en 0
-                // Redibujado final
-                requestAnimationFrame(() => {
-                  drawRoulette(finalEffectiveAngle);
-                });
-              }
-            };
-            
-            animateBounce();
-          };
-          
-          // Iniciar rebote inmediatamente
-          bounceAnimation();
-          
           setTimeout(() => {
             // Seleccionar una pregunta aleatoria del segmento ganador
             const winningSegment = wheelSegments[winningSegmentIndex];
@@ -828,7 +804,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
               
               setLastSpinResultIndex(questionIndex);
             }
-          }, 800);
+          }, 600); // Reducido de 800ms a 600ms para mayor fluidez en la transición
           setIsSpinning(false);
           return;
         }
