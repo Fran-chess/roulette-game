@@ -6,7 +6,6 @@ import WaitingScreen from '@/components/tv/screens/WaitingScreen';
 import RouletteWheel from '@/components/game/RouletteWheel';
 import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
-import Logo from '@/components/ui/Logo';
 import RouletteWheelIcon from '@/components/ui/RouletteWheelIcon';
 import { Question } from '@/types';
 import { MotionDiv } from '@/components/tv/shared/MotionComponents';
@@ -176,41 +175,31 @@ export default function TVPage() {
     );
   }
 
-  // [MODIFICACIÓN] Pantalla de ruleta optimizada para tablet 800x1340
+  // [MODIFICACIÓN] Pantalla de ruleta SIN LOGO - optimizada para pantalla completa
   if (screen === 'roulette') {
     return (
       <div className="flex flex-col min-h-screen w-full bg-main-gradient">
-        {/* Header con logo responsivo - PADDING MÍNIMO */}
-        <header className="w-full flex justify-center items-center flex-shrink-0 pt-1 pb-0 md:pt-2 md:pb-1 lg:pt-4 lg:pb-2">
-          <div className="w-full flex justify-center items-center max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg">
-            <Logo 
-              size="sm"
-              animated={true} 
-              withShadow={true} 
-              className="w-full h-auto"
-            />
-          </div>
-        </header>
+        {/* ELIMINADO: Header con logo - ahora todo el espacio es para la ruleta */}
 
-        {/* Contenido principal: ruleta y botón responsivo - LAYOUT FLEXIBLE */}
-        <main className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-1 py-0 md:px-2 md:py-1 lg:px-4 lg:py-2">
-          <div className="w-full flex flex-col items-center justify-center flex-1 max-w-xs md:max-w-sm lg:max-w-md xl:max-w-lg space-y-1 md:space-y-2 lg:space-y-4">
+        {/* Contenido principal: ruleta y botón - PANTALLA COMPLETA */}
+        <main className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-2 py-4">
+          <div className="w-full flex flex-col items-center justify-center flex-1 space-y-6 md:space-y-8 lg:space-y-12">
             <MotionDiv
               key="tv-roulette"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full flex flex-col items-center justify-center space-y-1 md:space-y-2 lg:space-y-4"
+              className="w-full flex flex-col items-center justify-center space-y-6 md:space-y-8 lg:space-y-12"
             >
-              {/* Contenedor de la ruleta responsivo - TAMAÑO MASSIVAMENTE AUMENTADO PARA TABLETS */}
+              {/* Contenedor de la ruleta - TAMAÑO MAXIMIZADO PARA TODA LA PANTALLA */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="w-full max-w-[280px] md:max-w-[450px] lg:max-w-[500px] xl:max-w-[600px] aspect-square flex justify-center"
+                className="w-full aspect-square flex justify-center"
                 style={{
-                  maxWidth: isTabletPortrait ? '450px' : undefined,
-                  width: isTabletPortrait ? 'min(450px, 85vw)' : undefined,
-                  height: isTabletPortrait ? 'min(450px, 85vw)' : undefined
+                  maxWidth: isTabletPortrait ? '600px' : '70vmin',
+                  width: isTabletPortrait ? 'min(600px, 90vw)' : 'min(70vmin, 90vw)',
+                  height: isTabletPortrait ? 'min(600px, 90vw)' : 'min(70vmin, 90vw)'
                 }}
               >
                 {questions.length > 0 ? (
@@ -220,13 +209,13 @@ export default function TVPage() {
                     onSpinStateChange={setIsSpinning}
                   />
                 ) : (
-                  <div className="text-white text-center font-bold text-sm md:text-base lg:text-lg">
+                  <div className="text-white text-center font-bold text-lg md:text-xl lg:text-2xl">
                     Cargando categorías...
                   </div>
                 )}
               </MotionDiv>
 
-              {/* Botón "¡Girar la Ruleta!" completamente responsivo */}
+              {/* Botón "¡Girar la Ruleta!" - TAMAÑO AUMENTADO */}
               <MotionDiv
                 initial={{ opacity: 0, y: 50 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -235,27 +224,26 @@ export default function TVPage() {
               >
                 <button
                   className={`
-                    font-semibold md:font-bold lg:font-black text-white
+                    font-bold lg:font-black text-white
                     bg-gradient-to-r from-blue-600 to-purple-600
                     hover:from-blue-700 hover:to-purple-700
-                    text-xs md:text-sm lg:text-base xl:text-lg
-                    px-2 py-1 md:px-3 md:py-2 lg:px-4 lg:py-3
-                    min-h-[32px] md:min-h-[40px] lg:min-h-[48px]
-                    max-w-[160px] md:max-w-[200px] lg:max-w-[280px]
-                    rounded-lg md:rounded-xl lg:rounded-2xl
-                    shadow-lg md:shadow-xl lg:shadow-2xl 
-                    transform transition-all duration-200
+                    text-lg md:text-xl lg:text-2xl xl:text-3xl
+                    px-6 py-3 md:px-8 md:py-4 lg:px-12 lg:py-6
+                    min-h-[60px] md:min-h-[80px] lg:min-h-[100px]
+                    min-w-[200px] md:min-w-[300px] lg:min-w-[400px]
+                    rounded-xl md:rounded-2xl lg:rounded-3xl
+                    shadow-2xl transform transition-all duration-200
                     hover:scale-105 hover:shadow-xl
-                    focus:outline-none focus:ring-2 md:focus:ring-4 focus:ring-blue-300
+                    focus:outline-none focus:ring-4 focus:ring-blue-300
                     ${isSpinning ? 'opacity-50 cursor-not-allowed' : ''}
                   `}
                   onClick={handleSpin}
                   disabled={isSpinning}
                 >
-                  <span className="inline-block mr-1 md:mr-2 -mt-0.5 md:-mt-1 align-middle">
+                  <span className="inline-block mr-2 md:mr-3 lg:mr-4 -mt-1 align-middle">
                     <RouletteWheelIcon 
-                      className="w-3 h-3 md:w-4 md:h-4 lg:w-5 lg:h-5"
-                      size={12}
+                      className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10"
+                      size={isTabletPortrait ? 24 : 32}
                     />
                   </span>
                   {isSpinning ? '¡Girando...' : '¡Girar la Ruleta!'}
@@ -265,8 +253,12 @@ export default function TVPage() {
           </div>
         </main>
 
-        {/* Footer responsivo - ALTURA MÍNIMA */}
-        <footer className="w-full flex-shrink-0 h-[0.5vh] md:h-[1vh] lg:h-[2vh] min-h-[5px] md:min-h-[10px] lg:min-h-[20px]"></footer>
+        {/* Footer mínimo */}
+        <footer className="w-full flex-shrink-0 py-2 text-center">
+          <div className="text-white/60 text-sm md:text-base lg:text-lg">
+            Modo de prueba local
+          </div>
+        </footer>
       </div>
     );
   }
