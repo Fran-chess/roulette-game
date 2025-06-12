@@ -1089,34 +1089,34 @@ body {
     padding: 0.5rem !important;
   }
 
-  /* Cronómetro ULTRA compacto - sin scroll */
+  /* Cronómetro ULTRA compacto - fuentes muy pequeñas */
   .timer-text-compact {
-    font-size: 1.5rem !important;
+    font-size: 1.25rem !important;
     font-weight: 900 !important;
     line-height: 1 !important;
     text-shadow: 0 3px 6px rgba(0, 0, 0, 0.9) !important;
   }
 
   .timer-seconds-compact {
-    font-size: 0.65rem !important;
+    font-size: 0.55rem !important;
     font-weight: 600 !important;
     margin-top: 0.25rem !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
   }
 
-  /* Contenedor de pregunta ULTRA compacto - sin scroll */
+  /* Contenedor de pregunta ULTRA compacto - fuentes muy pequeñas */
   .question-container-compact {
     background: rgba(0, 0, 0, 0.4) !important;
     backdrop-filter: blur(20px) !important;
-    border-radius: 0.625rem !important;
+    border-radius: 0.5rem !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-    padding: 0.625rem 0.875rem !important;
-    margin-bottom: 0.5rem !important;
+    padding: 0.5rem 0.75rem !important;
+    margin-bottom: 0.375rem !important;
   }
 
   .question-container-compact h2 {
-    font-size: 1.25rem !important;
+    font-size: 1rem !important;
     line-height: 1.25 !important;
     margin-bottom: 0 !important;
     text-align: center !important;
@@ -1125,24 +1125,24 @@ body {
     text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7) !important;
   }
 
-  /* Grid de opciones ULTRA compacto - sin scroll */
+  /* Grid de opciones ULTRA compacto - fuentes muy pequeñas */
   .options-grid-compact {
     display: grid !important;
     grid-template-columns: 1fr !important;
-    gap: 0.375rem !important;
+    gap: 0.25rem !important;
     max-width: 100% !important;
     margin: 0 auto !important;
   }
 
-  /* Opciones de respuesta ULTRA compactas - sin scroll */
+  /* Opciones de respuesta ULTRA compactas - fuentes muy pequeñas */
   .answer-option-compact {
-    padding: 0.5rem 0.875rem !important;
-    font-size: 0.9rem !important;
-    min-height: 36px !important;
-    max-height: 52px !important;
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    min-height: 32px !important;
+    max-height: 46px !important;
     border-radius: 0.5rem !important;
     border-width: 2px !important;
-    line-height: 1.15 !important;
+    line-height: 1.1 !important;
     font-weight: 600 !important;
     display: flex !important;
     align-items: center !important;
@@ -1165,11 +1165,11 @@ body {
     transform: translateY(0px) scale(0.98) !important;
   }
 
-  /* Íconos de opciones ULTRA compactos - sin scroll */
+  /* Íconos de opciones ULTRA compactos - fuentes muy pequeñas */
   .option-icon-compact {
-    width: 20px !important;
-    height: 20px !important;
-    font-size: 0.75rem !important;
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0.65rem !important;
     font-weight: 800 !important;
     margin-left: 0.5rem !important;
     background: rgba(255, 255, 255, 0.25) !important;

@@ -119,7 +119,7 @@ function Timer({
                 fontSize: isTV65 ? "120px" : isTVTouch ? "72px" : "48px",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               } : {
-                fontSize: "1.5rem",
+                fontSize: "1.25rem",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9), 0 6px 12px rgba(0, 0, 0, 0.7)",
               }}
             >
@@ -133,7 +133,7 @@ function Timer({
                 fontSize: isTV65 ? "36px" : isTVTouch ? "24px" : "16px",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               } : {
-                fontSize: "0.65rem",
+                fontSize: "0.55rem",
                 textShadow: "0 2px 4px rgba(0, 0, 0, 0.9)",
               }}
             >
@@ -535,16 +535,16 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         hyphens: "auto" as const,
       };
     } else if (isTabletPortrait) {
-      // Estilos ULTRA COMPACTOS para tablet vertical - sin scroll
+      // Estilos ULTRA COMPACTOS para tablet vertical - FUENTES MUY PEQUEÑAS
       return {
-        fontSize: textMetrics.isLong ? "0.8rem" : "0.9rem",
-        padding: "0.5rem 0.875rem",
-        minHeight: "36px",
-        maxHeight: "52px",
+        fontSize: textMetrics.isLong ? "0.7rem" : "0.75rem",
+        padding: "0.375rem 0.75rem",
+        minHeight: "32px",
+        maxHeight: "46px",
         borderRadius: "0.5rem",
         borderWidth: "2px",
         fontWeight: "600",
-        lineHeight: "1.15",
+        lineHeight: "1.1",
         textShadow: "0 2px 4px rgba(0, 0, 0, 0.7)",
         boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05)",
         display: "flex",
@@ -686,13 +686,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   ? "0 25px 50px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1)"
                   : "0 20px 40px rgba(0, 0, 0, 0.3)",
               } : {
-                padding: "0.625rem 0.875rem",
-                marginBottom: "0.5rem",
+                padding: "0.5rem 0.75rem",
+                marginBottom: "0.375rem",
                 backgroundColor: "rgba(0, 0, 0, 0.4)",
                 backdropFilter: "blur(20px)",
-                borderRadius: "0.625rem",
+                borderRadius: "0.5rem",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
+                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
               }}
             >
               <h2
@@ -703,7 +703,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
                   fontWeight: "900",
                 } : {
-                  fontSize: "1.25rem",
+                  fontSize: "1rem",
                   marginBottom: "0",
                   textShadow: "0 3px 6px rgba(0, 0, 0, 0.9), 0 6px 12px rgba(0, 0, 0, 0.7)",
                   fontWeight: "800",
@@ -726,7 +726,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
               } : {
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: "0.375rem",
+                gap: "0.25rem",
                 maxWidth: "100%",
                 margin: "0 auto",
               }}
@@ -797,7 +797,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                     ) : isTabletPortrait ? (
                       // Layout ULTRA COMPACTO para tablet vertical
                       <>
-                        <span className="flex-1 leading-tight break-words text-sm">
+                        <span className="flex-1 leading-tight break-words text-xs">
                           {option.text}
                         </span>
                         <div className="option-icon-compact">
