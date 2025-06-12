@@ -323,12 +323,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       }
     }
 
-    // Actualizar feedback (siempre local para tiempo agotado)
+    // Actualizar feedback (siempre local para tiempo agotado) SIN premios
     setPrizeFeedback({
       answeredCorrectly: false,
       explanation: question.explanation || "",
       correctOption: correctOption?.text || "",
-      prizeName: "",
+      prizeName: "", // SIN premios para timeout
     });
 
     setTimeout(() => {
@@ -425,24 +425,24 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             });
           }
         } else {
-          // Sin participante: usar lógica local
+          // Sin participante: usar lógica local SIN premios
           console.warn('⚠️ QuestionDisplay: No hay participante actual, usando lógica local');
           setPrizeFeedback({
             answeredCorrectly: correctAnswer,
             explanation: !correctAnswer ? question.explanation || "" : "",
             correctOption: correctOption?.text || "",
-            prizeName: correctAnswer ? question.prize || "" : "",
+            prizeName: "", // SIN premios en modo TV local
           });
         }
       } catch (error) {
         console.error('❌ QuestionDisplay: Error de red al guardar jugada:', error);
         
-        // Fallback: usar lógica local si hay error de red
+        // Fallback: usar lógica local SIN premios si hay error de red
         setPrizeFeedback({
           answeredCorrectly: correctAnswer,
           explanation: !correctAnswer ? question.explanation || "" : "",
           correctOption: correctOption?.text || "",
-          prizeName: correctAnswer ? question.prize || "" : "",
+          prizeName: "", // SIN premios en modo fallback
         });
 
         if (currentParticipant) {

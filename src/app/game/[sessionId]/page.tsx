@@ -316,8 +316,11 @@ export default function GamePage() {
               <button
                 className={`${rouletteButtonState.buttonClasses} text-white font-extrabold focus:outline-none focus:ring-4 focus:ring-blue-300`}
                 onClick={handleSpin}
+                onTouchStart={rouletteButtonState.handleRippleEffect}
+                onMouseDown={rouletteButtonState.handleRippleEffect}
                 disabled={rouletteButtonState.isDisabled}
                 aria-label={rouletteButtonState.buttonText}
+                style={{ position: 'relative', overflow: 'hidden' }}
               >
                 <span className={`inline-block mr-3 -mt-1 align-middle ${rouletteButtonState.iconClasses}`}>
                   <RouletteWheelIcon className="w-7 h-7" />
