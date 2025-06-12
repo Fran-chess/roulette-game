@@ -1089,67 +1089,67 @@ body {
     padding: 0.5rem !important;
   }
 
-  /* Cronómetro compacto */
+  /* Cronómetro MÁS compacto */
   .timer-text-compact {
-    font-size: 2rem !important;
+    font-size: 1.75rem !important;
     font-weight: 900 !important;
     line-height: 1 !important;
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.9) !important;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.9) !important;
   }
 
   .timer-seconds-compact {
-    font-size: 0.85rem !important;
+    font-size: 0.75rem !important;
     font-weight: 600 !important;
     margin-top: 0.25rem !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
   }
 
-  /* Contenedor de pregunta compacto */
+  /* Contenedor de pregunta MÁS compacto */
   .question-container-compact {
     background: rgba(0, 0, 0, 0.4) !important;
     backdrop-filter: blur(20px) !important;
-    border-radius: 1rem !important;
+    border-radius: 0.75rem !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
-    padding: 1.25rem 1.5rem !important;
-    margin-bottom: 1rem !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3) !important;
+    padding: 0.875rem 1rem !important;
+    margin-bottom: 0.75rem !important;
   }
 
   .question-container-compact h2 {
-    font-size: 1.75rem !important;
+    font-size: 1.5rem !important;
     line-height: 1.25 !important;
     margin-bottom: 0 !important;
     text-align: center !important;
     font-weight: 800 !important;
     color: #ffffff !important;
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7) !important;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7) !important;
   }
 
-  /* Grid de opciones compacto */
+  /* Grid de opciones MÁS compacto */
   .options-grid-compact {
     display: grid !important;
     grid-template-columns: 1fr !important;
-    gap: 0.75rem !important;
+    gap: 0.5rem !important;
     max-width: 100% !important;
     margin: 0 auto !important;
   }
 
-  /* Opciones de respuesta compactas */
+  /* Opciones de respuesta MÁS compactas */
   .answer-option-compact {
-    padding: 0.875rem 1.25rem !important;
-    font-size: 1.1rem !important;
-    min-height: 50px !important;
-    max-height: 70px !important;
-    border-radius: 0.75rem !important;
+    padding: 0.625rem 1rem !important;
+    font-size: 1rem !important;
+    min-height: 42px !important;
+    max-height: 60px !important;
+    border-radius: 0.625rem !important;
     border-width: 2px !important;
-    line-height: 1.25 !important;
+    line-height: 1.2 !important;
     font-weight: 600 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     transition: all 0.3s ease !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05) !important;
     overflow: hidden !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
@@ -1165,13 +1165,13 @@ body {
     transform: translateY(0px) scale(0.98) !important;
   }
 
-  /* Íconos de opciones compactos */
+  /* Íconos de opciones MÁS compactos */
   .option-icon-compact {
-    width: 28px !important;
-    height: 28px !important;
-    font-size: 1rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 0.875rem !important;
     font-weight: 800 !important;
-    margin-left: 0.75rem !important;
+    margin-left: 0.625rem !important;
     background: rgba(255, 255, 255, 0.25) !important;
     border-radius: 50% !important;
     display: flex !important;
