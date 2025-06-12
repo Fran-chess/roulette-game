@@ -43,10 +43,10 @@ function Timer({
     return () => clearTimeout(timer);
   }, [seconds, onTimeUp]);
 
-  // Cronómetro circular responsivo - MÁS REDUCIDO para mejor proporción
-  const timerSize = isTV65 ? 500 : isTabletPortrait ? 100 : isTVTouch ? 300 : 200;
-  const radius = isTV65 ? 200 : isTabletPortrait ? 40 : isTVTouch ? 120 : 80;
-  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 6 : isTVTouch ? 20 : 15;
+  // Cronómetro circular responsivo - ULTRA REDUCIDO para que todo quepa sin scroll
+  const timerSize = isTV65 ? 500 : isTabletPortrait ? 80 : isTVTouch ? 300 : 200;
+  const radius = isTV65 ? 200 : isTabletPortrait ? 32 : isTVTouch ? 120 : 80;
+  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 5 : isTVTouch ? 20 : 15;
 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -119,8 +119,8 @@ function Timer({
                 fontSize: isTV65 ? "120px" : isTVTouch ? "72px" : "48px",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               } : {
-                fontSize: "1.75rem",
-                textShadow: "0 4px 8px rgba(0, 0, 0, 0.9), 0 8px 16px rgba(0, 0, 0, 0.7)",
+                fontSize: "1.5rem",
+                textShadow: "0 3px 6px rgba(0, 0, 0, 0.9), 0 6px 12px rgba(0, 0, 0, 0.7)",
               }}
             >
               {seconds}
@@ -133,7 +133,7 @@ function Timer({
                 fontSize: isTV65 ? "36px" : isTVTouch ? "24px" : "16px",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               } : {
-                fontSize: "0.75rem",
+                fontSize: "0.65rem",
                 textShadow: "0 2px 4px rgba(0, 0, 0, 0.9)",
               }}
             >
@@ -535,18 +535,18 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         hyphens: "auto" as const,
       };
     } else if (isTabletPortrait) {
-      // Estilos MÁS COMPACTOS para tablet vertical
+      // Estilos ULTRA COMPACTOS para tablet vertical - sin scroll
       return {
-        fontSize: textMetrics.isLong ? "0.9rem" : "1rem",
-        padding: "0.625rem 1rem",
-        minHeight: "42px",
-        maxHeight: "60px",
-        borderRadius: "0.625rem",
+        fontSize: textMetrics.isLong ? "0.8rem" : "0.9rem",
+        padding: "0.5rem 0.875rem",
+        minHeight: "36px",
+        maxHeight: "52px",
+        borderRadius: "0.5rem",
         borderWidth: "2px",
         fontWeight: "600",
-        lineHeight: "1.2",
+        lineHeight: "1.15",
         textShadow: "0 2px 4px rgba(0, 0, 0, 0.7)",
-        boxShadow: "0 3px 6px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05)",
+        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -649,7 +649,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       >
         {/* CRONÓMETRO CENTRADO EN LA PARTE SUPERIOR */}
         <div className={`w-full flex justify-center items-center ${
-          isTabletPortrait ? 'pt-2 pb-1' : 'pt-8 pb-4'
+          isTabletPortrait ? 'pt-1 pb-0' : 'pt-8 pb-4'
         }`}>
           <motion.div
             variants={itemVariants}
@@ -668,7 +668,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
 
         {/* CONTENIDO PRINCIPAL: PREGUNTA Y OPCIONES */}
         <main className={`flex-1 flex flex-col justify-center items-center ${
-          isTabletPortrait ? 'px-3 py-1' : 'px-8 py-4'
+          isTabletPortrait ? 'px-2 py-0' : 'px-8 py-4'
         }`}>
           <div className="w-full max-w-4xl">
             {/* Contenedor de pregunta COMPACTO */}
@@ -686,13 +686,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   ? "0 25px 50px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1)"
                   : "0 20px 40px rgba(0, 0, 0, 0.3)",
               } : {
-                padding: "0.875rem 1rem",
-                marginBottom: "0.75rem",
+                padding: "0.625rem 0.875rem",
+                marginBottom: "0.5rem",
                 backgroundColor: "rgba(0, 0, 0, 0.4)",
                 backdropFilter: "blur(20px)",
-                borderRadius: "0.75rem",
+                borderRadius: "0.625rem",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow: "0 8px 16px rgba(0, 0, 0, 0.3)",
+                boxShadow: "0 6px 12px rgba(0, 0, 0, 0.3)",
               }}
             >
               <h2
@@ -703,9 +703,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
                   fontWeight: "900",
                 } : {
-                  fontSize: "1.5rem",
+                  fontSize: "1.25rem",
                   marginBottom: "0",
-                  textShadow: "0 4px 8px rgba(0, 0, 0, 0.9), 0 8px 16px rgba(0, 0, 0, 0.7)",
+                  textShadow: "0 3px 6px rgba(0, 0, 0, 0.9), 0 6px 12px rgba(0, 0, 0, 0.7)",
                   fontWeight: "800",
                 }}
               >
@@ -726,7 +726,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
               } : {
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: "0.5rem",
+                gap: "0.375rem",
                 maxWidth: "100%",
                 margin: "0 auto",
               }}
@@ -795,9 +795,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                         </div>
                       </>
                     ) : isTabletPortrait ? (
-                      // Layout COMPACTO para tablet vertical
+                      // Layout ULTRA COMPACTO para tablet vertical
                       <>
-                        <span className="flex-1 leading-tight break-words">
+                        <span className="flex-1 leading-tight break-words text-sm">
                           {option.text}
                         </span>
                         <div className="option-icon-compact">
@@ -830,12 +830,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
           </div>
         </main>
 
-        {/* Footer mínimo */}
-        <footer className={`text-center ${isTabletPortrait ? 'py-1' : 'py-4'}`}>
+        {/* Footer ultra mínimo */}
+        <footer className={`text-center ${isTabletPortrait ? 'py-0.5' : 'py-4'}`}>
           <div
             className="text-white/60"
             style={{
-              fontSize: isTV65 ? "24px" : isTabletPortrait ? "12px" : "16px",
+              fontSize: isTV65 ? "24px" : isTabletPortrait ? "10px" : "16px",
             }}
           >
             {currentParticipant?.nombre &&
