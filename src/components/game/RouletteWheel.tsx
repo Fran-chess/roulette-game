@@ -198,7 +198,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     const [isLandscape, setIsLandscape] = useState(false);
     const [isTablet, setIsTablet] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
-    const [isTablet800, setIsTablet800] = useState(false); // [NUEVO] Estado para tablet 800x1340
+    const [isTabletPortrait, setIsTabletPortrait] = useState(false); // [NUEVO] Universal para tablets verticales
 
     const [isSpinning, setIsSpinning] = useState(false);
       const [currentAngle, setCurrentAngle] = useState(0);
@@ -241,12 +241,17 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         setIsTablet(width >= 768 && width <= 1280);
         setIsMobile(width < 768);
         
-        // [NUEVO] Detectar tablet 800x1340 específicamente
-        const isTablet800x1340 = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350);
-        setIsTablet800(isTablet800x1340);
+        // [NUEVO] Detectar tablets en orientación vertical universal
+        const isTabletPortraitResolution = 
+          width >= 768 && width <= 1200 && 
+          height > width && // Orientación vertical
+          height >= 1000 && // Altura mínima para tablets
+          !((width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160)); // Excluir TV65
         
-        if (isTablet800x1340) {
-          console.log('🎰 RouletteWheel: Tablet 800x1340 detectada, aplicando optimizaciones específicas');
+        setIsTabletPortrait(isTabletPortraitResolution);
+        
+        if (isTabletPortraitResolution) {
+          console.log('🎰 RouletteWheel: Tablet en orientación vertical detectada, aplicando optimizaciones universales');
         }
       };
       
@@ -293,10 +298,10 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
         // Fuente base optimizada según dispositivo
         let baseFontSize;
-        if (isTablet800) {
-          // [NUEVO] Tamaño específico para tablet 800x1340 - AUMENTADO más para ruleta más grande
-          baseFontSize = Math.max(20, radius * 0.12);
-        } else {
+                  if (isTabletPortrait) {
+            // [NUEVO] Tamaño optimizado para tablets verticales - AUMENTADO más para ruleta más grande
+            baseFontSize = Math.max(20, radius * 0.12);
+          } else {
           // Fuente base existente para otros dispositivos
           baseFontSize = Math.max(20, radius * (isMobile ? 0.08 : 0.12));
         }
@@ -332,7 +337,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           if (highlightedSegment === i) {
             // [NUEVO] Glow suave y fluido para el segmento ganador
             const glowAlpha = 0.3 + winnerGlowIntensity * 0.4; // Intensidad base + variación suave
-            const shadowBlurIntensity = isTablet800 ? 15 + winnerGlowIntensity * 10 : 20 + winnerGlowIntensity * 15; // [NUEVO] Ajuste para tablet 800
+                          const shadowBlurIntensity = isTabletPortrait ? 15 + winnerGlowIntensity * 10 : 20 + winnerGlowIntensity * 15; // [NUEVO] Ajuste para tablets verticales
             
             // Glow exterior dorado brillante con animación suave
             ctx.save();
@@ -344,7 +349,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             ctx.fill();
             
             // Borde exterior grueso y blanco como aureola con intensidad variable
-            ctx.lineWidth = isTablet800 ? 4 + winnerGlowIntensity * 2 : 6 + winnerGlowIntensity * 4; // [NUEVO] Grosor ajustado para tablet 800
+                          ctx.lineWidth = isTabletPortrait ? 4 + winnerGlowIntensity * 2 : 6 + winnerGlowIntensity * 4; // [NUEVO] Grosor ajustado para tablets verticales
             ctx.strokeStyle = `rgba(255, 255, 255, ${0.7 + winnerGlowIntensity * 0.3})`;
             ctx.shadowColor = `rgba(255, 215, 0, ${glowAlpha * 0.8})`;
             ctx.shadowBlur = shadowBlurIntensity * 0.7;
@@ -361,7 +366,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           const textAngle = startAngle + anglePerSegment / 2;
           ctx.rotate(textAngle);
 
-          const textX = radius * (isTablet800 ? 0.58 : isMobile ? 0.52 : 0.62); // [NUEVO] Posición ajustada para tablet 800
+                      const textX = radius * (isTabletPortrait ? 0.58 : isMobile ? 0.52 : 0.62); // [NUEVO] Posición ajustada para tablets verticales
 
           // Capitaliza cada palabra
           const displayText = segment.text
@@ -375,7 +380,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           // Disminuye tamaño de fuente hasta que quepa el texto
           let fontSizeLocal = baseFontSize;
           ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
-          const minFontSize = isTablet800 ? 10 : 8; // [NUEVO] Tamaño mínimo ajustado para tablet 800
+                      const minFontSize = isTabletPortrait ? 10 : 8; // [NUEVO] Tamaño mínimo ajustado para tablets verticales
           while (
             ctx.measureText(displayText).width > radius * 0.75 &&
             fontSizeLocal > minFontSize
@@ -388,7 +393,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           if (highlightedSegment === i) {
             // [NUEVO] Texto ganador con efecto de brillo suave y fluido
             const textGlowAlpha = 0.6 + winnerGlowIntensity * 0.4; // Alpha variable para el texto
-            const textBlurIntensity = isTablet800 ? 12 + winnerGlowIntensity * 8 : 15 + winnerGlowIntensity * 10; // [NUEVO] Blur ajustado para tablet 800
+                          const textBlurIntensity = isTabletPortrait ? 12 + winnerGlowIntensity * 8 : 15 + winnerGlowIntensity * 10; // [NUEVO] Blur ajustado para tablets verticales
             
             ctx.fillStyle = "#FFFFFF"; // Texto blanco brillante
             
@@ -419,9 +424,9 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
             // Texto normal con sombra elegante
             ctx.fillStyle = getContrastYIQ(segment.color);
             ctx.shadowColor = "rgba(0,0,0,0.5)";
-            ctx.shadowBlur = isTablet800 ? 6 : 8; // [NUEVO] Sombra ajustada para tablet 800
-            ctx.shadowOffsetX = isTablet800 ? 1 : 2; // [NUEVO] Offset ajustado para tablet 800
-            ctx.shadowOffsetY = isTablet800 ? 1 : 2; // [NUEVO] Offset ajustado para tablet 800
+                          ctx.shadowBlur = isTabletPortrait ? 6 : 8; // [NUEVO] Sombra ajustada para tablets verticales
+              ctx.shadowOffsetX = isTabletPortrait ? 1 : 2; // [NUEVO] Offset ajustado para tablets verticales
+              ctx.shadowOffsetY = isTabletPortrait ? 1 : 2; // [NUEVO] Offset ajustado para tablets verticales
             ctx.fillText(displayText, textX, 0);
           }
           
@@ -431,9 +436,9 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
         // [MEJORADO] Puntero ultra visible con glow y sombras múltiples - SIN animación de rebote para mayor fluidez
         ctx.save();
-        const pointerBaseHalfHeight = radius * (isTablet800 ? 0.09 : isMobile ? 0.10 : 0.12); // [NUEVO] Ajustado para tablet 800
-        const pointerTipX = centerX + radius - radius * 0.02;
-        const pointerBaseX = centerX + radius + radius * (isTablet800 ? 0.12 : 0.16); // [NUEVO] Ajustado para tablet 800
+                  const pointerBaseHalfHeight = radius * (isTabletPortrait ? 0.09 : isMobile ? 0.10 : 0.12); // [NUEVO] Ajustado para tablets verticales
+          const pointerTipX = centerX + radius - radius * 0.02;
+          const pointerBaseX = centerX + radius + radius * (isTabletPortrait ? 0.12 : 0.16); // [NUEVO] Ajustado para tablets verticales
         
         // [NUEVO] Glow pulsante adicional cuando no está girando - MÁS LENTO Y SUAVE
         if (!isSpinning) {
@@ -441,7 +446,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           
           // Glow exterior pulsante
           ctx.shadowColor = "#FFD700";
-          ctx.shadowBlur = isTablet800 ? 25 + pulseIntensity * 10 : 35 + pulseIntensity * 15; // [NUEVO] Blur ajustado para tablet 800
+                      ctx.shadowBlur = isTabletPortrait ? 25 + pulseIntensity * 10 : 35 + pulseIntensity * 15; // [NUEVO] Blur ajustado para tablets verticales
           ctx.shadowOffsetX = 0;
           ctx.shadowOffsetY = 0;
           ctx.beginPath();
@@ -455,7 +460,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         
         // [NUEVO] CAPA 1: Glow exterior ultra brillante
         ctx.shadowColor = "#FFD700"; // Dorado brillante
-        ctx.shadowBlur = isTablet800 ? 18 : 25; // [NUEVO] Blur ajustado para tablet 800
+                  ctx.shadowBlur = isTabletPortrait ? 18 : 25; // [NUEVO] Blur ajustado para tablets verticales
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.beginPath();
@@ -468,9 +473,9 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         
         // [NUEVO] CAPA 2: Sombra profunda debajo del puntero
         ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-        ctx.shadowBlur = isTablet800 ? 10 : 15; // [NUEVO] Blur ajustado para tablet 800
-        ctx.shadowOffsetX = isTablet800 ? 5 : 8; // [NUEVO] Offset ajustado para tablet 800
-        ctx.shadowOffsetY = isTablet800 ? 8 : 12; // [NUEVO] Offset ajustado para tablet 800
+                  ctx.shadowBlur = isTabletPortrait ? 10 : 15; // [NUEVO] Blur ajustado para tablets verticales
+          ctx.shadowOffsetX = isTabletPortrait ? 5 : 8; // [NUEVO] Offset ajustado para tablets verticales
+          ctx.shadowOffsetY = isTabletPortrait ? 8 : 12; // [NUEVO] Offset ajustado para tablets verticales
         ctx.beginPath();
         ctx.moveTo(pointerBaseX, centerY - pointerBaseHalfHeight);
         ctx.lineTo(pointerTipX, centerY);
@@ -504,28 +509,28 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         
         // [NUEVO] CAPA 4: Borde brillante con glow
         ctx.strokeStyle = "#5ACCC1"; // Verde-salud brillante
-        ctx.lineWidth = isTablet800 ? 3 : isMobile ? 4 : 6; // [NUEVO] Grosor ajustado para tablet 800
-        ctx.shadowColor = "#5ACCC1";
-        ctx.shadowBlur = isTablet800 ? 8 : 12; // [NUEVO] Blur ajustado para tablet 800
+                  ctx.lineWidth = isTabletPortrait ? 3 : isMobile ? 4 : 6; // [NUEVO] Grosor ajustado para tablets verticales
+          ctx.shadowColor = "#5ACCC1";
+          ctx.shadowBlur = isTabletPortrait ? 8 : 12; // [NUEVO] Blur ajustado para tablets verticales
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.stroke();
         
         // [NUEVO] CAPA 5: Borde interior blanco brillante
         ctx.strokeStyle = "#FFFFFF";
-        ctx.lineWidth = isTablet800 ? 2 : isMobile ? 2 : 3; // [NUEVO] Grosor ajustado para tablet 800
-        ctx.shadowColor = "#FFFFFF";
-        ctx.shadowBlur = isTablet800 ? 6 : 8; // [NUEVO] Blur ajustado para tablet 800
+                  ctx.lineWidth = isTabletPortrait ? 2 : isMobile ? 2 : 3; // [NUEVO] Grosor ajustado para tablets verticales
+          ctx.shadowColor = "#FFFFFF";
+          ctx.shadowBlur = isTabletPortrait ? 6 : 8; // [NUEVO] Blur ajustado para tablets verticales
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.stroke();
         
         // [NUEVO] CAPA 6: Punto de luz en la punta del puntero
         ctx.beginPath();
-        ctx.arc(pointerTipX, centerY, radius * (isTablet800 ? 0.012 : 0.015), 0, 2 * Math.PI); // [NUEVO] Radio ajustado para tablet 800
-        ctx.fillStyle = "#FFFFFF";
-        ctx.shadowColor = "#FFD700";
-        ctx.shadowBlur = isTablet800 ? 10 : 15; // [NUEVO] Blur ajustado para tablet 800
+                  ctx.arc(pointerTipX, centerY, radius * (isTabletPortrait ? 0.012 : 0.015), 0, 2 * Math.PI); // [NUEVO] Radio ajustado para tablets verticales
+          ctx.fillStyle = "#FFFFFF";
+          ctx.shadowColor = "#FFD700";
+          ctx.shadowBlur = isTabletPortrait ? 10 : 15; // [NUEVO] Blur ajustado para tablets verticales
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         ctx.fill();
@@ -533,7 +538,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         ctx.restore();
 
         // Círculo central tecnológico con efectos múltiples
-        const centralRadius = radius * (isTablet800 ? 0.12 : isMobile ? 0.12 : 0.14); // [NUEVO] Radio ajustado para tablet 800
+                  const centralRadius = radius * (isTabletPortrait ? 0.12 : isMobile ? 0.12 : 0.14); // [NUEVO] Radio ajustado para tablets verticales
         
         // CAPA 1: Sombra exterior profunda para relieve
         ctx.save();
@@ -625,7 +630,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         
         // Borde exterior brillante
         ctx.strokeStyle = "#5ACCC1"; // Verde-salud brillante
-        ctx.lineWidth = isTablet800 ? 4 : 6;
+        ctx.lineWidth = isTabletPortrait ? 4 : 6;
         ctx.shadowColor = "#5ACCC1";
         ctx.shadowBlur = 15;
         ctx.shadowOffsetX = 0;
@@ -636,9 +641,9 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         // CAPA 6: Borde interior metálico
         ctx.save();
         ctx.beginPath();
-        ctx.arc(centerX, centerY, centralRadius - (isTablet800 ? 2 : 3), 0, 2 * Math.PI);
+        ctx.arc(centerX, centerY, centralRadius - (isTabletPortrait ? 2 : 3), 0, 2 * Math.PI);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
-        ctx.lineWidth = isTablet800 ? 2 : 3;
+        ctx.lineWidth = isTabletPortrait ? 2 : 3;
         ctx.shadowColor = "rgba(255, 255, 255, 0.5)";
         ctx.shadowBlur = 8;
         ctx.stroke();
@@ -646,7 +651,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
 
       },
-      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, isSpinning, winnerGlowIntensity, isTablet800]
+      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, isSpinning, winnerGlowIntensity, isTabletPortrait]
     );
 
     // Ajuste de tamaño del canvas optimizado para diferentes dispositivos
@@ -662,11 +667,11 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       let size = Math.min(containerWidth, containerHeight);
 
       // Ajuste mínimos optimizados según dispositivo
-      if (isTablet800) {
-        // [NUEVO] Tamaños específicos para tablet 800x1340
-        size = Math.max(350, Math.min(size, 450));
-        console.log('🎰 RouletteWheel: Aplicando tamaño para tablet 800x1340:', size);
-      } else if (isMobile) {
+              if (isTabletPortrait) {
+          // [NUEVO] Tamaños optimizados para tablets en orientación vertical
+          size = Math.max(350, Math.min(size, 450));
+          console.log('🎰 RouletteWheel: Aplicando tamaño para tablets verticales:', size);
+        } else if (isMobile) {
         size = Math.max(300, Math.min(size, 500));
       } else if (isTablet) {
         size = Math.max(450, Math.min(size, 700));
@@ -684,7 +689,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       if (!isSpinning && numSegments > 0) {
         drawRoulette(currentAngle, size);
       }
-    }, [currentAngle, numSegments, isSpinning, isMobile, isTablet, isTablet800, drawRoulette]);
+    }, [currentAngle, numSegments, isSpinning, isMobile, isTablet, isTabletPortrait, drawRoulette]);
 
     useEffect(() => {
       if (!isDOMReady || !canUseDOM) return;

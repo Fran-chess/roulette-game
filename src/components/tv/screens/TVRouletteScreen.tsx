@@ -28,7 +28,7 @@ export default function TVRouletteScreen() {
   
   // [modificación] - Estados para confetti optimizado para todos los dispositivos
   const [isTV65, setIsTV65] = useState(false);
-  const [isTablet800, setIsTablet800] = useState(false); // [NUEVO] Estado para tablet 800x1340
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false); // [NUEVO] Universal para tablets verticales
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   
   // [modificación] ID único para tracking de logs
@@ -47,7 +47,7 @@ export default function TVRouletteScreen() {
   const [isSpinning, setIsSpinning] = useState(false);
   
   // [NUEVO] Hook neumórfico para el botón
-  const rouletteButtonState = useRouletteButton(isSpinning, isTablet800 ? 'tablet' : 'tv'); // [NUEVO] Usar tipo tablet para 800x1340
+  const rouletteButtonState = useRouletteButton(isSpinning, isTabletPortrait ? 'tablet' : 'tv'); // [NUEVO] Usar tipo tablet para tablets verticales
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
   const setQuestionsInStore = useGameStore((state) => state.setQuestions);
   const gameState: GameState = useGameStore((state) => state.gameState);
@@ -77,16 +77,20 @@ export default function TVRouletteScreen() {
       const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
       setIsTV65(isTV65Resolution);
       
-      // [NUEVO] Detectar tablet 800x1340
-      const isTablet800Resolution = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350);
-      setIsTablet800(isTablet800Resolution);
+      // [NUEVO] Detectar tablets en orientación vertical universal
+      const isTabletPortraitResolution = 
+        width >= 768 && width <= 1200 && 
+        height > width && // Orientación vertical
+        height >= 1000 && // Altura mínima para tablets
+        !isTV65Resolution; // Excluir TV65
       
+      setIsTabletPortrait(isTabletPortraitResolution);
       setWindowSize({ width, height });
       
       if (isTV65Resolution) {
         console.log(`🎉 TVRouletteScreen: Confetti optimizado para TV65 activado - ${width}x${height}`);
-      } else if (isTablet800Resolution) {
-        console.log(`🎉 TVRouletteScreen: Confetti optimizado para tablet 800x1340 activado - ${width}x${height}`);
+      } else if (isTabletPortraitResolution) {
+        console.log(`🎉 TVRouletteScreen: Confetti optimizado para tablets verticales activado - ${width}x${height}`);
       }
     };
 
@@ -277,7 +281,7 @@ export default function TVRouletteScreen() {
           show={showConfetti} 
           windowSize={windowSize} 
           isTV65={isTV65}
-          isTablet800={isTablet800}
+          isTabletPortrait={isTabletPortrait}
         />
         <PrizeModal />
       </div>
@@ -293,7 +297,7 @@ export default function TVRouletteScreen() {
           show={showConfetti} 
           windowSize={windowSize} 
           isTV65={isTV65}
-          isTablet800={isTablet800}
+          isTabletPortrait={isTabletPortrait}
         />
         <QuestionDisplay question={currentQuestion} />
       </div>
@@ -305,27 +309,27 @@ export default function TVRouletteScreen() {
     <div className="flex flex-col min-h-screen w-full bg-main-gradient">
       {/* Header con logo optimizado para todos los dispositivos */}
       <header className={`w-full flex justify-center items-center ${
-        isTablet800 ? 'pt-12 pb-4' : 'pt-24 pb-6' // [NUEVO] Padding específico para tablet 800
+        isTabletPortrait ? 'pt-12 pb-4' : 'pt-24 pb-6' // [NUEVO] Padding específico para tablets verticales
       }`}>
         <div className={`w-full flex justify-center items-center ${
-          isTablet800 ? 'max-w-3xl' : 'max-w-5xl' // [NUEVO] Ancho máximo para tablet 800
+          isTabletPortrait ? 'max-w-3xl' : 'max-w-5xl' // [NUEVO] Ancho máximo para tablets verticales
         }`}>
           {/* [modificación] Logo con clase específica según dispositivo */}
           <Logo
             size="lg"
             animated={true}
             withShadow={true}
-            className={`w-full h-auto ${isTablet800 ? 'logo-tablet-800' : ''}`} // [NUEVO] Clase específica para tablet 800
+            className={`w-full h-auto ${isTabletPortrait ? 'logo-tablet-portrait' : ''}`} // [NUEVO] Clase específica para tablets verticales
           />
         </div>
       </header>
 
       {/* Contenido principal: ruleta y botón - optimizado para todos los dispositivos */}
       <main className={`flex-1 flex flex-col items-center justify-center w-full ${
-        isTablet800 ? 'px-4' : 'px-8' // [NUEVO] Padding lateral para tablet 800
+        isTabletPortrait ? 'px-4' : 'px-8' // [NUEVO] Padding lateral para tablets verticales
       }`}>
         <div className={`w-full flex flex-col items-center justify-center ${
-          isTablet800 ? 'max-w-[700px] space-y-4' : 'max-w-[1800px] space-y-16' // [NUEVO] Reducido space-y de 6 a 4 para tablet 800
+          isTabletPortrait ? 'max-w-[700px] space-y-4' : 'max-w-[1800px] space-y-16' // [NUEVO] Reducido space-y de 6 a 4 para tablets verticales
         }`}>
           <MotionDiv
             key="tv-roulette"
@@ -333,7 +337,7 @@ export default function TVRouletteScreen() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             className={`w-full flex flex-col items-center justify-center ${
-              isTablet800 ? 'space-y-3' : 'space-y-12' // [NUEVO] Reducido espaciado interno para tablet 800
+              isTabletPortrait ? 'space-y-3' : 'space-y-12' // [NUEVO] Reducido espaciado interno para tablets verticales
             }`}
             role="main"
             aria-label="Pantalla de ruleta optimizada para diferentes dispositivos"
@@ -344,9 +348,9 @@ export default function TVRouletteScreen() {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
               className={`w-full max-w-none flex justify-center ${
-                isTablet800 ? 'wheel-container' : '' // [NUEVO] Clase específica para tablet 800
+                isTabletPortrait ? 'wheel-container' : '' // [NUEVO] Clase específica para tablets verticales
               }`}
-              style={isTablet800 ? {
+              style={isTabletPortrait ? {
                 width: '100%',
                 height: 'auto',
                 maxWidth: '680px',  // Aumentado de 520px a 680px
@@ -370,7 +374,7 @@ export default function TVRouletteScreen() {
                 />
               ) : (
                 <div className={`text-white text-center font-bold ${
-                  isTablet800 ? 'text-4xl' : 'text-8xl' // [NUEVO] Tamaño de texto para tablet 800
+                  isTabletPortrait ? 'text-4xl' : 'text-8xl' // [NUEVO] Tamaño de texto para tablets verticales
                 }`}>
                   Cargando categorías...
                 </div>
@@ -386,7 +390,7 @@ export default function TVRouletteScreen() {
             >
               <button
                 className={`${rouletteButtonState.buttonClasses} ${
-                  isTablet800 ? 'neomorphic-button-tablet-800' : ''
+                  isTabletPortrait ? 'neomorphic-button-tablet-portrait' : ''
                 } text-white font-black focus:outline-none focus:ring-8 focus:ring-blue-300`}
                 onClick={handleSpin}
                 onTouchStart={rouletteButtonState.handleRippleEffect}
@@ -396,8 +400,8 @@ export default function TVRouletteScreen() {
                 style={{
                   position: 'relative',
                   overflow: 'hidden',
-                  // [NUEVO] Estilos específicos para tablet 800x1340
-                  ...(isTablet800 && {
+                  // [NUEVO] Estilos específicos para tablets verticales
+                  ...(isTabletPortrait && {
                     padding: "20px 40px",
                     fontSize: "1.8rem",
                     minHeight: "100px",
@@ -410,10 +414,10 @@ export default function TVRouletteScreen() {
               >
                 <span className={`inline-block mr-8 -mt-3 align-middle ${
                   rouletteButtonState.iconClasses
-                } ${isTablet800 ? 'roulette-icon-tablet-800' : ''}`}> {/* [NUEVO] Clase específica para tablet 800 */}
+                } ${isTabletPortrait ? 'roulette-icon-tablet-portrait' : ''}`}> {/* [NUEVO] Clase específica para tablets verticales */}
                   <RouletteWheelIcon 
-                    className={`${isTablet800 ? 'w-13 h-13' : 'w-28 h-28'}`} // [NUEVO] Tamaño ajustado para tablet 800
-                    size={isTablet800 ? 52 : 112} // [NUEVO] Tamaño específico para tablet 800
+                                          className={`${isTabletPortrait ? 'w-13 h-13' : 'w-28 h-28'}`} // [NUEVO] Tamaño ajustado para tablets verticales
+                      size={isTabletPortrait ? 52 : 112} // [NUEVO] Tamaño específico para tablets verticales
                   />
                 </span>
                 {rouletteButtonState.buttonText}
@@ -425,7 +429,7 @@ export default function TVRouletteScreen() {
 
       {/* Footer optimizado para todos los dispositivos */}
       <footer className={`w-full ${
-        isTablet800 ? 'h-[3vh] min-h-[60px]' : 'h-[5vh] min-h-[100px]' // [NUEVO] Altura específica para tablet 800
+        isTabletPortrait ? 'h-[3vh] min-h-[60px]' : 'h-[5vh] min-h-[100px]' // [NUEVO] Altura específica para tablets verticales
       }`}></footer>
     </div>
   );

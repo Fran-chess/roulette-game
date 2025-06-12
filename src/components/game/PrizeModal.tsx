@@ -34,7 +34,7 @@ export default function PrizeModal() {
   const [isTablet, setIsTablet] = useState(false);
   const [isTVTouch, setIsTVTouch] = useState(false);
   const [isTV65, setIsTV65] = useState(false);
-  const [isTablet800, setIsTablet800] = useState(false); // [NUEVO] Estado para tablet 800x1340
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false); // [NUEVO] Universal para tablets verticales
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
   // [modificación] ID único para tracking de logs
@@ -75,15 +75,19 @@ export default function PrizeModal() {
       setIsTablet(width >= 601 && width <= 1024 && !isTV65Resolution);
       setIsTVTouch(width >= 1025 && !isTV65Resolution);
       
-      // [NUEVO] Detectar tablet 800x1340
-      const isTablet800Resolution = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350);
-      setIsTablet800(isTablet800Resolution);
+      // [NUEVO] Detectar tablets en orientación vertical universal
+      const isTabletPortraitResolution = 
+        width >= 768 && width <= 1200 && 
+        height > width && // Orientación vertical
+        height >= 1000 && // Altura mínima para tablets
+        !isTV65Resolution;
+      setIsTabletPortrait(isTabletPortraitResolution);
       
       setWindowSize({ width, height });
 
-      // [NUEVO] Log para tablet 800x1340
-      if (isTablet800Resolution) {
-        console.log(`🎁 PrizeModal: Tablet 800x1340 detectada, aplicando optimizaciones específicas`);
+      // [NUEVO] Log para tablets verticales
+      if (isTabletPortraitResolution) {
+        console.log(`🎁 PrizeModal: Tablet en orientación vertical detectada, aplicando optimizaciones universales`);
       }
     };
 
@@ -96,7 +100,7 @@ export default function PrizeModal() {
   const modalContainerClasses = useMemo(() => {
     if (isTV65) {
       return "w-full max-w-7xl mx-auto p-20 rounded-4xl shadow-3xl text-center bg-black/15 backdrop-blur-xl border-4 border-white/60";
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Estilos específicos para tablet 800x1340
       return "w-full max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center bg-black/15 backdrop-blur-xl border-2 border-white/40 prize-modal-tablet-800";
     } else if (isTVTouch) {
@@ -105,12 +109,12 @@ export default function PrizeModal() {
       return "w-full max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
     }
     return "w-full max-w-md mx-auto p-6 md:p-10 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const iconClasses = useMemo(() => {
     if (isTV65) {
       return "w-32 h-32 mx-auto mb-8";
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return "w-20 h-20 mx-auto mb-6";
     } else if (isTVTouch) {
@@ -119,13 +123,13 @@ export default function PrizeModal() {
       return "w-20 h-20 mx-auto mb-5";
     }
     return "w-16 h-16 mx-auto mb-4";
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   // [modificación] Icono específico para el premio
   const prizeIconClasses = useMemo(() => {
     if (isTV65) {
       return "w-40 h-40 mx-auto mb-8";
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return "w-24 h-24 mx-auto mb-6 prize-icon";
     } else if (isTVTouch) {
@@ -134,7 +138,7 @@ export default function PrizeModal() {
       return "w-28 h-28 mx-auto mb-5";
     }
     return "w-20 h-20 mx-auto mb-4";
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const titleClasses = useMemo(() => {
     const baseClasses =
@@ -142,7 +146,7 @@ export default function PrizeModal() {
 
     if (isTV65) {
       return `${baseClasses} text-[10rem] font-extrabold mb-12 text-shadow-ultra-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-xl mb-6`;
     } else if (isTVTouch) {
@@ -151,7 +155,7 @@ export default function PrizeModal() {
       return `${baseClasses} text-[3.5rem] lg:text-[4.5rem] mb-6`;
     }
     return `${baseClasses} text-3xl md:text-4xl`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   // [modificación] Mejorar el tamaño de "¡Respuesta correcta!"
   const correctAnswerTitleClasses = useMemo(() => {
@@ -160,7 +164,7 @@ export default function PrizeModal() {
 
     if (isTV65) {
       return `${baseClasses} text-[8rem] font-extrabold mb-10 text-shadow-ultra-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-lg mb-4`;
     } else if (isTVTouch) {
@@ -169,14 +173,14 @@ export default function PrizeModal() {
       return `${baseClasses} text-[3rem] lg:text-[3.5rem] mb-4`;
     }
     return `${baseClasses} text-2xl md:text-3xl`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const subtitleClasses = useMemo(() => {
     const baseClasses = "text-white font-marineRegular leading-relaxed";
 
     if (isTV65) {
       return `${baseClasses} text-[6rem] mb-12 text-shadow-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-md mb-6`;
     } else if (isTVTouch) {
@@ -185,14 +189,14 @@ export default function PrizeModal() {
       return `${baseClasses} text-[2.5rem] lg:text-[3rem] mb-6`;
     }
     return `${baseClasses} text-xl mb-4`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const explanationContainerClasses = useMemo(() => {
     const baseClasses = "bg-black/10 p-4 rounded-lg border text-white";
 
     if (isTV65) {
       return `${baseClasses} p-16 rounded-2xl border-4 border-red-400/40 my-12`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Estilos específicos para tablet 800x1340
       return `${baseClasses} p-6 rounded-xl border-2 border-red-400/35 my-6`;
     } else if (isTVTouch) {
@@ -201,14 +205,14 @@ export default function PrizeModal() {
       return `${baseClasses} p-6 rounded-lg border-2 border-red-400/30 my-6`;
     }
     return `${baseClasses} border-red-400/30 my-4`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const explanationTextClasses = useMemo(() => {
     const baseClasses = "font-marineBold";
 
     if (isTV65) {
       return `${baseClasses} text-[5rem] mb-4 text-shadow-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-md mb-2`;
     } else if (isTVTouch) {
@@ -217,14 +221,14 @@ export default function PrizeModal() {
       return `${baseClasses} text-[1.8rem] lg:text-[2.2rem] mb-2`;
     }
     return `${baseClasses} text-lg mb-1`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const correctAnswerClasses = useMemo(() => {
     const baseClasses = "font-marineBold text-verde-salud";
 
     if (isTV65) {
       return `${baseClasses} text-[5.5rem] mb-8 text-shadow-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-md mb-3`;
     } else if (isTVTouch) {
@@ -233,14 +237,14 @@ export default function PrizeModal() {
       return `${baseClasses} text-[2.1rem] lg:text-[2.5rem] mb-3`;
     }
     return `${baseClasses} text-xl mb-2`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const explanationDetailClasses = useMemo(() => {
     const baseClasses = "text-white/90";
 
     if (isTV65) {
       return `${baseClasses} text-[4.2rem] leading-relaxed text-shadow-soft`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-sm leading-relaxed`;
     } else if (isTVTouch) {
@@ -249,7 +253,7 @@ export default function PrizeModal() {
       return `${baseClasses} text-[1.6rem] lg:text-[2rem] leading-relaxed`;
     }
     return `${baseClasses} text-lg`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   // [modificación] Mejorar el tamaño de "Has ganado:"
   const hasGanadoClasses = useMemo(() => {
@@ -257,7 +261,7 @@ export default function PrizeModal() {
 
     if (isTV65) {
       return `${baseClasses} text-[6.5rem] mb-8 text-shadow-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-lg mb-4`;
     } else if (isTVTouch) {
@@ -266,14 +270,14 @@ export default function PrizeModal() {
       return `${baseClasses} text-[2.6rem] lg:text-[3rem] mb-4`;
     }
     return `${baseClasses} text-xl md:text-2xl`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const prizeNameClasses = useMemo(() => {
     const baseClasses = "font-marineBold text-white";
 
     if (isTV65) {
       return `${baseClasses} text-[7rem] mb-12 text-shadow-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Tamaño específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-xl mb-6`;
     } else if (isTVTouch) {
@@ -282,7 +286,7 @@ export default function PrizeModal() {
       return `${baseClasses} text-[3rem] lg:text-[3.5rem] mb-6`;
     }
     return `${baseClasses} text-2xl md:text-3xl mb-5`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   // [modificación] Eliminar prizeInstructionsClasses ya que no mostraremos las instrucciones del mostrador
   // const prizeInstructionsClasses = useMemo(() => {
@@ -301,7 +305,7 @@ export default function PrizeModal() {
   const buttonContainerClasses = useMemo(() => {
     if (isTV65) {
       return "flex flex-col gap-8 w-full max-w-4xl mx-auto";
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Contenedor específico para tablet 800x1340
       return "flex flex-col gap-4 w-full max-w-lg mx-auto";
     } else if (isTVTouch) {
@@ -310,7 +314,7 @@ export default function PrizeModal() {
       return "flex flex-col gap-4 w-full max-w-xl mx-auto";
     }
     return "flex flex-col gap-3 w-full max-w-xs mx-auto";
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const buttonClasses = useMemo(() => {
     const baseClasses =
@@ -318,7 +322,7 @@ export default function PrizeModal() {
 
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-strong`;
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Botón específico para tablet 800x1340
       return `${baseClasses} text-tablet-800-md py-4 px-8 rounded-xl border-2 modal-button`;
     } else if (isTVTouch) {
@@ -327,7 +331,7 @@ export default function PrizeModal() {
       return `${baseClasses} text-[2.1rem] lg:text-[2.5rem] py-6 px-10`;
     }
     return `${baseClasses} text-xl py-3`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const secondaryButtonClasses = useMemo(() => {
     const baseClasses =
@@ -335,16 +339,16 @@ export default function PrizeModal() {
 
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-soft`;
-    } else if (isTablet800) {
-      // [NUEVO] Botón secundario específico para tablet 800x1340
-      return `${baseClasses} text-tablet-800-md py-4 px-8 rounded-xl border-2 modal-button`;
+    } else if (isTabletPortrait) {
+      // [NUEVO] Botón secundario específico para tablets verticales
+      return `${baseClasses} text-tablet-portrait-md py-4 px-8 rounded-xl border-2 modal-button`;
     } else if (isTVTouch) {
       return `${baseClasses} text-[2.6rem] lg:text-[3.2rem] py-8 px-12`;
     } else if (isTablet) {
       return `${baseClasses} text-[2.1rem] lg:text-[2.5rem] py-6 px-10`;
     }
     return `${baseClasses} text-xl py-3`;
-  }, [isTV65, isTablet800, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   // useEffect para tracking de montaje/desmontaje - usando tvLogger
   useEffect(() => {
@@ -679,7 +683,7 @@ export default function PrizeModal() {
         show={showConfetti}
         windowSize={windowSize}
         isTV65={isTV65}
-        isTablet800={isTablet800}
+        isTabletPortrait={isTabletPortrait}
       />
 
       {/* [modificación] Agregar estilos CSS para sombras de texto */}

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useIsMounted } from '@/hooks/useIsMounted';
 import { MotionDiv } from '../shared/MotionComponents';
 
@@ -56,18 +56,52 @@ function FullScreenVideo() {
 /**
  * [modificación] Pantalla de espera con video en pantalla completa
  * Se muestra cuando no hay sesiones activas
- * Optimizada para TV portrait 2160x3840 con video que ocupa toda la pantalla
+ * Optimizada universalmente para tablets en orientación vertical
  */
 export default function WaitingScreen() {
   const isMounted = useIsMounted();
+  
+  // [NUEVO] Estados para detección de dispositivo universal
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ width: 0, height: 0 });
+
+  // [NUEVO] useEffect para detección universal de tablets en orientación vertical
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+
+      // [NUEVO] Detectar tablets en orientación vertical universal
+      const isTabletPortraitResolution = 
+        width >= 768 && width <= 1200 && 
+        height > width && // Orientación vertical
+        height >= 1000 && // Altura mínima para tablets
+        !((width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160)); // Excluir TV65
+
+      setIsTabletPortrait(isTabletPortraitResolution);
+      setDebugInfo({ width, height });
+
+      // [NUEVO] Log para tablets verticales
+      if (isTabletPortraitResolution) {
+        console.log('📱 WaitingScreen: Tablet en orientación vertical detectada, aplicando optimizaciones universales');
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // [modificación] Log para debugging cuando se muestra la pantalla de espera con video
   useEffect(() => {
     if (isMounted) {
-      console.log('📺 WaitingScreen: Pantalla de espera montada - video en pantalla completa para TV portrait 2160x3840');
+      console.log('📺 WaitingScreen: Pantalla de espera montada - video en pantalla completa optimizado universalmente');
       console.log('📺 WaitingScreen: Reproduciendo DarSaludPanallaLed.mp4 en loop automático');
+      if (isTabletPortrait) {
+        console.log('📱 WaitingScreen: Optimizaciones para tablet vertical aplicadas');
+      }
     }
-  }, [isMounted]);
+  }, [isMounted, isTabletPortrait]);
 
   if (!isMounted) {
     return null; // [modificación] Retornar null durante la hidratación
@@ -79,17 +113,29 @@ export default function WaitingScreen() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="relative min-h-screen w-full bg-black overflow-hidden tv-portrait:min-h-screen"
+      className={`relative min-h-screen w-full bg-black overflow-hidden tv-portrait:min-h-screen ${
+        isTabletPortrait ? 'waiting-screen-tablet-portrait' : ''
+      }`}
       role="main"
-      aria-label="Pantalla de espera con video en pantalla completa optimizada para TV portrait"
+      aria-label="Pantalla de espera con video en pantalla completa optimizada universalmente para tablets verticales"
     >
       {/* [modificación] Video en pantalla completa que reemplaza el carrusel de imágenes */}
       <FullScreenVideo />
 
+      {/* [NUEVO] DEBUG INFO VISUAL - SOLO EN DESARROLLO */}
+      {process.env.NODE_ENV === 'development' && debugInfo.width > 0 && (
+        <div className="absolute top-4 left-4 bg-black/80 text-white p-4 text-lg font-bold z-50 rounded-br-lg">
+          <div>
+            Resolución: {debugInfo.width}x{debugInfo.height}
+          </div>
+          <div>Tablet Vertical: {isTabletPortrait ? "SÍ" : "NO"}</div>
+        </div>
+      )}
+
       {/* [modificación] Información de debug solo en desarrollo */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="absolute top-4 left-4 bg-black/70 text-white text-xs p-2 rounded tv-portrait:text-lg tv-portrait:p-4 z-30">
-          TV Portrait Mode: Video Full Screen - DarSaludPanallaLed.mp4
+        <div className="absolute top-4 right-4 bg-black/70 text-white text-xs p-2 rounded tv-portrait:text-lg tv-portrait:p-4 z-30">
+          {isTabletPortrait ? 'Tablet Portrait Mode' : 'Standard Mode'}: Video Full Screen - DarSaludPanallaLed.mp4
         </div>
       )}
     </MotionDiv>

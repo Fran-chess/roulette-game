@@ -18,8 +18,8 @@ function Timer({
   onTimeUp,
   isTV65,
   isTVTouch,
-  isTablet800,
-}: TimerProps & { isTV65: boolean; isTVTouch: boolean; isTablet800: boolean }) {
+  isTabletPortrait,
+}: TimerProps & { isTV65: boolean; isTVTouch: boolean; isTabletPortrait: boolean }) {
   const [seconds, setSeconds] = useState(initialSeconds);
   const [isUrgent, setIsUrgent] = useState(false);
 
@@ -44,10 +44,10 @@ function Timer({
     return () => clearTimeout(timer);
   }, [seconds, onTimeUp]);
 
-  // [modificación] Cronómetro circular responsivo - ahora incluye tablet 800x1340
-  const timerSize = isTV65 ? 500 : isTablet800 ? 200 : isTVTouch ? 300 : 200;
-  const radius = isTV65 ? 200 : isTablet800 ? 80 : isTVTouch ? 120 : 80;
-  const strokeWidth = isTV65 ? 30 : isTablet800 ? 12 : isTVTouch ? 20 : 15;
+  // [modificación] Cronómetro circular responsivo - ahora incluye tablets verticales universales
+  const timerSize = isTV65 ? 500 : isTabletPortrait ? 200 : isTVTouch ? 300 : 200;
+  const radius = isTV65 ? 200 : isTabletPortrait ? 80 : isTVTouch ? 120 : 80;
+  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 12 : isTVTouch ? 20 : 15;
 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -57,14 +57,14 @@ function Timer({
   // [modificación] Debug info para verificar detección - SOLO CUANDO CAMBIA
   useEffect(() => {
     if (process.env.NODE_ENV === "development") {
-      // console.log('⏱️ Timer configurado:', { isTV65, isTVTouch, isTablet800, timerSize });
+      // console.log('⏱️ Timer configurado:', { isTV65, isTVTouch, isTabletPortrait, timerSize });
     }
-  }, [isTV65, isTVTouch, isTablet800, timerSize]);
+  }, [isTV65, isTVTouch, isTabletPortrait, timerSize]);
 
   return (
     <motion.div
       className={`flex flex-col items-center justify-center ${
-        isTV65 ? "mb-20" : isTablet800 ? "mb-8" : "mb-12"
+        isTV65 ? "mb-20" : isTabletPortrait ? "mb-8" : "mb-12"
       }`}
       animate={isUrgent ? { scale: [1, 1.05, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isUrgent ? Infinity : 0 }}
@@ -123,9 +123,9 @@ function Timer({
           >
             <div
               className={`font-black leading-none ${
-                isTablet800 ? "timer-text" : ""
+                isTabletPortrait ? "timer-text" : ""
               }`}
-              style={!isTablet800 ? {
+              style={!isTabletPortrait ? {
                 fontSize: isTV65 ? "120px" : isTVTouch ? "72px" : "48px",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               } : {
@@ -136,9 +136,9 @@ function Timer({
             </div>
             <div
               className={`font-bold opacity-90 mt-2 ${
-                isTablet800 ? "timer-seconds" : ""
+                isTabletPortrait ? "timer-seconds" : ""
               }`}
-              style={!isTablet800 ? {
+              style={!isTabletPortrait ? {
                 fontSize: isTV65 ? "36px" : isTVTouch ? "24px" : "16px",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               } : {
@@ -156,7 +156,7 @@ function Timer({
         <motion.div
           className="mt-6 text-red-400 font-black text-center"
           style={{
-            fontSize: isTV65 ? "60px" : isTablet800 ? "24px" : isTVTouch ? "36px" : "24px",
+            fontSize: isTV65 ? "60px" : isTabletPortrait ? "24px" : isTVTouch ? "36px" : "24px",
             textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 0 30px #ef4444",
           }}
           animate={{ opacity: [1, 0.5, 1] }}
@@ -177,7 +177,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   const [isTablet, setIsTablet] = useState(false);
   const [isTVTouch, setIsTVTouch] = useState(false);
   const [isTV65, setIsTV65] = useState(false);
-  const [isTablet800, setIsTablet800] = useState(false);
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false); // [NUEVO] Universal para tablets verticales
   const [debugInfo, setDebugInfo] = useState({ width: 0, height: 0 });
 
   const setGameState = useGameStore((state) => state.setGameState);
@@ -195,10 +195,10 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   const [isAnswered, setIsAnswered] = useState(false);
   const hasTimeUpExecutedRef = useRef(false);
 
-  // [modificación] Tiempos ajustados - incluir tablet 800x1340
+  // [modificación] Tiempos ajustados - incluir tablets verticales universales
   const timerSeconds = useMemo(() => {
-    return isTV65 ? 20 : isTablet800 ? 25 : isTVTouch ? 40 : isTablet ? 30 : 25; // [NUEVO] 25 segundos para tablet 800
-  }, [isTV65, isTablet800, isTVTouch, isTablet]); // [NUEVO] Agregar isTablet800 a dependencias
+    return isTV65 ? 20 : isTabletPortrait ? 25 : isTVTouch ? 40 : isTablet ? 30 : 25; // [NUEVO] 25 segundos para tablets verticales
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]); // [NUEVO] Agregar isTabletPortrait a dependencias
 
   // [modificación] Sistema de ajuste automático basado en longitud de texto
   const textMetrics = useMemo(() => {
@@ -239,17 +239,23 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         width >= 768 && width <= 1399 && !isTV65Resolution;
       setIsTablet(isTabletResolution);
 
-      // Detectar Tablet 800x1340
-      const isTablet800Resolution = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350); // [NUEVO] Rango más flexible
-      setIsTablet800(isTablet800Resolution);
+      // [NUEVO] Detectar tablets en orientación vertical universal
+      const isTabletPortraitResolution = 
+        width >= 768 && width <= 1200 && 
+        height > width && // Orientación vertical
+        height >= 1000 && // Altura mínima para tablets
+        !isTV65Resolution;
+      setIsTabletPortrait(isTabletPortraitResolution);
+
+
 
       // Debug info
       const newDebugInfo = { width, height };
       setDebugInfo(newDebugInfo);
       
-      // [NUEVO] Log para tablet 800x1340
-      if (isTablet800Resolution) {
-        console.log('📱 QuestionDisplay: Tablet 800x1340 detectada, aplicando optimizaciones específicas');
+      // [NUEVO] Log para tablets verticales
+      if (isTabletPortraitResolution) {
+        console.log('📱 QuestionDisplay: Tablet en orientación vertical detectada, aplicando optimizaciones universales');
       }
     };
 
@@ -546,7 +552,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         overflowWrap: "break-word" as const, // [modificación] ARREGLADO: Tipo específico para TypeScript
         hyphens: "auto" as const, // [modificación] ARREGLADO: Tipo específico para TypeScript
       };
-    } else if (isTablet800) {
+    } else if (isTabletPortrait) {
       // [NUEVO] Estilos específicos para tablet 800x1340
       return {
         fontSize: textMetrics.isLong ? "1.2rem" : "1.4rem",
@@ -588,7 +594,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         lineHeight: "1.4",
       };
     }
-  }, [isTV65, isTablet800, isTVTouch, textMetrics]); // [NUEVO] Agregar isTablet800 a dependencias
+  }, [isTV65, isTabletPortrait, isTVTouch, textMetrics]); // [NUEVO] Agregar isTabletPortrait a dependencias
 
   // [modificación] Animaciones escalonadas
   const containerVariants = {
@@ -620,7 +626,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   // [modificación] Layout principal con DEBUG VISUAL - OPTIMIZADO PARA TODOS LOS DISPOSITIVOS
   return (
     <div className={`min-h-screen bg-main-gradient relative overflow-hidden ${
-      isTablet800 ? 'question-layout-tablet-800' : ''
+      isTabletPortrait ? 'question-layout-tablet-800' : ''
     }`}>
       {/* [modificación] DEBUG INFO VISUAL - SOLO EN DESARROLLO */}
       {process.env.NODE_ENV === "development" && debugInfo.width > 0 && (
@@ -632,7 +638,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             TV65: {isTV65 ? "SÍ" : "NO"} | TVTouch: {isTVTouch ? "SÍ" : "NO"}
           </div>
           <div>Tablet: {isTablet ? "SÍ" : "NO"}</div>
-          <div>Tablet 800x1340: {isTablet800 ? "SÍ" : "NO"}</div>
+          <div>Tablet Vertical: {isTabletPortrait ? "SÍ" : "NO"}</div>
         </div>
       )}
 
@@ -658,20 +664,20 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         initial="hidden"
         animate="visible"
         className={`relative z-10 min-h-screen flex flex-col ${
-          isTablet800 ? 'question-layout-tablet-800' : ''
+          isTabletPortrait ? 'question-layout-tablet-portrait' : ''
         }`}>
         {/* [modificación] Header con logo - OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
         <header className={`w-full flex justify-center items-center ${
-          isTablet800 ? 'question-header-tablet-800' : 'pt-24 pb-6'
+                      isTabletPortrait ? 'question-header-tablet-portrait' : 'pt-24 pb-6'
         }`}>
           <div className={`w-full flex justify-center items-center ${
-            isTablet800 ? 'max-w-4xl' : 'max-w-5xl'
+            isTabletPortrait ? 'max-w-4xl' : 'max-w-5xl'
           }`}>
             <Logo
               size="lg"
               animated={true}
               withShadow={true}
-              className={`w-full h-auto ${isTablet800 ? 'logo-tablet-800' : ''}`} // [NUEVO] Clase específica para tablet 800
+                              className={`w-full h-auto ${isTabletPortrait ? 'logo-tablet-portrait' : ''}`} // [NUEVO] Clase específica para tablets verticales
             />
           </div>
         </header>
@@ -679,30 +685,30 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         {/* [modificación] Contenido principal OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
         <main
           className={`flex-1 flex flex-col justify-center items-center ${
-            isTablet800 ? 'question-main-tablet-800' : ''
+            isTabletPortrait ? 'question-main-tablet-portrait' : ''
           }`}
           style={{
-            padding: isTV65 ? "0px 64px 32px 64px" : isTablet800 ? "0px 16px" : "12px 32px", // [NUEVO] Padding optimizado para tablet 800
+            padding: isTV65 ? "0px 64px 32px 64px" : isTabletPortrait ? "0px 16px" : "12px 32px", // [NUEVO] Padding optimizado para tablet 800
           }}
         >
           <div
             className="w-full"
             style={{
-              maxWidth: isTV65 ? "1800px" : isTablet800 ? "700px" : isTVTouch ? "1200px" : "1000px", // [NUEVO] Ancho máximo para tablet 800
+              maxWidth: isTV65 ? "1800px" : isTabletPortrait ? "700px" : isTVTouch ? "1200px" : "1000px", // [NUEVO] Ancho máximo para tablet 800
             }}
           >
             <motion.div
               variants={itemVariants}
               className={`flex justify-center ${
-                isTV65 ? "timer-container-tv65" : isTablet800 ? "timer-tablet-800" : ""
+                                  isTV65 ? "timer-container-tv65" : isTabletPortrait ? "timer-tablet-portrait" : ""
               }`}
               style={{
-                marginBottom: isTV65 ? "6px" : isTablet800 ? "0px" : "12px", 
-                marginTop: isTV65 ? "-320px" : isTablet800 ? "0px" : isTVTouch ? "-150px" : "-120px",
-                width: isTablet800 ? "100%" : "auto", // Asegurar ancho completo para centrado en tablet 800
-                display: isTablet800 ? "flex" : "block", 
-                alignItems: isTablet800 ? "center" : "initial",
-                justifyContent: isTablet800 ? "center" : "initial"
+                marginBottom: isTV65 ? "6px" : isTabletPortrait ? "0px" : "12px", 
+                marginTop: isTV65 ? "-320px" : isTabletPortrait ? "0px" : isTVTouch ? "-150px" : "-120px",
+                width: isTabletPortrait ? "100%" : "auto", // Asegurar ancho completo para centrado en tablet 800
+                display: isTabletPortrait ? "flex" : "block", 
+                alignItems: isTabletPortrait ? "center" : "initial",
+                justifyContent: isTabletPortrait ? "center" : "initial"
               }}
             >
               <Timer
@@ -713,7 +719,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                 onTimeUp={handleTimeUp}
                 isTV65={isTV65}
                 isTVTouch={isTVTouch}
-                isTablet800={isTablet800}
+                isTabletPortrait={isTabletPortrait}
               />
             </motion.div>
 
@@ -721,11 +727,11 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             <motion.div
               variants={itemVariants}
               className={`relative ${
-                isTablet800 
+                isTabletPortrait 
                   ? 'question-container-tablet-800' 
                   : 'bg-black/40 backdrop-blur-xl rounded-3xl border border-white/30 shadow-2xl mb-8'
               }`}
-              style={!isTablet800 ? {
+              style={!isTabletPortrait ? {
                 padding: isTV65 ? "44px 54px" : "32px 48px",
                 marginBottom: isTV65 ? "28px" : "32px",
                 boxShadow: isTV65
@@ -735,9 +741,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             >
               <h2
                 className={`font-marineBold text-white text-center leading-tight ${
-                  isTablet800 ? '' : ''
+                  isTabletPortrait ? '' : ''
                 }`}
-                style={!isTablet800 ? {
+                style={!isTabletPortrait ? {
                   fontSize: isTV65 ? "96px" : isTVTouch ? "56px" : "36px",
                   marginBottom: isTV65 ? "32px" : "16px",
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
@@ -752,11 +758,11 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             <motion.div
               variants={itemVariants}
               className={`${
-                isTablet800 
+                isTabletPortrait 
                   ? 'options-grid-tablet-800' 
                   : 'grid grid-cols-1'
               }`}
-              style={!isTablet800 ? {
+              style={!isTabletPortrait ? {
                 gap: isTV65 ? "24px" : "16px",
               } : {}}
             >
@@ -764,20 +770,20 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                 <motion.div
                   key={index}
                   variants={itemVariants}
-                  whileHover={{ scale: isAnswered ? 1 : isTV65 ? 1.01 : isTablet800 ? 1.02 : 1.02 }} // [NUEVO] Escala para tablet 800
-                  whileTap={{ scale: isAnswered ? 1 : isTV65 ? 0.995 : isTablet800 ? 0.98 : 0.98 }} // [NUEVO] Escala para tablet 800
+                  whileHover={{ scale: isAnswered ? 1 : isTV65 ? 1.01 : isTabletPortrait ? 1.02 : 1.02 }} // [NUEVO] Escala para tablet 800
+                  whileTap={{ scale: isAnswered ? 1 : isTV65 ? 0.995 : isTabletPortrait ? 0.98 : 0.98 }} // [NUEVO] Escala para tablet 800
                 >
                   <Button
                     variant="custom"
                     onClick={() => handleAnswer(option)}
                     className={`${getOptionClasses(option)} ${
-                      isTablet800 
+                      isTabletPortrait 
                         ? 'answer-option-tablet-800' 
                         : isTV65 
                         ? 'tv-65-layout' 
                         : ''
                     } btn-option`}
-                    style={!isTablet800 ? getOptionStyles() : {}}
+                    style={!isTabletPortrait ? getOptionStyles() : {}}
                     disabled={isAnswered}
                   >
                     {/* [modificación] Layout específico para cada dispositivo */}
@@ -823,7 +829,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                           {String.fromCharCode(65 + index)}
                         </div>
                       </>
-                    ) : isTablet800 ? (
+                    ) : isTabletPortrait ? (
                       // [NUEVO] Layout simplificado para tablet 800x1340 - usa clases CSS
                       <>
                         <span className="flex-1 leading-tight break-words">
@@ -862,18 +868,18 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         {/* [modificación] Footer OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
         <footer
           className={`text-center ${
-            isTablet800 ? 'question-footer-tablet-800' : ''
+            isTabletPortrait ? 'question-footer-tablet-800' : ''
           }`}
-          style={!isTablet800 ? {
+          style={!isTabletPortrait ? {
             padding: isTV65 ? "24px" : "16px",
             minHeight: isTV65 ? "5vh" : "auto",
           } : {}}
         >
           <div
             className={`text-white/60 ${
-              isTablet800 ? '' : ''
+              isTabletPortrait ? '' : ''
             }`}
-            style={!isTablet800 ? {
+            style={!isTabletPortrait ? {
               fontSize: isTV65 ? "24px" : "16px",
             } : {}}
           >

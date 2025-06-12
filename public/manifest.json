@@ -5,7 +5,7 @@
   "start_url": "/",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],
-  "orientation": "landscape",
+  "orientation": "portrait",
   "theme_color": "#192A6E",
   "background_color": "#121F4B",
   "scope": "/",
