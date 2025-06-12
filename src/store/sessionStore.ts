@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import type { RealtimeChannel } from '@supabase/supabase-js';
-import { supabaseClient } from '@/lib/supabase';
+import { supabaseAdminClient } from '@/lib/supabase-admin';
 
 // [modificación] Tipos para la gestión de sesiones y roles
 export interface User {
@@ -118,7 +118,7 @@ export const useSessionStore = create<SessionState>()(
         // [modificación] Generar un session_id único
         const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         
-        const { data, error } = await supabaseClient
+        const { data, error } = await supabaseAdminClient
           .from('game_sessions')
           .insert({
             session_id: sessionId,
@@ -152,7 +152,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true, error: null });
       
       try {
-        const { data, error } = await supabaseClient
+        const { data, error } = await supabaseAdminClient
           .from('game_sessions')
           .update({
             ...updates,
@@ -186,7 +186,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true, error: null });
       
       try {
-        const { error } = await supabaseClient
+        const { error } = await supabaseAdminClient
           .from('game_sessions')
           .delete()
           .eq('session_id', sessionId);
@@ -244,7 +244,7 @@ export const useSessionStore = create<SessionState>()(
       set({ isLoading: true });
       
       try {
-        await supabaseClient.auth.signOut();
+        await supabaseAdminClient.auth.signOut();
         get().cleanup();
         
         set({
@@ -274,7 +274,7 @@ export const useSessionStore = create<SessionState>()(
         return;
       }
       
-      const channel = supabaseClient
+      const channel = supabaseAdminClient
         .channel('game_sessions_channel')
         .on(
           'postgres_changes',
@@ -330,7 +330,7 @@ export const useSessionStore = create<SessionState>()(
     cleanup: () => {
       const { realtimeChannel } = get();
       if (realtimeChannel) {
-        supabaseClient.removeChannel(realtimeChannel);
+        supabaseAdminClient.removeChannel(realtimeChannel);
         set({ realtimeChannel: null });
       }
     },

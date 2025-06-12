@@ -56,15 +56,9 @@ export default function PrizeModal() {
   const gameSession = useGameStore((state) => state.gameSession);
   const gameState = useGameStore((state) => state.gameState);
   const showConfetti = useGameStore((state) => state.showConfetti);
-  const currentQuestion = useGameStore((state) => state.currentQuestion);
 
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
-
-  // [modificación] Verificar si el participante ya había ganado un premio anteriormente
-  // Esto se puede detectar cuando la respuesta es correcta pero no hay prizeName
-  const yaGanoPremio =
-    answeredCorrectly && !prizeName && currentQuestion?.prize;
 
   // [modificación] useEffect para detección de tipo de pantalla y windowSize
   useEffect(() => {
@@ -563,7 +557,7 @@ export default function PrizeModal() {
           >
             <CheckCircleIcon className={`${iconClasses} text-verde-salud`} />
             <h2 className={titleClasses}>
-              ¡Felicitaciones {currentParticipant?.nombre}!
+              ¡Felicitaciones{currentParticipant?.nombre ? ` ${currentParticipant.nombre}` : ''}!
             </h2>
             <h3 className={correctAnswerTitleClasses}>¡Respuesta correcta!</h3>
 
@@ -598,9 +592,7 @@ export default function PrizeModal() {
 
             {!prizeName && (
               <p className={subtitleClasses}>
-                {yaGanoPremio
-                  ? `¡Excelente ${currentParticipant?.nombre}! Respuesta correcta. Puedes seguir jugando y disfrutando. ¡Gracias por participar!`
-                  : "¡Bien hecho! Sigue participando."}
+                ¡Excelente! Respuesta correcta. ¡Sigue jugando y divirtiéndote!
               </p>
             )}
 

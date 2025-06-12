@@ -357,8 +357,11 @@ export default function TVRouletteScreen() {
               <button
                 className={`${rouletteButtonState.buttonClasses} text-white font-black focus:outline-none focus:ring-8 focus:ring-blue-300`}
                 onClick={handleSpin}
+                onTouchStart={rouletteButtonState.handleRippleEffect}
+                onMouseDown={rouletteButtonState.handleRippleEffect}
                 disabled={rouletteButtonState.isDisabled}
                 aria-label={rouletteButtonState.buttonText}
+                style={{ position: 'relative', overflow: 'hidden' }}
               >
                 <span className={`inline-block mr-8 -mt-3 align-middle ${rouletteButtonState.iconClasses}`}>
                   <RouletteWheelIcon className="w-28 h-28" size={112} />

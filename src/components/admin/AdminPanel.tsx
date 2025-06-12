@@ -1,7 +1,7 @@
 // src/components/admin/AdminPanel.tsx
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { supabaseClient } from "@/lib/supabase"; // Sigue siendo necesario para la suscripción en tiempo real
+import { supabaseAdminClient } from "@/lib/supabase-admin"; // Cliente de Supabase específico para admin
 import { useGameStore } from "@/store/gameStore";
 import { motion, AnimatePresence } from "framer-motion";
 import AdminTabs from "./AdminTabs";
@@ -102,7 +102,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
       fetchActiveSessions(); // Carga inicial de sesiones
       loadParticipantsStats(); // [modificación] Carga inicial de estadísticas de participantes
 
-      const playsChannel = supabaseClient
+      const playsChannel = supabaseAdminClient
         .channel(`admin_plays_changes_${adminData.id}`)
         .on<Partial<PlaySession>>(
           "postgres_changes",
@@ -228,7 +228,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
 // //           "AdminPanel: Removiendo canal de suscripción a plays para admin:",
 // //           adminData.id
 // //         );
-        supabaseClient.removeChannel(playsChannel);
+        supabaseAdminClient.removeChannel(playsChannel);
       };
     }
   }, [

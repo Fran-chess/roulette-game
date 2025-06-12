@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useGameStore } from '@/store/gameStore';
 
 export interface RouletteButtonState {
@@ -7,17 +7,97 @@ export interface RouletteButtonState {
   buttonClasses: string;
   iconClasses: string;
   buttonText: string;
+  handleRippleEffect: (event: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => void;
 }
 
 /**
+ * Función para crear efecto ripple en el punto exacto del toque
+ */
+const createRippleEffect = (event: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
+  const button = event.currentTarget;
+  const rect = button.getBoundingClientRect();
+  
+  // Obtener coordenadas del toque/click
+  let clientX: number, clientY: number;
+  
+  if ('touches' in event && event.touches.length > 0) {
+    // Touch event
+    clientX = event.touches[0].clientX;
+    clientY = event.touches[0].clientY;
+  } else if ('clientX' in event) {
+    // Mouse event
+    clientX = event.clientX;
+    clientY = event.clientY;
+  } else {
+    // Fallback al centro del botón
+    clientX = rect.left + rect.width / 2;
+    clientY = rect.top + rect.height / 2;
+  }
+  
+  // Calcular posición relativa al botón
+  const x = clientX - rect.left;
+  const y = clientY - rect.top;
+  
+  // Remover ripples anteriores
+  const existingRipples = button.querySelectorAll('.ripple-effect');
+  existingRipples.forEach(ripple => ripple.remove());
+  
+  // Crear elemento ripple
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple-effect';
+  
+  // Calcular el tamaño del ripple (diagonal del botón para cubrir todo)
+  const size = Math.sqrt(rect.width * rect.width + rect.height * rect.height) * 2;
+  
+  // Aplicar estilos
+  ripple.style.cssText = `
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, 
+      rgba(90, 204, 193, 0.6) 0%,
+      rgba(90, 204, 193, 0.3) 30%,
+      rgba(90, 204, 193, 0.1) 60%,
+      transparent 100%
+    );
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(0);
+    animation: ripple-animation 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    left: ${x}px;
+    top: ${y}px;
+    width: ${size}px;
+    height: ${size}px;
+    z-index: 0;
+  `;
+  
+  // Insertar el ripple
+  button.appendChild(ripple);
+  
+  // Remover el ripple después de la animación
+  setTimeout(() => {
+    if (ripple.parentNode) {
+      ripple.remove();
+    }
+  }, 600);
+};
+
+/**
  * Hook personalizado para gestionar el estado del botón de la ruleta
- * Incluye manejo de clases CSS para efectos neumórficos y animaciones del ícono
+ * Incluye manejo de clases CSS para efectos neumórficos, animaciones del ícono y efecto ripple
  */
 export function useRouletteButton(
   isSpinning: boolean = false,
   deviceType: 'mobile' | 'tablet' | 'tv' | 'desktop' = 'desktop'
 ): RouletteButtonState {
   const gameState = useGameStore((state) => state.gameState);
+  
+  // Función para manejar el efecto ripple
+  const handleRippleEffect = useCallback((event: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
+    // Solo crear ripple si el botón no está deshabilitado
+    const isDisabled = isSpinning || gameState === 'question' || gameState === 'prize';
+    if (!isDisabled) {
+      createRippleEffect(event);
+    }
+  }, [isSpinning, gameState]);
   
   return useMemo(() => {
     // Determinar si el botón está deshabilitado
@@ -80,8 +160,9 @@ export function useRouletteButton(
       buttonClasses,
       iconClasses,
       buttonText,
+      handleRippleEffect,
     };
-  }, [isSpinning, gameState, deviceType]);
+  }, [isSpinning, gameState, deviceType, handleRippleEffect]);
 }
 
 /**
