@@ -44,10 +44,10 @@ function Timer({
     return () => clearTimeout(timer);
   }, [seconds, onTimeUp]);
 
-  // [modificación] Cronómetro circular responsivo - ahora incluye tablets verticales universales
-  const timerSize = isTV65 ? 500 : isTabletPortrait ? 140 : isTVTouch ? 300 : 200;
-  const radius = isTV65 ? 200 : isTabletPortrait ? 56 : isTVTouch ? 120 : 80;
-  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 10 : isTVTouch ? 20 : 15;
+  // [modificación] Cronómetro circular responsivo - SIGNIFICATIVAMENTE REDUCIDO para tablets
+  const timerSize = isTV65 ? 500 : isTabletPortrait ? 90 : isTVTouch ? 300 : 200;
+  const radius = isTV65 ? 200 : isTabletPortrait ? 35 : isTVTouch ? 120 : 80;
+  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 6 : isTVTouch ? 20 : 15;
 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -129,19 +129,21 @@ function Timer({
                 fontSize: isTV65 ? "120px" : isTVTouch ? "72px" : "48px",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               } : {
+                fontSize: "1.5rem",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               }}
             >
               {seconds}
             </div>
             <div
-              className={`font-bold opacity-90 mt-2 ${
+              className={`font-bold opacity-90 mt-1 ${
                 isTabletPortrait ? "timer-seconds" : ""
               }`}
               style={!isTabletPortrait ? {
                 fontSize: isTV65 ? "36px" : isTVTouch ? "24px" : "16px",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               } : {
+                fontSize: "0.7rem",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               }}
             >
@@ -553,18 +555,18 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         hyphens: "auto" as const, // [modificación] ARREGLADO: Tipo específico para TypeScript
       };
     } else if (isTabletPortrait) {
-      // [NUEVO] Estilos específicos para tablet 800x1340
+      // [NUEVO] Estilos específicos para tablet - MÁS COMPACTOS
       return {
-        fontSize: textMetrics.isLong ? "1.2rem" : "1.4rem",
-        padding: "20px 24px",
-        minHeight: "80px",
-        maxHeight: "120px",
-        borderRadius: "12px",
-        borderWidth: "3px",
-        fontWeight: "700",
-        lineHeight: "1.3",
+        fontSize: textMetrics.isLong ? "0.9rem" : "1rem",
+        padding: "0.75rem 1rem",
+        minHeight: "45px",
+        maxHeight: "65px",
+        borderRadius: "0.5rem",
+        borderWidth: "2px",
+        fontWeight: "600",
+        lineHeight: "1.2",
         textShadow: "0 2px 4px rgba(0, 0, 0, 0.7)",
-        boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2), inset 0 0 10px rgba(255, 255, 255, 0.05)",
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -668,7 +670,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         }`}>
         {/* [modificación] Header con logo - OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
         <header className={`w-full flex justify-center items-center ${
-                      isTabletPortrait ? 'question-header-tablet-portrait' : 'pt-24 pb-6'
+                      isTabletPortrait ? 'pt-2 pb-1' : 'pt-24 pb-6'
         }`}>
           <div className={`w-full flex justify-center items-center ${
             isTabletPortrait ? 'max-w-4xl' : 'max-w-5xl'
@@ -685,10 +687,10 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         {/* [modificación] Contenido principal OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
         <main
           className={`flex-1 flex flex-col justify-center items-center ${
-            isTabletPortrait ? 'question-main-tablet-portrait' : ''
+            isTabletPortrait ? 'py-2' : ''
           }`}
           style={{
-            padding: isTV65 ? "0px 64px 32px 64px" : isTabletPortrait ? "0px 16px" : "12px 32px", // [NUEVO] Padding optimizado para tablet 800
+            padding: isTV65 ? "0px 64px 32px 64px" : isTabletPortrait ? "0.5rem 1rem" : "12px 32px",
           }}
         >
           <div
@@ -703,9 +705,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                                   isTV65 ? "timer-container-tv65" : isTabletPortrait ? "timer-tablet-portrait" : ""
               }`}
               style={{
-                marginBottom: isTV65 ? "6px" : isTabletPortrait ? "0px" : "12px", 
-                marginTop: isTV65 ? "-320px" : isTabletPortrait ? "0px" : isTVTouch ? "-150px" : "-120px",
-                width: isTabletPortrait ? "100%" : "auto", // Asegurar ancho completo para centrado en tablet 800
+                marginBottom: isTV65 ? "6px" : isTabletPortrait ? "-1rem" : "12px", 
+                marginTop: isTV65 ? "-320px" : isTabletPortrait ? "-1rem" : isTVTouch ? "-150px" : "-120px",
+                width: isTabletPortrait ? "100%" : "auto",
                 display: isTabletPortrait ? "flex" : "block", 
                 alignItems: isTabletPortrait ? "center" : "initial",
                 justifyContent: isTabletPortrait ? "center" : "initial"
@@ -737,7 +739,15 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                 boxShadow: isTV65
                   ? "0 25px 50px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1)"
                   : "0 20px 40px rgba(0, 0, 0, 0.3)",
-              } : {}}
+              } : {
+                padding: "1rem 1.5rem",
+                marginBottom: "1rem",
+                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                backdropFilter: "blur(20px)",
+                borderRadius: "1.5rem",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                boxShadow: "0 10px 20px rgba(0, 0, 0, 0.3)",
+              }}
             >
               <h2
                 className={`font-marineBold text-white text-center leading-tight ${
@@ -748,7 +758,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   marginBottom: isTV65 ? "32px" : "16px",
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
                   fontWeight: "900",
-                } : {}}
+                } : {
+                  fontSize: "1.4rem",
+                  marginBottom: "1rem",
+                  textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
+                  fontWeight: "800",
+                }}
               >
                 {question.text}
               </h2>
@@ -764,7 +779,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
               }`}
               style={!isTabletPortrait ? {
                 gap: isTV65 ? "24px" : "16px",
-              } : {}}
+              } : {
+                display: "grid",
+                gridTemplateColumns: "1fr",
+                gap: "0.5rem",
+                maxWidth: "600px",
+                margin: "0 auto",
+              }}
             >
               {question.options.map((option, index) => (
                 <motion.div
@@ -846,12 +867,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                           {option.text}
                         </span>
                         <div
-                          className="ml-4 rounded-full flex items-center justify-center font-black bg-white/30 text-white"
+                          className="ml-2 rounded-full flex items-center justify-center font-black bg-white/30 text-white"
                           style={{
-                            width: isTVTouch ? "56px" : "48px",
-                            height: isTVTouch ? "56px" : "48px",
-                            fontSize: isTVTouch ? "28px" : "24px",
-                            marginLeft: isTVTouch ? "20px" : "16px",
+                            width: isTabletPortrait ? "24px" : isTVTouch ? "56px" : "48px",
+                            height: isTabletPortrait ? "24px" : isTVTouch ? "56px" : "48px",
+                            fontSize: isTabletPortrait ? "0.75rem" : isTVTouch ? "28px" : "24px",
+                            marginLeft: isTabletPortrait ? "8px" : isTVTouch ? "20px" : "16px",
                           }}
                         >
                           {String.fromCharCode(65 + index)}

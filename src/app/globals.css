@@ -1055,31 +1055,31 @@ body {
     flex-shrink: 0 !important;       /* Evita que se achique */
   }
 
-  /* Ruleta optimizada para tablet 800x1340 - TAMAÑO BALANCEADO AUMENTADO */
+  /* Ruleta optimizada para tablet - SIGNIFICATIVAMENTE AUMENTADA */
   .wheel-container {
-    max-width: 450px !important;  /* Aumentado de 350px a 450px */
-    max-height: 450px !important; /* Aumentado de 350px a 450px */
-    min-width: 380px !important;  /* Aumentado de 280px a 380px */
-    min-height: 380px !important; /* Aumentado de 280px a 380px */
-    margin: 0.5rem auto !important; /* Margen pequeño */
-    width: min(450px, 35vh) !important; /* Responsive basado en altura de viewport, aumentado */
-    height: min(450px, 35vh) !important; /* Responsive basado en altura de viewport, aumentado */
+    max-width: 500px !important;  /* Aumentado aún más para ser más prominente */
+    max-height: 500px !important; 
+    min-width: 450px !important;  /* Mínimo más grande */
+    min-height: 450px !important; 
+    margin: 0.25rem auto !important;
+    width: min(500px, 80vw) !important; /* Usar más ancho de viewport */
+    height: min(500px, 80vw) !important;
     filter: 
-      drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2))
-      drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15))
-      drop-shadow(0 0 15px rgba(90, 204, 193, 0.15)) !important;
+      drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3))
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+      drop-shadow(0 0 20px rgba(90, 204, 193, 0.2)) !important;
   }
 
   .wheel-canvas {
-    max-width: 100% !important;   /* Usa el tamaño del contenedor */
-    max-height: 100% !important;  /* Usa el tamaño del contenedor */
+    max-width: 100% !important;
+    max-height: 100% !important;
     width: 100% !important;
     height: 100% !important;
-    border: 3px solid rgba(255, 255, 255, 0.15) !important;
+    border: 4px solid rgba(255, 255, 255, 0.2) !important;
     filter: 
-      drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25))
-      drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15))
-      drop-shadow(0 0 20px rgba(90, 204, 193, 0.2)) !important;
+      drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3))
+      drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2))
+      drop-shadow(0 0 25px rgba(90, 204, 193, 0.25)) !important;
   }
 
   /* Botón de girar optimizado para tablets verticales - TAMAÑO PROPORCIONAL AL NUEVO LAYOUT */
@@ -2480,24 +2480,24 @@ textarea::placeholder {
     padding: 0.25rem !important;
   }
 
-  /* Cronómetro optimizado para tablets verticales - REDUCIDO PARA MEJOR BALANCE */
+  /* Cronómetro SIGNIFICATIVAMENTE reducido para tablets verticales */
   .timer-tablet-portrait {
-    width: 140px !important; /* Reducido de 190px a 140px */
-    height: 140px !important; /* Reducido de 190px a 140px */
-    margin: 0 auto !important; /* Centrado horizontal */
+    width: 90px !important; /* Reducido aún más a 90px */
+    height: 90px !important; /* Reducido aún más a 90px */
+    margin: 0 auto !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
   }
 
   .timer-tablet-800 .timer-text {
-    font-size: 2.2rem !important; /* Reducido de 2.85rem a 2.2rem */
+    font-size: 1.5rem !important; /* Reducido significativamente a 1.5rem */
     font-weight: 900 !important;
     line-height: 1 !important;
   }
 
   .timer-tablet-800 .timer-seconds {
-    font-size: 0.9rem !important; /* Reducido de 1rem a 0.9rem */
+    font-size: 0.7rem !important; /* Reducido a 0.7rem */
     margin-top: 0.25rem !important;
     font-weight: 600 !important;
   }

@@ -22,6 +22,7 @@ export default function TVPage() {
   const [screen, setScreen] = useState<TVScreen>('waiting');
   const [questions, setLocalQuestions] = useState<Question[]>([]);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false);
   const rouletteRef = useRef<{ spin: () => void }>(null);
 
   // Estados del store global que necesitamos observar
@@ -35,6 +36,26 @@ export default function TVPage() {
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
   const setStoreQuestions = useGameStore((state) => state.setQuestions);
+
+  // Detectar tablets en orientación vertical
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      const isTabletPortraitResolution = 
+        width >= 768 && width <= 1200 && 
+        height > width && 
+        height >= 1000 && 
+        !((width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160));
+      
+      setIsTabletPortrait(isTabletPortraitResolution);
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Cargar preguntas al montar
   useEffect(() => {
@@ -180,12 +201,17 @@ export default function TVPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="w-full flex flex-col items-center justify-center space-y-1 md:space-y-2 lg:space-y-4"
             >
-              {/* Contenedor de la ruleta responsivo - TAMAÑO AUMENTADO PARA TABLETS */}
+              {/* Contenedor de la ruleta responsivo - TAMAÑO MASSIVAMENTE AUMENTADO PARA TABLETS */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="w-full max-w-[200px] md:max-w-[280px] lg:max-w-[320px] xl:max-w-[360px] aspect-square flex justify-center"
+                className="w-full max-w-[280px] md:max-w-[450px] lg:max-w-[500px] xl:max-w-[600px] aspect-square flex justify-center"
+                style={{
+                  maxWidth: isTabletPortrait ? '450px' : undefined,
+                  width: isTabletPortrait ? 'min(450px, 85vw)' : undefined,
+                  height: isTabletPortrait ? 'min(450px, 85vw)' : undefined
+                }}
               >
                 {questions.length > 0 ? (
                   <RouletteWheel 
