@@ -45,9 +45,9 @@ function Timer({
   }, [seconds, onTimeUp]);
 
   // [modificación] Cronómetro circular responsivo - ahora incluye tablets verticales universales
-  const timerSize = isTV65 ? 500 : isTabletPortrait ? 200 : isTVTouch ? 300 : 200;
-  const radius = isTV65 ? 200 : isTabletPortrait ? 80 : isTVTouch ? 120 : 80;
-  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 12 : isTVTouch ? 20 : 15;
+  const timerSize = isTV65 ? 500 : isTabletPortrait ? 140 : isTVTouch ? 300 : 200;
+  const radius = isTV65 ? 200 : isTabletPortrait ? 56 : isTVTouch ? 120 : 80;
+  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 10 : isTVTouch ? 20 : 15;
 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;

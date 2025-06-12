@@ -1055,15 +1055,15 @@ body {
     flex-shrink: 0 !important;       /* Evita que se achique */
   }
 
-  /* Ruleta optimizada para tablet 800x1340 - TAMAÑO BALANCEADO PARA VIEWPORT */
+  /* Ruleta optimizada para tablet 800x1340 - TAMAÑO BALANCEADO AUMENTADO */
   .wheel-container {
-    max-width: 350px !important;  /* Ajustado a 350px para coincidir con inline styles */
-    max-height: 350px !important; /* Ajustado a 350px para coincidir con inline styles */
-    min-width: 280px !important;  /* Ajustado a 280px para coincidir con inline styles */
-    min-height: 280px !important; /* Ajustado a 280px para coincidir con inline styles */
+    max-width: 450px !important;  /* Aumentado de 350px a 450px */
+    max-height: 450px !important; /* Aumentado de 350px a 450px */
+    min-width: 380px !important;  /* Aumentado de 280px a 380px */
+    min-height: 380px !important; /* Aumentado de 280px a 380px */
     margin: 0.5rem auto !important; /* Margen pequeño */
-    width: min(350px, 30vh) !important; /* Responsive basado en altura de viewport, reducido */
-    height: min(350px, 30vh) !important; /* Responsive basado en altura de viewport, reducido */
+    width: min(450px, 35vh) !important; /* Responsive basado en altura de viewport, aumentado */
+    height: min(450px, 35vh) !important; /* Responsive basado en altura de viewport, aumentado */
     filter: 
       drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2))
       drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15))
@@ -2432,16 +2432,16 @@ textarea::placeholder {
 
 /* [RESPONSIVO] Media queries optimizadas para tablets universales */
 @media screen and (min-width: 768px) and (max-width: 1200px) and (orientation: portrait) {
-  /* [RESPONSIVO] Contenedores con max-width constraint */
+  /* [RESPONSIVO] Contenedores con max-width constraint - AUMENTADOS PARA MEJOR BALANCE */
   .wheel-container {
-    max-width: 220px !important;
-    max-height: 220px !important;
+    max-width: 320px !important; /* Aumentado de 220px a 320px */
+    max-height: 320px !important; /* Aumentado de 220px a 320px */
     margin: 0 auto;
   }
 
   .wheel-canvas {
-    max-width: 200px !important;
-    max-height: 200px !important;
+    max-width: 300px !important; /* Aumentado de 200px a 300px */
+    max-height: 300px !important; /* Aumentado de 200px a 300px */
   }
 
   /* [RESPONSIVO] Botones con tamaño limitado */
@@ -2478,6 +2478,140 @@ textarea::placeholder {
   /* [RESPONSIVO] Main con padding mínimo */
   main {
     padding: 0.25rem !important;
+  }
+
+  /* Cronómetro optimizado para tablets verticales - REDUCIDO PARA MEJOR BALANCE */
+  .timer-tablet-portrait {
+    width: 140px !important; /* Reducido de 190px a 140px */
+    height: 140px !important; /* Reducido de 190px a 140px */
+    margin: 0 auto !important; /* Centrado horizontal */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .timer-tablet-800 .timer-text {
+    font-size: 2.2rem !important; /* Reducido de 2.85rem a 2.2rem */
+    font-weight: 900 !important;
+    line-height: 1 !important;
+  }
+
+  .timer-tablet-800 .timer-seconds {
+    font-size: 0.9rem !important; /* Reducido de 1rem a 0.9rem */
+    margin-top: 0.25rem !important;
+    font-weight: 600 !important;
+  }
+
+  /* Contenedor de pregunta optimizado para tablet 800x1340 - REDUCIDO */
+  .question-container-tablet-800 {
+    max-width: 700px !important;
+    margin: 0 auto 1.5rem auto !important;
+    padding: 1.5rem 1.25rem !important; /* Reducido padding */
+    border-radius: 1.25rem !important; /* Reducido border-radius */
+    background: rgba(0, 0, 0, 0.45) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 2px solid rgba(255, 255, 255, 0.25) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .question-container-tablet-800 h2 {
+    font-size: 1.9rem !important; /* Reducido de 2.2rem a 1.9rem */
+    line-height: 1.25 !important;
+    margin-bottom: 0 !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  /* Opciones de respuesta optimizadas para tablet 800x1340 - REDUCIDAS */
+  .answer-option-tablet-800 {
+    padding: 1rem 1.5rem !important; /* Reducido padding */
+    font-size: 1.2rem !important; /* Reducido de 1.35rem a 1.2rem */
+    min-height: 65px !important; /* Reducido de 75px a 65px */
+    border-radius: 0.75rem !important; /* Reducido border-radius */
+    border-width: 2px !important; /* Reducido border-width */
+    margin-bottom: 0.75rem !important; /* Reducido margin */
+    line-height: 1.3 !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    transition: all 0.3s ease !important;
+  }
+
+  .answer-option-tablet-800:last-child {
+    margin-bottom: 0 !important;
+  }
+
+  .answer-option-tablet-800 .option-icon {
+    width: 32px !important; /* Reducido de 36px a 32px */
+    height: 32px !important; /* Reducido de 36px a 32px */
+    font-size: 1.1rem !important; /* Reducido font-size */
+    font-weight: 800 !important;
+    margin-left: 1rem !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Grid de opciones optimizado para tablet 800x1340 */
+  .options-grid-tablet-800 {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important; /* Reducido gap */
+    max-width: 700px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Layout principal de pregunta para tablets verticales */
+  .question-layout-tablet-portrait {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-between !important; /* Cambiado para distribuir el espacio uniformemente */
+    min-height: 100vh !important;
+    padding: 0.25rem 1.5rem 0.75rem 1.5rem !important; /* Reducido padding superior */
+    gap: 0rem !important; /* Eliminado gap para control manual del espaciado */
+  }
+
+  /* Header de pregunta compacto para tablets verticales */
+  .question-header-tablet-portrait {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0.25rem 2rem 0rem 2rem !important; /* Reducido padding para dar más espacio al cronómetro */
+    margin-bottom: 0rem !important; /* Eliminado margin-bottom */
+  }
+
+  /* Main de pregunta optimizado para tablets verticales */
+  .question-main-tablet-portrait {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important; /* Mantener centrado verticalmente */
+    width: 100% !important;
+    max-width: 750px !important;
+    margin: 0 auto !important;
+    gap: 1.25rem !important; /* Reducido gap de 1.5rem a 1.25rem */
+    padding: 0.75rem 0 !important; /* Reducido padding vertical */
+  }
+
+  /* Footer de pregunta compacto para tablet 800x1340 */
+  .question-footer-tablet-800 {
+    text-align: center !important;
+    padding: 0.5rem !important;
+    min-height: auto !important;
+  }
+
+  .question-footer-tablet-800 div {
+    font-size: 0.95rem !important;
+    color: rgba(255, 255, 255, 0.7) !important;
   }
 }
 

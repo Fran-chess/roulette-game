@@ -180,12 +180,12 @@ export default function TVPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="w-full flex flex-col items-center justify-center space-y-1 md:space-y-2 lg:space-y-4"
             >
-              {/* Contenedor de la ruleta responsivo - TAMAÑO LIMITADO */}
+              {/* Contenedor de la ruleta responsivo - TAMAÑO AUMENTADO PARA TABLETS */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.8, delay: 0.2 }}
-                className="w-full max-w-[180px] md:max-w-[220px] lg:max-w-[280px] xl:max-w-[320px] aspect-square flex justify-center"
+                className="w-full max-w-[200px] md:max-w-[280px] lg:max-w-[320px] xl:max-w-[360px] aspect-square flex justify-center"
               >
                 {questions.length > 0 ? (
                   <RouletteWheel 

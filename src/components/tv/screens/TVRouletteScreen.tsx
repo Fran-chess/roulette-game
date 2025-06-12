@@ -332,12 +332,12 @@ export default function TVRouletteScreen() {
             role="main"
             aria-label="Pantalla de ruleta optimizada para diferentes dispositivos"
           >
-            {/* Contenedor de la ruleta - TAMAÑO RESPONSIVO */}
+            {/* Contenedor de la ruleta - TAMAÑO RESPONSIVO AUMENTADO PARA TABLETS */}
             <MotionDiv
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="w-full max-w-[180px] md:max-w-[220px] lg:max-w-[280px] xl:max-w-[320px] aspect-square flex justify-center"
+              className="w-full max-w-[200px] md:max-w-[280px] lg:max-w-[320px] xl:max-w-[360px] aspect-square flex justify-center"
             >
               {questions.length > 0 ? (
                 <RouletteWheel 
