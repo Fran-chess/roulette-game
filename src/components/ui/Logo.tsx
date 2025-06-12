@@ -21,15 +21,15 @@ const Logo = ({
   className = "",
   withShadow = true,
 }: LogoProps) => {
-  // [modificación] Aumenté los valores de 'lg' para que el logo sea notablemente grande (simétrico con la ruleta y el botón).
+  // [RESPONSIVO] Usar clases responsivas de Tailwind en lugar de tamaños fijos
   const sizesMap = {
-    sm: { width: 200, height: 60 },   // Tamaño pequeño aumentado
-    md: { width: 600, height: 180 },  // Tamaño mediano ultra grande
-    lg: { width: 1200, height: 360 }, // Tamaño grande ultra optimizado (antes 800×240)
+    sm: { width: 80, height: 24 },    // Muy reducido para mobile
+    md: { width: 120, height: 36 },   // Tamaño base para tablet
+    lg: { width: 160, height: 48 },   // Tamaño grande para desktop
   };
 
   // Estado para manejar dimensiones responsivas si size='auto'
-  const [dimensions, setDimensions] = useState(sizesMap.md);
+  const [dimensions, setDimensions] = useState(sizesMap.sm); // Cambiar default a 'sm'
 
   useEffect(() => {
     if (size !== "auto") return;
@@ -54,7 +54,7 @@ const Logo = ({
         if (isUltraHighRes) {
           console.log('🖼️ Logo TV65 detectada:', { width, height, isGameView });
         } else if (isTabletPortrait) {
-          console.log('🖼️ Logo Tablet 800x1340 detectada:', { width, height, isGameView });
+          console.log('🖼️ Logo Tablet detectada - aplicando tamaños PEQUEÑOS:', { width, height, isGameView });
         }
       }
 
@@ -65,22 +65,23 @@ const Logo = ({
         } else {
           setDimensions({ width: 1400, height: 420 });  // [modificación] Vista principal → súper grande
         }
-              } else if (isTabletPortrait) {
-        // [NUEVO] Tamaños específicos para tablet 800x1340
+      } else if (isTabletPortrait) {
+        // [NUEVO] Tamaños MUCHO MÁS PEQUEÑOS para tablet
         if (isGameView) {
-          setDimensions({ width: 400, height: 120 });   // [NUEVO] Vista de juego en tablet 800
+          setDimensions({ width: 180, height: 54 });   // Reducido de 400x120 a 180x54
         } else {
-          setDimensions({ width: 500, height: 150 });   // [NUEVO] Vista principal en tablet 800
+          setDimensions({ width: 200, height: 60 });   // Reducido de 500x150 a 200x60
         }
       } else if (isGameView) {
+        // Tamaños para mobile y otras pantallas pequeñas
         if (width < 640) {
-          setDimensions({ width: 200, height: 60 });
+          setDimensions({ width: 140, height: 42 });  // Reducido
         } else if (width < 768) {
-          setDimensions({ width: 240, height: 72 });
+          setDimensions({ width: 160, height: 48 });  // Reducido
         } else if (width < 1024) {
-          setDimensions({ width: 280, height: 84 });
+          setDimensions({ width: 180, height: 54 });  // Reducido
         } else {
-          setDimensions({ width: 320, height: 96 });
+          setDimensions({ width: 200, height: 60 });  // Reducido
         }
         // Si está en landscape, reducimos un poco
         if (width > height) {
@@ -90,17 +91,17 @@ const Logo = ({
           }));
         }
       } else {
-        // En otras secciones (no juego), tamaños estándar optimizados para TV
+        // En otras secciones (no juego), tamaños pequeños para tablet
         if (width < 640) {
-          setDimensions({ width: 240, height: 72 });
+          setDimensions({ width: 160, height: 48 });
         } else if (width < 768) {
-          setDimensions({ width: 300, height: 90 });
+          setDimensions({ width: 180, height: 54 });
         } else if (width < 1024) {
-          setDimensions({ width: 400, height: 120 });
+          setDimensions({ width: 200, height: 60 });  // Muy reducido de 400x120
         } else if (width < 2560) {
-          setDimensions({ width: 800, height: 240 });
+          setDimensions({ width: 300, height: 90 });   // Muy reducido de 800x240
         } else {
-          setDimensions({ width: 1200, height: 360 });
+          setDimensions({ width: 1200, height: 360 }); // Solo para TV muy grande
         }
       }
     };
@@ -122,28 +123,38 @@ const Logo = ({
   }, [size]); // [modificación] Solo dependencia 'size'
 
   const logoSize = size === "auto" ? dimensions : sizesMap[size];
-  const safeWidth = logoSize?.width ?? 160;
-  const safeHeight = logoSize?.height ?? 48;
+  const safeWidth = logoSize?.width ?? 120; // Reducido default
+  const safeHeight = logoSize?.height ?? 36; // Reducido default
 
-  // [modificación] Clases de imagen reforzadas para resoluciones grandes
-  const imageClasses = `w-auto h-auto ${withShadow ? "drop-shadow-2xl filter contrast-110 brightness-105" : ""}`;
+  // [RESPONSIVO] Clases de imagen con breakpoints responsivos
+  const imageClasses = `
+    w-16 h-16 
+    sm:w-20 sm:h-20 
+    md:w-24 md:h-24 
+    lg:w-28 lg:h-28 
+    xl:w-32 xl:h-32
+    max-w-full max-h-full 
+    object-contain
+    ${withShadow ? "drop-shadow-sm md:drop-shadow-md lg:drop-shadow-lg" : ""}
+  `;
 
   const logoContent = (
-    <Image
-      src="/images/8.svg"
-      alt="Logo DarSalud"
-      width={safeWidth}
-      height={safeHeight}
-      priority
-      className={imageClasses}
-      style={{
-        // [modificación] Sombra más pronunciada en TV
-        filter: withShadow
-          ? 'drop-shadow(0 15px 30px rgba(0, 0, 0, 0.3)) contrast(110%) brightness(105%)'
-          : 'contrast(110%) brightness(105%)',
-        imageRendering: 'crisp-edges',
-      }}
-    />
+    <div className="w-full h-full max-w-[200px] md:max-w-[300px] lg:max-w-[400px] flex items-center justify-center">
+      <Image
+        src="/images/8.svg"
+        alt="Logo DarSalud"
+        width={safeWidth}
+        height={safeHeight}
+        priority
+        className={imageClasses}
+        style={{
+          filter: withShadow
+            ? 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1)) md:drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2)) lg:drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3)) contrast(110%) brightness(105%)'
+            : 'contrast(110%) brightness(105%)',
+          imageRendering: 'crisp-edges',
+        }}
+      />
+    </div>
   );
 
   if (animated) {

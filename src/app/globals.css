@@ -2429,3 +2429,178 @@ textarea::placeholder {
 .h-13 {
   height: 3.25rem !important; /* 52px */
 }
+
+/* [RESPONSIVO] Media queries optimizadas para tablets universales */
+@media screen and (min-width: 768px) and (max-width: 1200px) and (orientation: portrait) {
+  /* [RESPONSIVO] Contenedores con max-width constraint */
+  .wheel-container {
+    max-width: 220px !important;
+    max-height: 220px !important;
+    margin: 0 auto;
+  }
+
+  .wheel-canvas {
+    max-width: 200px !important;
+    max-height: 200px !important;
+  }
+
+  /* [RESPONSIVO] Botones con tamaño limitado */
+  button {
+    max-width: 200px !important;
+    font-size: 0.875rem !important; /* text-sm equivalent */
+    padding: 0.5rem 0.75rem !important; /* px-3 py-2 equivalent */
+  }
+
+  /* [RESPONSIVO] Logo con constraint específico */
+  .logo-container,
+  .logo-header {
+    max-width: 180px !important;
+    max-height: 54px !important;
+  }
+
+  /* [RESPONSIVO] Espaciado mínimo universal */
+  .space-y-responsive > * + * {
+    margin-top: 0.5rem !important; /* space-y-2 equivalent */
+  }
+
+  /* [RESPONSIVO] Headers compactos */
+  header {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* [RESPONSIVO] Footers mínimos */
+  footer {
+    height: 1vh !important;
+    min-height: 10px !important;
+  }
+
+  /* [RESPONSIVO] Main con padding mínimo */
+  main {
+    padding: 0.25rem !important;
+  }
+}
+
+/* [RESPONSIVO] Optimizaciones para móviles pequeños */
+@media screen and (max-width: 480px) {
+  /* [RESPONSIVO] Logo muy pequeño para mobile */
+  .logo-container,
+  .logo-header {
+    max-width: 120px !important;
+    max-height: 36px !important;
+  }
+
+  /* [RESPONSIVO] Ruleta compacta para mobile */
+  .wheel-container {
+    max-width: 160px !important;
+    max-height: 160px !important;
+  }
+
+  .wheel-canvas {
+    max-width: 150px !important;
+    max-height: 150px !important;
+  }
+
+  /* [RESPONSIVO] Botones compactos para mobile */
+  button {
+    max-width: 160px !important;
+    font-size: 0.75rem !important; /* text-xs equivalent */
+    padding: 0.25rem 0.5rem !important; /* px-2 py-1 equivalent */
+    min-height: 32px !important;
+  }
+
+  /* [RESPONSIVO] Espaciado ultra mínimo */
+  .space-y-responsive > * + * {
+    margin-top: 0.25rem !important; /* space-y-1 equivalent */
+  }
+}
+
+/* [RESPONSIVO] Optimizaciones para tablets en landscape */
+@media screen and (min-width: 768px) and (max-width: 1200px) and (orientation: landscape) {
+  /* [RESPONSIVO] Reducir elementos para landscape */
+  .wheel-container {
+    max-width: 180px !important;
+    max-height: 180px !important;
+  }
+
+  .wheel-canvas {
+    max-width: 170px !important;
+    max-height: 170px !important;
+  }
+
+  /* [RESPONSIVO] Logo más pequeño en landscape */
+  .logo-container,
+  .logo-header {
+    max-width: 140px !important;
+    max-height: 42px !important;
+  }
+
+  /* [RESPONSIVO] Botones más compactos en landscape */
+  button {
+    max-width: 180px !important;
+    font-size: 0.75rem !important;
+    padding: 0.375rem 0.625rem !important;
+  }
+}
+
+/* [RESPONSIVO] Utilidades para aspect ratio y constraints */
+.aspect-square-responsive {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  height: auto;
+}
+
+.max-w-responsive-sm {
+  max-width: 160px;
+}
+
+.max-w-responsive-md {
+  max-width: 200px;
+}
+
+.max-w-responsive-lg {
+  max-width: 280px;
+}
+
+/* [RESPONSIVO] Helper classes para spacing responsivo */
+.space-y-responsive-1 > * + * {
+  margin-top: 0.25rem;
+}
+
+.space-y-responsive-2 > * + * {
+  margin-top: 0.5rem;
+}
+
+.space-y-responsive-4 > * + * {
+  margin-top: 1rem;
+}
+
+/* [RESPONSIVO] Container constraints para diferentes breakpoints */
+.container-responsive {
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .container-responsive {
+    max-width: 320px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 384px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-responsive {
+    max-width: 448px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container-responsive {
+    max-width: 512px;
+  }
+}
