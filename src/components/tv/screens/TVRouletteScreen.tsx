@@ -26,8 +26,9 @@ export default function TVRouletteScreen() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   
-  // [modificación] - Estados para confetti optimizado para TV
+  // [modificación] - Estados para confetti optimizado para todos los dispositivos
   const [isTV65, setIsTV65] = useState(false);
+  const [isTablet800, setIsTablet800] = useState(false); // [NUEVO] Estado para tablet 800x1340
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
   
   // [modificación] ID único para tracking de logs
@@ -46,7 +47,7 @@ export default function TVRouletteScreen() {
   const [isSpinning, setIsSpinning] = useState(false);
   
   // [NUEVO] Hook neumórfico para el botón
-  const rouletteButtonState = useRouletteButton(isSpinning, 'tv');
+  const rouletteButtonState = useRouletteButton(isSpinning, isTablet800 ? 'tablet' : 'tv'); // [NUEVO] Usar tipo tablet para 800x1340
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
   const setQuestionsInStore = useGameStore((state) => state.setQuestions);
   const gameState: GameState = useGameStore((state) => state.gameState);
@@ -66,7 +67,7 @@ export default function TVRouletteScreen() {
     tvLogger.debug(`lastSpinResultIndex: ${lastSpinResultIndex}, currentQuestion: ${currentQuestion ? currentQuestion.category : 'undefined'}`);
   }, [gameState, currentParticipant, gameSession, lastSpinResultIndex, currentQuestion]);
 
-  // [modificación] - useEffect para detectar TV65 y configurar ventana para confetti
+  // [modificación] - useEffect para detectar dispositivos y configurar ventana para confetti
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -74,12 +75,18 @@ export default function TVRouletteScreen() {
       
       // Detectar TV65 igual que en QuestionDisplay
       const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
-      
       setIsTV65(isTV65Resolution);
+      
+      // [NUEVO] Detectar tablet 800x1340
+      const isTablet800Resolution = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350);
+      setIsTablet800(isTablet800Resolution);
+      
       setWindowSize({ width, height });
       
       if (isTV65Resolution) {
-// //         console.log(`🎉 TVRouletteScreen: Confetti optimizado para TV65 activado - ${width}x${height}`);
+        console.log(`🎉 TVRouletteScreen: Confetti optimizado para TV65 activado - ${width}x${height}`);
+      } else if (isTablet800Resolution) {
+        console.log(`🎉 TVRouletteScreen: Confetti optimizado para tablet 800x1340 activado - ${width}x${height}`);
       }
     };
 
@@ -270,6 +277,7 @@ export default function TVRouletteScreen() {
           show={showConfetti} 
           windowSize={windowSize} 
           isTV65={isTV65}
+          isTablet800={isTablet800}
         />
         <PrizeModal />
       </div>
@@ -285,53 +293,73 @@ export default function TVRouletteScreen() {
           show={showConfetti} 
           windowSize={windowSize} 
           isTV65={isTV65}
+          isTablet800={isTablet800}
         />
         <QuestionDisplay question={currentQuestion} />
       </div>
     );
   }
 
-  // [modificación] Layout principal: logo, ruleta y botón, todos grandes y centrados
+  // [modificación] Layout principal: logo, ruleta y botón, todos optimizados para diferentes dispositivos
   return (
     <div className="flex flex-col min-h-screen w-full bg-main-gradient">
-      {/* Header con logo muy grande - [modificación] Más espacio superior (10% de altura total) */}
-      <header className="w-full flex justify-center items-center pt-24 pb-6"> {/* [modificación] pt-24 (antes pt-16) para dar ~10% más de espacio arriba */}
-        <div className="w-full max-w-5xl flex justify-center items-center">
-          {/* [modificación] Forzamos tamaño 'lg' para que coincida con la ruleta */}
+      {/* Header con logo optimizado para todos los dispositivos */}
+      <header className={`w-full flex justify-center items-center ${
+        isTablet800 ? 'pt-12 pb-4' : 'pt-24 pb-6' // [NUEVO] Padding específico para tablet 800
+      }`}>
+        <div className={`w-full flex justify-center items-center ${
+          isTablet800 ? 'max-w-3xl' : 'max-w-5xl' // [NUEVO] Ancho máximo para tablet 800
+        }`}>
+          {/* [modificación] Logo con clase específica según dispositivo */}
           <Logo
             size="lg"
             animated={true}
             withShadow={true}
-            className="w-full h-auto"
+            className={`w-full h-auto ${isTablet800 ? 'logo-tablet-800' : ''}`} // [NUEVO] Clase específica para tablet 800
           />
         </div>
       </header>
 
-      {/* Contenido principal: ruleta y botón - [modificación] Container centrado con ancho máximo */}
-      <main className="flex-1 flex flex-col items-center justify-center w-full px-8"> {/* [modificación] px-8 (antes px-16) para mejor centrado */}
-        <div className="w-full max-w-[1800px] flex flex-col items-center justify-center space-y-16"> {/* [modificación] Container centrado de 1800px máximo y space-y-16 (antes space-y-24) */}
+      {/* Contenido principal: ruleta y botón - optimizado para todos los dispositivos */}
+      <main className={`flex-1 flex flex-col items-center justify-center w-full ${
+        isTablet800 ? 'px-4' : 'px-8' // [NUEVO] Padding lateral para tablet 800
+      }`}>
+        <div className={`w-full flex flex-col items-center justify-center ${
+          isTablet800 ? 'max-w-[700px] space-y-4' : 'max-w-[1800px] space-y-16' // [NUEVO] Reducido space-y de 6 a 4 para tablet 800
+        }`}>
           <MotionDiv
             key="tv-roulette"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="w-full flex flex-col items-center justify-center space-y-12" // [modificación] space-y-12 (antes space-y-16) para acercar ruleta y botón
+            className={`w-full flex flex-col items-center justify-center ${
+              isTablet800 ? 'space-y-3' : 'space-y-12' // [NUEVO] Reducido espaciado interno para tablet 800
+            }`}
             role="main"
-            aria-label="Pantalla de ruleta para TV"
+            aria-label="Pantalla de ruleta optimizada para diferentes dispositivos"
           >
-            {/* Contenedor de la ruleta - [modificación] Más grande usando vh en lugar de px fijos */}
+            {/* Contenedor de la ruleta - optimizado según dispositivo */}
             <MotionDiv
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="w-full max-w-none flex justify-center"
-              style={{
+              className={`w-full max-w-none flex justify-center ${
+                isTablet800 ? 'wheel-container' : '' // [NUEVO] Clase específica para tablet 800
+              }`}
+              style={isTablet800 ? {
                 width: '100%',
                 height: 'auto',
-                maxWidth: '55vh', // [modificación] Usar 55vh para que ocupe 55% de altura como sugiere el usuario
-                maxHeight: '55vh', // [modificación] Mantener aspecto cuadrado pero más grande
-                minWidth: '2000px', // [modificación] Tamaño mínimo más grande (antes 1800px)
-                minHeight: '2000px', // [modificación] Tamaño mínimo más grande
+                maxWidth: '680px',  // Aumentado de 520px a 680px
+                maxHeight: '680px', // Aumentado de 520px a 680px
+                minWidth: '640px',  // Aumentado de 480px a 640px
+                minHeight: '640px', // Aumentado de 480px a 640px
+              } : {
+                width: '100%',
+                height: 'auto',
+                maxWidth: '55vh',
+                maxHeight: '55vh',
+                minWidth: '2000px',
+                minHeight: '2000px',
               }}
             >
               {questions.length > 0 ? (
@@ -341,13 +369,15 @@ export default function TVRouletteScreen() {
                   onSpinStateChange={handleSpinStateChange}
                 />
               ) : (
-                <div className="text-white text-8xl text-center font-bold">
+                <div className={`text-white text-center font-bold ${
+                  isTablet800 ? 'text-4xl' : 'text-8xl' // [NUEVO] Tamaño de texto para tablet 800
+                }`}>
                   Cargando categorías...
                 </div>
               )}
             </MotionDiv>
 
-            {/* Botón "¡Girar la Ruleta!" - [NUEVO] Con efectos neumórficos */}
+            {/* Botón "¡Girar la Ruleta!" - optimizado según dispositivo */}
             <MotionDiv
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
@@ -355,16 +385,36 @@ export default function TVRouletteScreen() {
               className="relative flex justify-center"
             >
               <button
-                className={`${rouletteButtonState.buttonClasses} text-white font-black focus:outline-none focus:ring-8 focus:ring-blue-300`}
+                className={`${rouletteButtonState.buttonClasses} ${
+                  isTablet800 ? 'neomorphic-button-tablet-800' : ''
+                } text-white font-black focus:outline-none focus:ring-8 focus:ring-blue-300`}
                 onClick={handleSpin}
                 onTouchStart={rouletteButtonState.handleRippleEffect}
                 onMouseDown={rouletteButtonState.handleRippleEffect}
                 disabled={rouletteButtonState.isDisabled}
                 aria-label={rouletteButtonState.buttonText}
-                style={{ position: 'relative', overflow: 'hidden' }}
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  // [NUEVO] Estilos específicos para tablet 800x1340
+                  ...(isTablet800 && {
+                    padding: "20px 40px",
+                    fontSize: "1.8rem",
+                    minHeight: "100px",
+                    minWidth: "400px",
+                    borderRadius: "50px",
+                    fontWeight: "800",
+                    letterSpacing: "0.02em",
+                  })
+                }}
               >
-                <span className={`inline-block mr-8 -mt-3 align-middle ${rouletteButtonState.iconClasses}`}>
-                  <RouletteWheelIcon className="w-28 h-28" size={112} />
+                <span className={`inline-block mr-8 -mt-3 align-middle ${
+                  rouletteButtonState.iconClasses
+                } ${isTablet800 ? 'roulette-icon-tablet-800' : ''}`}> {/* [NUEVO] Clase específica para tablet 800 */}
+                  <RouletteWheelIcon 
+                    className={`${isTablet800 ? 'w-13 h-13' : 'w-28 h-28'}`} // [NUEVO] Tamaño ajustado para tablet 800
+                    size={isTablet800 ? 52 : 112} // [NUEVO] Tamaño específico para tablet 800
+                  />
                 </span>
                 {rouletteButtonState.buttonText}
               </button>
@@ -373,8 +423,10 @@ export default function TVRouletteScreen() {
         </div>
       </main>
 
-      {/* [modificación] Footer invisible para asegurar 5vh de espacio bajo el botón */}
-      <footer className="h-[5vh] min-h-[100px] w-full"></footer> {/* [modificación] Espacio inferior garantizado */}
+      {/* Footer optimizado para todos los dispositivos */}
+      <footer className={`w-full ${
+        isTablet800 ? 'h-[3vh] min-h-[60px]' : 'h-[5vh] min-h-[100px]' // [NUEVO] Altura específica para tablet 800
+      }`}></footer>
     </div>
   );
 }

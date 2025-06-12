@@ -26,7 +26,7 @@ function FullScreenVideo() {
         }}
         transition={{ 
           duration: 1.5,
-          ease: [0.25, 0.46, 0.45, 0.94] // [modificación] Easing profesional y suave
+          ease: "easeOut" as const // [modificación] Easing profesional y suave
         }}
         className="relative w-full h-full"
       >

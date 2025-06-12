@@ -23,7 +23,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1.0] }}
+        transition={{ duration: 0.3, ease: "easeOut" as const }}
         className="flex"
       >
         {tabs.map((tab) => (
@@ -36,7 +36,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
             aria-controls={`panel-${tab.id}`}
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.25, 0.1, 0.25, 1.0] }}
+            transition={{ duration: 0.3, ease: "easeOut" as const }}
             whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
             className={`
               flex flex-1 items-center justify-center      // Ocupa espacio equitativamente y centra contenido

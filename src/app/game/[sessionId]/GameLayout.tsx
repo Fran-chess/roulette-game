@@ -13,6 +13,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [isTV65, setIsTV65] = useState(false); // [modificación] - Detectar TV65 para confetti optimizado
+  const [isTablet800, setIsTablet800] = useState(false); // [NUEVO] - Detectar tablet 800x1340
   const showConfetti = useGameStore((state) => state.showConfetti);
 
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
@@ -25,13 +26,19 @@ export default function GameLayout({ children }: { children: ReactNode }) {
       // [modificación] - Detectar TV65 igual que en QuestionDisplay
       const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
       
+      // [NUEVO] - Detectar tablet 800x1340
+      const isTablet800Resolution = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350);
+      
       setIsMobile(width < 768);
       setIsTablet(width >= 768 && width <= 1280);
       setIsTV65(isTV65Resolution);
+      setIsTablet800(isTablet800Resolution);
       setWindowSize({ width, height });
       
       if (isTV65Resolution) {
-// //         console.log(`🎉 GameLayout: Confetti optimizado para TV65 activado - ${width}x${height}`);
+        console.log(`🎉 GameLayout: Confetti optimizado para TV65 activado - ${width}x${height}`);
+      } else if (isTablet800Resolution) {
+        console.log(`🎉 GameLayout: Confetti optimizado para tablet 800x1340 activado - ${width}x${height}`);
       }
     };
 
@@ -47,6 +54,7 @@ export default function GameLayout({ children }: { children: ReactNode }) {
         show={showConfetti} 
         windowSize={windowSize} 
         isTV65={isTV65}
+        isTablet800={isTablet800} // [NUEVO] Pasar prop para tablet 800x1340
       />
       {/* [modificación] Header compacto y con layout similar al de registro para consistencia */}
       <header className="w-full flex justify-center items-center min-h-[65px] border-b border-white/10 backdrop-blur-sm">

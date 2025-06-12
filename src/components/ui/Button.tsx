@@ -80,7 +80,11 @@ export default function Button({
     ? {
         whileHover: !disabled && !loading ? { scale: 1.03 } : undefined, // [modificación] Menos escala en hover, considerar loading
         whileTap: !disabled && !loading ? { scale: 0.97 } : undefined, // [modificación] Menos escala en tap, considerar loading
-        transition: { type: "spring", stiffness: 500, damping: 25 }, // Animación más rápida
+        transition: { 
+          type: "spring" as const, 
+          stiffness: 500, 
+          damping: 25 
+        }, // Animación más rápida
       }
     : {
         whileHover: !disabled && !loading ? { scale: 1.05 } : undefined, // [modificación] Considerar loading

@@ -41,10 +41,17 @@ const Logo = ({
 
       // [modificación] Detección específica corregida para resolución 2160×3840 (portrait y landscape)
       const isUltraHighRes = (width === 2160 && height === 3840) || (width === 3840 && height === 2160);
+      
+      // [NUEVO] Detección específica para tablet 800x1340
+      const isTablet800 = (width >= 790 && width <= 810) && (height >= 1330 && height <= 1350);
 
       // [modificación] Debug SIMPLIFICADO para logo en desarrollo
-      if (process.env.NODE_ENV === 'development' && isUltraHighRes) {
-// //         console.log('🖼️ Logo TV65 detectada:', { width, height, isGameView });
+      if (process.env.NODE_ENV === 'development') {
+        if (isUltraHighRes) {
+          console.log('🖼️ Logo TV65 detectada:', { width, height, isGameView });
+        } else if (isTablet800) {
+          console.log('🖼️ Logo Tablet 800x1340 detectada:', { width, height, isGameView });
+        }
       }
 
       if (isUltraHighRes) {
@@ -53,6 +60,13 @@ const Logo = ({
           setDimensions({ width: 1000, height: 300 });   // [modificación] Vista de juego → más grande para visibilidad
         } else {
           setDimensions({ width: 1400, height: 420 });  // [modificación] Vista principal → súper grande
+        }
+      } else if (isTablet800) {
+        // [NUEVO] Tamaños específicos para tablet 800x1340
+        if (isGameView) {
+          setDimensions({ width: 400, height: 120 });   // [NUEVO] Vista de juego en tablet 800
+        } else {
+          setDimensions({ width: 500, height: 150 });   // [NUEVO] Vista principal en tablet 800
         }
       } else if (isGameView) {
         if (width < 640) {
