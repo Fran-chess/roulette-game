@@ -307,12 +307,12 @@ export default function TVRouletteScreen() {
   // [modificación] Layout principal: logo, ruleta y botón, todos optimizados para diferentes dispositivos
   return (
     <div className="flex flex-col min-h-screen w-full bg-main-gradient">
-      {/* Header con logo optimizado para todos los dispositivos */}
-      <header className={`w-full flex justify-center items-center ${
-        isTabletPortrait ? 'pt-12 pb-4' : 'pt-24 pb-6' // [NUEVO] Padding específico para tablets verticales
+      {/* Header con logo optimizado para todos los dispositivos - COMPACTO */}
+      <header className={`w-full flex justify-center items-center flex-shrink-0 ${
+        isTabletPortrait ? 'pt-2 pb-1' : 'pt-24 pb-6' // [MODIFICADO] Padding muy reducido para tablets
       }`}>
         <div className={`w-full flex justify-center items-center ${
-          isTabletPortrait ? 'max-w-3xl' : 'max-w-5xl' // [NUEVO] Ancho máximo para tablets verticales
+          isTabletPortrait ? 'max-w-md' : 'max-w-5xl' // [MODIFICADO] Ancho máximo reducido para tablets
         }`}>
           {/* [modificación] Logo con clase específica según dispositivo */}
           <Logo
@@ -324,12 +324,12 @@ export default function TVRouletteScreen() {
         </div>
       </header>
 
-      {/* Contenido principal: ruleta y botón - optimizado para todos los dispositivos */}
-      <main className={`flex-1 flex flex-col items-center justify-center w-full ${
-        isTabletPortrait ? 'px-4' : 'px-8' // [NUEVO] Padding lateral para tablets verticales
+      {/* Contenido principal: ruleta y botón - LAYOUT FLEXIBLE */}
+      <main className={`flex-1 flex flex-col items-center justify-center w-full min-h-0 ${
+        isTabletPortrait ? 'px-2 py-1' : 'px-8' // [MODIFICADO] Padding mínimo para tablets
       }`}>
-        <div className={`w-full flex flex-col items-center justify-center ${
-          isTabletPortrait ? 'max-w-[700px] space-y-4' : 'max-w-[1800px] space-y-16' // [NUEVO] Reducido space-y de 6 a 4 para tablets verticales
+        <div className={`w-full flex flex-col items-center justify-center flex-1 ${
+          isTabletPortrait ? 'max-w-md space-y-3' : 'max-w-[1800px] space-y-16' // [MODIFICADO] Ancho y espaciado reducidos
         }`}>
           <MotionDiv
             key="tv-roulette"
@@ -342,7 +342,7 @@ export default function TVRouletteScreen() {
             role="main"
             aria-label="Pantalla de ruleta optimizada para diferentes dispositivos"
           >
-            {/* Contenedor de la ruleta - optimizado según dispositivo */}
+            {/* Contenedor de la ruleta - TAMAÑO BALANCEADO PARA TABLETS */}
             <MotionDiv
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -353,10 +353,10 @@ export default function TVRouletteScreen() {
               style={isTabletPortrait ? {
                 width: '100%',
                 height: 'auto',
-                maxWidth: '680px',  // Aumentado de 520px a 680px
-                maxHeight: '680px', // Aumentado de 520px a 680px
-                minWidth: '640px',  // Aumentado de 480px a 640px
-                minHeight: '640px', // Aumentado de 480px a 640px
+                maxWidth: '350px',  // REDUCIDO de 680px a 350px para mejor balance
+                maxHeight: '350px', // REDUCIDO de 680px a 350px
+                minWidth: '280px',  // REDUCIDO de 640px a 280px
+                minHeight: '280px', // REDUCIDO de 640px a 280px
               } : {
                 width: '100%',
                 height: 'auto',
@@ -400,24 +400,24 @@ export default function TVRouletteScreen() {
                 style={{
                   position: 'relative',
                   overflow: 'hidden',
-                  // [NUEVO] Estilos específicos para tablets verticales
+                  // [MODIFICADO] Estilos ajustados para tablets verticales
                   ...(isTabletPortrait && {
-                    padding: "20px 40px",
-                    fontSize: "1.8rem",
-                    minHeight: "100px",
-                    minWidth: "400px",
-                    borderRadius: "50px",
-                    fontWeight: "800",
-                    letterSpacing: "0.02em",
+                    padding: "12px 24px",     // REDUCIDO de "20px 40px"
+                    fontSize: "1.3rem",      // REDUCIDO de "1.8rem"
+                    minHeight: "55px",       // REDUCIDO de "100px"
+                    minWidth: "250px",       // REDUCIDO de "400px"
+                    borderRadius: "28px",    // REDUCIDO de "50px"
+                    fontWeight: "700",       // REDUCIDO de "800"
+                    letterSpacing: "0.01em", // REDUCIDO de "0.02em"
                   })
                 }}
               >
-                <span className={`inline-block mr-8 -mt-3 align-middle ${
+                <span className={`inline-block mr-4 -mt-2 align-middle ${
                   rouletteButtonState.iconClasses
-                } ${isTabletPortrait ? 'roulette-icon-tablet-portrait' : ''}`}> {/* [NUEVO] Clase específica para tablets verticales */}
+                } ${isTabletPortrait ? 'roulette-icon-tablet-portrait' : ''}`}> {/* [MODIFICADO] Margen reducido */}
                   <RouletteWheelIcon 
-                                          className={`${isTabletPortrait ? 'w-13 h-13' : 'w-28 h-28'}`} // [NUEVO] Tamaño ajustado para tablets verticales
-                      size={isTabletPortrait ? 52 : 112} // [NUEVO] Tamaño específico para tablets verticales
+                                          className={`${isTabletPortrait ? 'w-8 h-8' : 'w-28 h-28'}`} // [MODIFICADO] Tamaño reducido para tablets verticales
+                      size={isTabletPortrait ? 32 : 112} // [MODIFICADO] Tamaño específico reducido para tablets verticales
                   />
                 </span>
                 {rouletteButtonState.buttonText}
@@ -427,9 +427,9 @@ export default function TVRouletteScreen() {
         </div>
       </main>
 
-      {/* Footer optimizado para todos los dispositivos */}
-      <footer className={`w-full ${
-        isTabletPortrait ? 'h-[3vh] min-h-[60px]' : 'h-[5vh] min-h-[100px]' // [NUEVO] Altura específica para tablets verticales
+      {/* Footer optimizado para todos los dispositivos - MÍNIMO EN TABLETS */}
+      <footer className={`w-full flex-shrink-0 ${
+        isTabletPortrait ? 'h-[2vh] min-h-[20px]' : 'h-[5vh] min-h-[100px]' // [MODIFICADO] Altura mínima para tablets
       }`}></footer>
     </div>
   );

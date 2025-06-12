@@ -136,23 +136,17 @@
   }
 }
 
-/* [modificación] Forzar sin scroll en toda la aplicación */
+/* [modificación] Layout responsivo con scroll habilitado */
 
 html,
 body {
   height: 100%;
-
+  min-height: 100dvh;
   width: 100%;
-
   margin: 0;
-
   padding: 0;
-
-  overflow: hidden; /* Elimina el scroll en toda la aplicación */
-
-  position: fixed; /* Asegura que no haya desplazamiento */
-
-  inset: 0; /* Ocupa toda la pantalla */
+  overflow-x: hidden; /* Solo elimina scroll horizontal */
+  overflow-y: auto; /* Permite scroll vertical cuando sea necesario */
 }
 
 /* [modificación] - Clases auxiliares para manejo de texto largo */
@@ -1028,82 +1022,92 @@ body {
 
   /* [NUEVO] OPTIMIZACIONES ESPECÍFICAS PARA COMPONENTES DE JUEGO EN TABLETS VERTICALES */
   
-  /* Logo optimizado para tablets verticales */
+  /* Logo optimizado para tablets verticales - TAMAÑO REDUCIDO PARA MEJOR BALANCE */
   .logo-tablet-portrait {
-    max-width: 320px !important;    /* Reducido de 380px a 320px para dar más espacio al cronómetro */
-    min-width: 280px !important;    /* Reducido de 320px a 280px */
+    max-width: 240px !important;    /* Reducido significativamente de 320px a 240px */
+    min-width: 200px !important;    /* Reducido de 280px a 200px */
     height: auto !important;
-    transform: scale(1) !important;
-    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.3)) contrast(115%) brightness(110%) !important;
+    transform: scale(0.9) !important; /* Escala adicional para reducir más el tamaño */
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) contrast(110%) brightness(105%) !important;
   }
 
-  /* Header optimizado para tablets verticales - MÁS COMPACTO */
+  /* Header optimizado para tablets verticales - ULTRA COMPACTO */
   header {
-    padding: 0.125rem 2rem 0rem 2rem !important; /* Reducido aún más el padding top */
+    padding: 0.5rem 1rem 0.25rem 1rem !important; /* Padding mínimo pero funcional */
     min-height: auto !important;
+    flex-shrink: 0 !important; /* Evita que se achique demasiado */
   }
 
-  /* Main container optimizado para tablets verticales - MÁS ESPACIO PARA RULETA */
+  /* Main container optimizado para tablets verticales - MÁXIMO ESPACIO DISPONIBLE */
   main {
-    padding: 0rem 1.5rem !important; /* Eliminado padding top/bottom para maximizar espacio */
-    gap: 0.5rem !important;           /* Gap mínimo para aprovechar al máximo el espacio */
+    padding: 0.5rem 1rem !important; /* Padding mínimo */
+    gap: 0.75rem !important;          /* Gap pequeño pero suficiente */
+    flex: 1 !important;               /* Ocupa todo el espacio disponible */
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;         /* Permite que se comprima si es necesario */
   }
 
-  /* Footer optimizado para tablet 800x1340 - MÁS COMPACTO */
+  /* Footer optimizado para tablet 800x1340 - MÍNIMO PERO PRESENTE */
   footer {
-    padding: 0.125rem !important; /* Reducido al mínimo para maximizar espacio */
+    padding: 0.25rem !important;     /* Padding mínimo */
     min-height: auto !important;
+    flex-shrink: 0 !important;       /* Evita que se achique */
   }
 
-  /* Ruleta optimizada para tablet 800x1340 - MÁXIMO TAMAÑO POSIBLE */
+  /* Ruleta optimizada para tablet 800x1340 - TAMAÑO BALANCEADO PARA VIEWPORT */
   .wheel-container {
-    max-width: 680px !important;  /* Aumentado de 600px a 680px */
-    max-height: 680px !important; /* Aumentado de 600px a 680px */
-    min-width: 640px !important;  /* Aumentado de 560px a 640px */
-    min-height: 640px !important; /* Aumentado de 560px a 640px */
-    margin: 0.25rem auto !important; /* Margen mínimo */
+    max-width: 350px !important;  /* Ajustado a 350px para coincidir con inline styles */
+    max-height: 350px !important; /* Ajustado a 350px para coincidir con inline styles */
+    min-width: 280px !important;  /* Ajustado a 280px para coincidir con inline styles */
+    min-height: 280px !important; /* Ajustado a 280px para coincidir con inline styles */
+    margin: 0.5rem auto !important; /* Margen pequeño */
+    width: min(350px, 30vh) !important; /* Responsive basado en altura de viewport, reducido */
+    height: min(350px, 30vh) !important; /* Responsive basado en altura de viewport, reducido */
     filter: 
-      drop-shadow(0 12px 24px rgba(0, 0, 0, 0.2))
-      drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15))
-      drop-shadow(0 0 30px rgba(90, 204, 193, 0.15)) !important;
+      drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2))
+      drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15))
+      drop-shadow(0 0 15px rgba(90, 204, 193, 0.15)) !important;
   }
 
   .wheel-canvas {
-    max-width: 680px !important;  /* Aumentado de 600px a 680px */
-    max-height: 680px !important; /* Aumentado de 600px a 680px */
-    border: 4px solid rgba(255, 255, 255, 0.15) !important;
+    max-width: 100% !important;   /* Usa el tamaño del contenedor */
+    max-height: 100% !important;  /* Usa el tamaño del contenedor */
+    width: 100% !important;
+    height: 100% !important;
+    border: 3px solid rgba(255, 255, 255, 0.15) !important;
     filter: 
-      drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25))
-      drop-shadow(0 5px 10px rgba(0, 0, 0, 0.15))
-      drop-shadow(0 0 30px rgba(90, 204, 193, 0.2)) !important;
+      drop-shadow(0 6px 12px rgba(0, 0, 0, 0.25))
+      drop-shadow(0 3px 6px rgba(0, 0, 0, 0.15))
+      drop-shadow(0 0 20px rgba(90, 204, 193, 0.2)) !important;
   }
 
-  /* Botón de girar optimizado para tablets verticales - MEJOR PROPORCIÓN */
+  /* Botón de girar optimizado para tablets verticales - TAMAÑO PROPORCIONAL AL NUEVO LAYOUT */
   .neomorphic-button-tablet-portrait {
-    padding: 20px 36px !important;   /* Ajustado para mejor proporción con ruleta más grande */
-    font-size: 1.9rem !important;    /* Ligeramente reducido para mantener proporción */
-    min-height: 85px !important;     /* Ligeramente reducido */
-    min-width: 380px !important;     /* Reducido para mejor proporción */
-    border-radius: 45px !important;  /* Ajustado el border-radius */
-    font-weight: 800 !important;
-    letter-spacing: 0.02em !important;
+    padding: 14px 28px !important;   /* Reducido de 20px 36px para ser más compacto */
+    font-size: 1.4rem !important;    /* Reducido de 1.9rem para mejor proporción */
+    min-height: 60px !important;     /* Reducido de 85px */
+    min-width: 280px !important;     /* Reducido de 380px para mejor proporción */
+    border-radius: 30px !important;  /* Ajustado el border-radius proporcionalmente */
+    font-weight: 700 !important;     /* Ligeramente reducido */
+    letter-spacing: 0.01em !important;
     
     box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.3),
-      0 4px 16px rgba(0, 0, 0, 0.2),
-      inset 2px 2px 8px rgba(255, 255, 255, 0.15),
-      inset -2px -2px 8px rgba(0, 0, 0, 0.25),
-      0 0 25px rgba(90, 204, 193, 0.4),
-      0 0 50px rgba(90, 204, 193, 0.2) !important;
+      0 6px 24px rgba(0, 0, 0, 0.3),
+      0 3px 12px rgba(0, 0, 0, 0.2),
+      inset 2px 2px 6px rgba(255, 255, 255, 0.15),
+      inset -2px -2px 6px rgba(0, 0, 0, 0.25),
+      0 0 20px rgba(90, 204, 193, 0.4),
+      0 0 40px rgba(90, 204, 193, 0.2) !important;
   }
 
   .neomorphic-button-tablet-portrait:active {
-    transform: translateY(2px) scale(0.98) !important;
+    transform: translateY(1px) scale(0.98) !important;
     box-shadow: 
-      0 2px 8px rgba(0, 0, 0, 0.4),
-      inset 4px 4px 12px rgba(0, 0, 0, 0.3),
-      inset -1px -1px 4px rgba(255, 255, 255, 0.05),
-      0 0 15px rgba(90, 204, 193, 0.3) !important;
+      0 1px 6px rgba(0, 0, 0, 0.4),
+      inset 3px 3px 9px rgba(0, 0, 0, 0.3),
+      inset -1px -1px 3px rgba(255, 255, 255, 0.05),
+      0 0 12px rgba(90, 204, 193, 0.3) !important;
   }
 
   /* Timer optimizado para tablets verticales */
@@ -1265,9 +1269,9 @@ body {
 
   /* Ícono de ruleta optimizado para tablet 800x1340 */
   .roulette-icon-tablet-800 {
-    width: 52px !important;  /* Reducido de 56px a 52px para mejor proporción */
-    height: 52px !important; /* Reducido de 56px a 52px para mejor proporción */
-    margin-right: 0.875rem !important; /* Ligeramente reducido el margen */
+    width: 36px !important;  /* Reducido de 52px a 36px para ser proporcional al botón más pequeño */
+    height: 36px !important; /* Reducido de 52px a 36px para ser proporcional al botón más pequeño */
+    margin-right: 0.5rem !important; /* Reducido el margen para mejor espaciado */
   }
 
   /* Partículas de fondo optimizadas para tablet 800x1340 */

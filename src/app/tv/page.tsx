@@ -187,12 +187,12 @@ export default function TVPage() {
   if (screen === 'roulette') {
     return (
       <div className="flex flex-col min-h-screen w-full bg-main-gradient">
-        {/* Header con logo optimizado para tablet 800x1340 */}
-        <header className={`w-full flex justify-center items-center ${
-          isTabletPortrait ? 'pt-6 pb-2' : 'pt-24 pb-6'
+        {/* Header con logo optimizado para tablet 800x1340 - COMPACTO */}
+        <header className={`w-full flex justify-center items-center flex-shrink-0 ${
+          isTabletPortrait ? 'pt-2 pb-1' : 'pt-24 pb-6'
         }`}>
           <div className={`w-full flex justify-center items-center ${
-            isTabletPortrait ? 'max-w-3xl' : 'max-w-5xl'
+            isTabletPortrait ? 'max-w-md' : 'max-w-5xl'
           }`}>
             <Logo 
               size="lg" 
@@ -203,12 +203,12 @@ export default function TVPage() {
           </div>
         </header>
 
-        {/* Contenido principal: ruleta y botón optimizado para tablet 800x1340 */}
-        <main className={`flex-1 flex flex-col items-center justify-center w-full ${
-          isTabletPortrait ? 'px-4' : 'px-8'
+        {/* Contenido principal: ruleta y botón optimizado para tablet 800x1340 - LAYOUT FLEXIBLE */}
+        <main className={`flex-1 flex flex-col items-center justify-center w-full min-h-0 ${
+          isTabletPortrait ? 'px-2 py-1' : 'px-8'
         }`}>
-          <div className={`w-full flex flex-col items-center justify-center ${
-            isTabletPortrait ? 'max-w-[700px] space-y-4' : 'max-w-[1800px] space-y-16'
+          <div className={`w-full flex flex-col items-center justify-center flex-1 ${
+            isTabletPortrait ? 'max-w-md space-y-3' : 'max-w-[1800px] space-y-16'
           }`}>
             <MotionDiv
               key="tv-roulette"
@@ -218,7 +218,7 @@ export default function TVPage() {
                 isTabletPortrait ? 'space-y-3' : 'space-y-12'
               }`}
             >
-              {/* Contenedor de la ruleta optimizado para tablet 800x1340 - TAMAÑO AUMENTADO */}
+              {/* Contenedor de la ruleta optimizado para tablet 800x1340 - TAMAÑO BALANCEADO */}
               <MotionDiv
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -227,10 +227,10 @@ export default function TVPage() {
                                 style={isTabletPortrait ? {
                   width: '100%',
                   height: 'auto',
-                  maxWidth: '680px',  // Aumentado de 520px a 680px
-                  maxHeight: '680px', // Aumentado de 520px a 680px
-                  minWidth: '640px',  // Aumentado de 480px a 640px
-                  minHeight: '640px', // Aumentado de 480px a 640px
+                  maxWidth: '350px',  // REDUCIDO de 680px a 350px para mejor balance
+                  maxHeight: '350px', // REDUCIDO de 680px a 350px
+                  minWidth: '280px',  // REDUCIDO de 640px a 280px
+                  minHeight: '280px', // REDUCIDO de 640px a 280px
                 } : {
                   width: '100%',
                   height: 'auto',
@@ -265,33 +265,33 @@ export default function TVPage() {
                 <button
                   className={`
                                         ${isTabletPortrait
-                      ? 'px-10 py-5 text-2xl'
+                      ? 'px-6 py-3 text-lg'  // REDUCIDO para mejor proporción
                       : 'px-16 py-8 text-6xl'
                     } 
                     font-black text-white
                     bg-gradient-to-r from-blue-600 to-purple-600
-                    ${isTabletPortrait ? 'rounded-2xl' : 'rounded-3xl'} 
+                    ${isTabletPortrait ? 'rounded-xl' : 'rounded-3xl'} 
                     shadow-2xl transform transition-all duration-200
                     hover:scale-105 hover:shadow-3xl
                     focus:outline-none focus:ring-8 focus:ring-blue-300
                     ${isSpinning ? 'opacity-50 cursor-not-allowed' : 'hover:from-blue-700 hover:to-purple-700'}
-                    ${isTabletPortrait ? 'min-h-[90px] min-w-[400px]' : ''}
+                    ${isTabletPortrait ? 'min-h-[55px] min-w-[250px]' : ''}  // REDUCIDO para mejor balance
                   `}
                   onClick={handleSpin}
                   disabled={isSpinning}
                   style={isTabletPortrait ? {
-                    fontSize: '2rem',      // Aumentado de 1.8rem a 2rem
-                    padding: '24px 40px', // Aumentado de 20px 32px a 24px 40px
-                    minHeight: '90px',    // Aumentado de 80px a 90px
-                    minWidth: '400px'     // Aumentado de 350px a 400px
+                    fontSize: '1.3rem',   // REDUCIDO de 2rem a 1.3rem
+                    padding: '12px 24px', // REDUCIDO de 24px 40px a 12px 24px
+                    minHeight: '55px',    // REDUCIDO de 90px a 55px
+                    minWidth: '250px'     // REDUCIDO de 400px a 250px
                   } : {}}
                 >
                   <span className={`inline-block align-middle ${
-                                          isTabletPortrait ? 'mr-4 -mt-1' : 'mr-8 -mt-3'
+                                          isTabletPortrait ? 'mr-3 -mt-0.5' : 'mr-8 -mt-3'  // REDUCIDO el margen
                   }`}>
                     <RouletteWheelIcon 
-                                              className={isTabletPortrait ? 'w-13 h-13' : 'w-28 h-28'}
-                        size={isTabletPortrait ? 52 : 112} 
+                                              className={isTabletPortrait ? 'w-8 h-8' : 'w-28 h-28'}  // REDUCIDO el tamaño
+                        size={isTabletPortrait ? 32 : 112}  // REDUCIDO de 52 a 32
                     />
                   </span>
                   {isSpinning ? '¡Girando...' : '¡Girar la Ruleta!'}
@@ -301,9 +301,9 @@ export default function TVPage() {
           </div>
         </main>
 
-        {/* Footer optimizado para tablet 800x1340 */}
-        <footer className={`w-full ${
-          isTabletPortrait ? 'h-[2vh] min-h-[30px]' : 'h-[5vh] min-h-[100px]'
+        {/* Footer optimizado para tablet 800x1340 - MÍNIMO */}
+        <footer className={`w-full flex-shrink-0 ${
+          isTabletPortrait ? 'h-[2vh] min-h-[20px]' : 'h-[5vh] min-h-[100px]'
         }`}></footer>
       </div>
     );

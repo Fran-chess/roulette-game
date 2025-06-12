@@ -55,7 +55,7 @@ export default function RootLayout({
         {/* [modificación] Link al manifest para PWA */}
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="bg-main-gradient h-screen overflow-hidden flex flex-col font-sans text-white">
+      <body className="bg-main-gradient min-h-screen flex flex-col font-sans text-white">
         <ShellRootClient>{children}</ShellRootClient>
       </body>
     </html>
