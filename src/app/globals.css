@@ -1089,67 +1089,67 @@ body {
     padding: 0.5rem !important;
   }
 
-  /* Cronómetro ULTRA compacto - fuentes muy pequeñas */
+  /* Cronómetro MICRO - fuentes extremadamente pequeñas */
   .timer-text-compact {
-    font-size: 1.25rem !important;
+    font-size: 1rem !important;
     font-weight: 900 !important;
     line-height: 1 !important;
-    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.9) !important;
-  }
-
-  .timer-seconds-compact {
-    font-size: 0.55rem !important;
-    font-weight: 600 !important;
-    margin-top: 0.25rem !important;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
   }
 
-  /* Contenedor de pregunta ULTRA compacto - fuentes muy pequeñas */
+  .timer-seconds-compact {
+    font-size: 0.45rem !important;
+    font-weight: 600 !important;
+    margin-top: 0.25rem !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9) !important;
+  }
+
+  /* Contenedor de pregunta MICRO - fuentes extremadamente pequeñas */
   .question-container-compact {
     background: rgba(0, 0, 0, 0.4) !important;
     backdrop-filter: blur(20px) !important;
-    border-radius: 0.5rem !important;
+    border-radius: 0.375rem !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3) !important;
-    padding: 0.5rem 0.75rem !important;
-    margin-bottom: 0.375rem !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    padding: 0.375rem 0.5rem !important;
+    margin-bottom: 0.25rem !important;
   }
 
   .question-container-compact h2 {
-    font-size: 1rem !important;
+    font-size: 0.85rem !important;
     line-height: 1.25 !important;
     margin-bottom: 0 !important;
     text-align: center !important;
     font-weight: 800 !important;
     color: #ffffff !important;
-    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.7) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
   }
 
-  /* Grid de opciones ULTRA compacto - fuentes muy pequeñas */
+  /* Grid de opciones MICRO - fuentes extremadamente pequeñas */
   .options-grid-compact {
     display: grid !important;
     grid-template-columns: 1fr !important;
-    gap: 0.25rem !important;
+    gap: 0.125rem !important;
     max-width: 100% !important;
     margin: 0 auto !important;
   }
 
-  /* Opciones de respuesta ULTRA compactas - fuentes muy pequeñas */
+  /* Opciones de respuesta MICRO - fuentes extremadamente pequeñas */
   .answer-option-compact {
-    padding: 0.375rem 0.75rem !important;
-    font-size: 0.75rem !important;
-    min-height: 32px !important;
-    max-height: 46px !important;
-    border-radius: 0.5rem !important;
-    border-width: 2px !important;
-    line-height: 1.1 !important;
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.65rem !important;
+    min-height: 28px !important;
+    max-height: 40px !important;
+    border-radius: 0.375rem !important;
+    border-width: 1px !important;
+    line-height: 1.05 !important;
     font-weight: 600 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     transition: all 0.3s ease !important;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 0 3px rgba(255, 255, 255, 0.05) !important;
     overflow: hidden !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
@@ -1165,13 +1165,13 @@ body {
     transform: translateY(0px) scale(0.98) !important;
   }
 
-  /* Íconos de opciones ULTRA compactos - fuentes muy pequeñas */
+  /* Íconos de opciones MICRO - fuentes extremadamente pequeñas */
   .option-icon-compact {
-    width: 18px !important;
-    height: 18px !important;
-    font-size: 0.65rem !important;
+    width: 16px !important;
+    height: 16px !important;
+    font-size: 0.55rem !important;
     font-weight: 800 !important;
-    margin-left: 0.5rem !important;
+    margin-left: 0.375rem !important;
     background: rgba(255, 255, 255, 0.25) !important;
     border-radius: 50% !important;
     display: flex !important;

@@ -43,10 +43,10 @@ function Timer({
     return () => clearTimeout(timer);
   }, [seconds, onTimeUp]);
 
-  // Cronómetro circular responsivo - ULTRA REDUCIDO para que todo quepa sin scroll
-  const timerSize = isTV65 ? 500 : isTabletPortrait ? 80 : isTVTouch ? 300 : 200;
-  const radius = isTV65 ? 200 : isTabletPortrait ? 32 : isTVTouch ? 120 : 80;
-  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 5 : isTVTouch ? 20 : 15;
+  // Cronómetro circular responsivo - MICRO para que todo quepa sin scroll
+  const timerSize = isTV65 ? 500 : isTabletPortrait ? 60 : isTVTouch ? 300 : 200;
+  const radius = isTV65 ? 200 : isTabletPortrait ? 24 : isTVTouch ? 120 : 80;
+  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 4 : isTVTouch ? 20 : 15;
 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
@@ -119,8 +119,8 @@ function Timer({
                 fontSize: isTV65 ? "120px" : isTVTouch ? "72px" : "48px",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               } : {
-                fontSize: "1.25rem",
-                textShadow: "0 3px 6px rgba(0, 0, 0, 0.9), 0 6px 12px rgba(0, 0, 0, 0.7)",
+                fontSize: "1rem",
+                textShadow: "0 2px 4px rgba(0, 0, 0, 0.9), 0 4px 8px rgba(0, 0, 0, 0.7)",
               }}
             >
               {seconds}
@@ -133,8 +133,8 @@ function Timer({
                 fontSize: isTV65 ? "36px" : isTVTouch ? "24px" : "16px",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               } : {
-                fontSize: "0.55rem",
-                textShadow: "0 2px 4px rgba(0, 0, 0, 0.9)",
+                fontSize: "0.45rem",
+                textShadow: "0 1px 2px rgba(0, 0, 0, 0.9)",
               }}
             >
               segundos
@@ -535,18 +535,18 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         hyphens: "auto" as const,
       };
     } else if (isTabletPortrait) {
-      // Estilos ULTRA COMPACTOS para tablet vertical - FUENTES MUY PEQUEÑAS
+      // Estilos MICRO para tablet vertical - FUENTES EXTREMADAMENTE PEQUEÑAS
       return {
-        fontSize: textMetrics.isLong ? "0.7rem" : "0.75rem",
-        padding: "0.375rem 0.75rem",
-        minHeight: "32px",
-        maxHeight: "46px",
-        borderRadius: "0.5rem",
-        borderWidth: "2px",
+        fontSize: textMetrics.isLong ? "0.6rem" : "0.65rem",
+        padding: "0.25rem 0.5rem",
+        minHeight: "28px",
+        maxHeight: "40px",
+        borderRadius: "0.375rem",
+        borderWidth: "1px",
         fontWeight: "600",
-        lineHeight: "1.1",
-        textShadow: "0 2px 4px rgba(0, 0, 0, 0.7)",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05)",
+        lineHeight: "1.05",
+        textShadow: "0 1px 2px rgba(0, 0, 0, 0.7)",
+        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.2), inset 0 0 3px rgba(255, 255, 255, 0.05)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -686,13 +686,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   ? "0 25px 50px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1)"
                   : "0 20px 40px rgba(0, 0, 0, 0.3)",
               } : {
-                padding: "0.5rem 0.75rem",
-                marginBottom: "0.375rem",
+                padding: "0.375rem 0.5rem",
+                marginBottom: "0.25rem",
                 backgroundColor: "rgba(0, 0, 0, 0.4)",
                 backdropFilter: "blur(20px)",
-                borderRadius: "0.5rem",
+                borderRadius: "0.375rem",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
-                boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.3)",
               }}
             >
               <h2
@@ -703,9 +703,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
                   fontWeight: "900",
                 } : {
-                  fontSize: "1rem",
+                  fontSize: "0.85rem",
                   marginBottom: "0",
-                  textShadow: "0 3px 6px rgba(0, 0, 0, 0.9), 0 6px 12px rgba(0, 0, 0, 0.7)",
+                  textShadow: "0 2px 4px rgba(0, 0, 0, 0.9), 0 4px 8px rgba(0, 0, 0, 0.7)",
                   fontWeight: "800",
                 }}
               >
@@ -726,7 +726,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
               } : {
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: "0.25rem",
+                gap: "0.125rem",
                 maxWidth: "100%",
                 margin: "0 auto",
               }}
@@ -830,12 +830,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
           </div>
         </main>
 
-        {/* Footer ultra mínimo */}
-        <footer className={`text-center ${isTabletPortrait ? 'py-0.5' : 'py-4'}`}>
+        {/* Footer micro */}
+        <footer className={`text-center ${isTabletPortrait ? 'py-0' : 'py-4'}`}>
           <div
             className="text-white/60"
             style={{
-              fontSize: isTV65 ? "24px" : isTabletPortrait ? "10px" : "16px",
+              fontSize: isTV65 ? "24px" : isTabletPortrait ? "8px" : "16px",
             }}
           >
             {currentParticipant?.nombre &&
