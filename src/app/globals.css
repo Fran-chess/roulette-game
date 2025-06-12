@@ -1082,6 +1082,122 @@ body {
       drop-shadow(0 0 25px rgba(90, 204, 193, 0.25)) !important;
   }
 
+  /* [NUEVO] OPTIMIZACIONES ESPECÍFICAS PARA QUESTIONDISPLAY COMPACTO */
+  
+  /* Layout principal compacto sin logo */
+  .question-layout-compact {
+    padding: 0.5rem !important;
+  }
+
+  /* Cronómetro compacto */
+  .timer-text-compact {
+    font-size: 2rem !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.9) !important;
+  }
+
+  .timer-seconds-compact {
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    margin-top: 0.25rem !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9) !important;
+  }
+
+  /* Contenedor de pregunta compacto */
+  .question-container-compact {
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: 1rem !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+    padding: 1.25rem 1.5rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .question-container-compact h2 {
+    font-size: 1.75rem !important;
+    line-height: 1.25 !important;
+    margin-bottom: 0 !important;
+    text-align: center !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  /* Grid de opciones compacto */
+  .options-grid-compact {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+  }
+
+  /* Opciones de respuesta compactas */
+  .answer-option-compact {
+    padding: 0.875rem 1.25rem !important;
+    font-size: 1.1rem !important;
+    min-height: 50px !important;
+    max-height: 70px !important;
+    border-radius: 0.75rem !important;
+    border-width: 2px !important;
+    line-height: 1.25 !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    transition: all 0.3s ease !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05) !important;
+    overflow: hidden !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+
+  .answer-option-compact:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  .answer-option-compact:active {
+    transform: translateY(0px) scale(0.98) !important;
+  }
+
+  /* Íconos de opciones compactos */
+  .option-icon-compact {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    margin-left: 0.75rem !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Estados de respuesta para opciones compactas */
+  .answer-option-compact.correct {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    border-color: #34d399 !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
+  }
+
+  .answer-option-compact.incorrect {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    border-color: #f87171 !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4) !important;
+  }
+
+  .answer-option-compact.selected {
+    transform: scale(1.02) !important;
+    z-index: 10 !important;
+  }
+
   /* Botón de girar optimizado para tablets verticales - TAMAÑO PROPORCIONAL AL NUEVO LAYOUT */
   .neomorphic-button-tablet-portrait {
     padding: 14px 28px !important;   /* Reducido de 20px 36px para ser más compacto */
@@ -1432,8 +1548,8 @@ body {
     width: 100% !important;
     max-width: 750px !important;
     margin: 0 auto !important;
-    gap: 1.5rem !important; /* Aumentado gap para mejor espaciado entre cronómetro y pregunta */
-    padding: 1rem 0 !important; /* Padding vertical para mejor centrado */
+    gap: 1.25rem !important; /* Reducido gap de 1.5rem a 1.25rem */
+    padding: 0.75rem 0 !important; /* Reducido padding vertical */
   }
 
   /* Footer de pregunta compacto para tablet 800x1340 */

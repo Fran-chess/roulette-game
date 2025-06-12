@@ -6,7 +6,6 @@ import { useGameStore } from "@/store/gameStore";
 import type { Question, AnswerOption } from "@/types";
 import { motion } from "framer-motion";
 import Button from "@/components/ui/Button";
-import Logo from "@/components/ui/Logo";
 
 interface TimerProps {
   initialSeconds: number;
@@ -29,7 +28,7 @@ function Timer({
   }, [initialSeconds]);
 
   useEffect(() => {
-    // [modificación] Estado urgente cuando quedan 5 segundos o menos (antes 10)
+    // Estado urgente cuando quedan 5 segundos o menos
     setIsUrgent(seconds <= 5);
 
     if (seconds <= 0) {
@@ -44,34 +43,25 @@ function Timer({
     return () => clearTimeout(timer);
   }, [seconds, onTimeUp]);
 
-  // [modificación] Cronómetro circular responsivo - SIGNIFICATIVAMENTE REDUCIDO para tablets
-  const timerSize = isTV65 ? 500 : isTabletPortrait ? 90 : isTVTouch ? 300 : 200;
-  const radius = isTV65 ? 200 : isTabletPortrait ? 35 : isTVTouch ? 120 : 80;
-  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 6 : isTVTouch ? 20 : 15;
+  // Cronómetro circular responsivo - REDUCIDO para mejor proporción
+  const timerSize = isTV65 ? 500 : isTabletPortrait ? 120 : isTVTouch ? 300 : 200;
+  const radius = isTV65 ? 200 : isTabletPortrait ? 48 : isTVTouch ? 120 : 80;
+  const strokeWidth = isTV65 ? 30 : isTabletPortrait ? 8 : isTVTouch ? 20 : 15;
 
   const circumference = 2 * Math.PI * radius;
   const strokeDasharray = circumference;
   const strokeDashoffset =
     circumference - (seconds / initialSeconds) * circumference;
 
-  // [modificación] Debug info para verificar detección - SOLO CUANDO CAMBIA
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      // console.log('⏱️ Timer configurado:', { isTV65, isTVTouch, isTabletPortrait, timerSize });
-    }
-  }, [isTV65, isTVTouch, isTabletPortrait, timerSize]);
-
   return (
     <motion.div
       className={`flex flex-col items-center justify-center ${
-        isTV65 ? "mb-20" : isTabletPortrait ? "mb-8" : "mb-12"
+        isTV65 ? "mb-20" : isTabletPortrait ? "mb-6" : "mb-12"
       }`}
       animate={isUrgent ? { scale: [1, 1.05, 1] } : { scale: 1 }}
       transition={{ duration: 0.5, repeat: isUrgent ? Infinity : 0 }}
     >
-      {/* [modificación] Debug visual eliminado para limpiar interfaz */}
-
-      {/* [modificación] Cronómetro circular optimizado para todos los dispositivos */}
+      {/* Cronómetro circular optimizado para todos los dispositivos */}
       <div
         className="relative"
         style={{ width: timerSize + 40, height: timerSize + 40 }}
@@ -82,7 +72,7 @@ function Timer({
           className="transform -rotate-90 absolute top-5 left-5"
           style={{ filter: "drop-shadow(0 15px 40px rgba(0, 0, 0, 0.6))" }}
         >
-          {/* [modificación] Círculo de fondo ultra visible */}
+          {/* Círculo de fondo */}
           <circle
             cx={timerSize / 2}
             cy={timerSize / 2}
@@ -91,7 +81,7 @@ function Timer({
             strokeWidth={strokeWidth}
             fill="transparent"
           />
-          {/* [modificación] Círculo de progreso ultra llamativo */}
+          {/* Círculo de progreso */}
           <circle
             cx={timerSize / 2}
             cy={timerSize / 2}
@@ -111,7 +101,7 @@ function Timer({
           />
         </svg>
 
-        {/* [modificación] Texto del cronómetro optimizado para todos los dispositivos */}
+        {/* Texto del cronómetro optimizado */}
         <div
           className="absolute inset-0 flex items-center justify-center"
           style={{ width: timerSize, height: timerSize, top: 20, left: 20 }}
@@ -123,13 +113,13 @@ function Timer({
           >
             <div
               className={`font-black leading-none ${
-                isTabletPortrait ? "timer-text" : ""
+                isTabletPortrait ? "timer-text-compact" : ""
               }`}
               style={!isTabletPortrait ? {
                 fontSize: isTV65 ? "120px" : isTVTouch ? "72px" : "48px",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               } : {
-                fontSize: "1.5rem",
+                fontSize: "2rem",
                 textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
               }}
             >
@@ -137,13 +127,13 @@ function Timer({
             </div>
             <div
               className={`font-bold opacity-90 mt-1 ${
-                isTabletPortrait ? "timer-seconds" : ""
+                isTabletPortrait ? "timer-seconds-compact" : ""
               }`}
               style={!isTabletPortrait ? {
                 fontSize: isTV65 ? "36px" : isTVTouch ? "24px" : "16px",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               } : {
-                fontSize: "0.7rem",
+                fontSize: "0.85rem",
                 textShadow: "0 3px 6px rgba(0, 0, 0, 0.9)",
               }}
             >
@@ -153,12 +143,12 @@ function Timer({
         </div>
       </div>
 
-      {/* [modificación] Indicador de urgencia optimizado para todos los dispositivos */}
+      {/* Indicador de urgencia optimizado */}
       {isUrgent && (
         <motion.div
           className="mt-6 text-red-400 font-black text-center"
           style={{
-            fontSize: isTV65 ? "60px" : isTabletPortrait ? "24px" : isTVTouch ? "36px" : "24px",
+            fontSize: isTV65 ? "60px" : isTabletPortrait ? "18px" : isTVTouch ? "36px" : "24px",
             textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 0 30px #ef4444",
           }}
           animate={{ opacity: [1, 0.5, 1] }}
@@ -179,7 +169,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   const [isTablet, setIsTablet] = useState(false);
   const [isTVTouch, setIsTVTouch] = useState(false);
   const [isTV65, setIsTV65] = useState(false);
-  const [isTabletPortrait, setIsTabletPortrait] = useState(false); // [NUEVO] Universal para tablets verticales
+  const [isTabletPortrait, setIsTabletPortrait] = useState(false);
   const [debugInfo, setDebugInfo] = useState({ width: 0, height: 0 });
 
   const setGameState = useGameStore((state) => state.setGameState);
@@ -197,12 +187,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
   const [isAnswered, setIsAnswered] = useState(false);
   const hasTimeUpExecutedRef = useRef(false);
 
-  // [modificación] Tiempos ajustados - incluir tablets verticales universales
+  // Tiempos ajustados - incluir tablets verticales universales
   const timerSeconds = useMemo(() => {
-    return isTV65 ? 20 : isTabletPortrait ? 25 : isTVTouch ? 40 : isTablet ? 30 : 25; // [NUEVO] 25 segundos para tablets verticales
-  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]); // [NUEVO] Agregar isTabletPortrait a dependencias
+    return isTV65 ? 20 : isTabletPortrait ? 25 : isTVTouch ? 40 : isTablet ? 30 : 25;
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
-  // [modificación] Sistema de ajuste automático basado en longitud de texto
+  // Sistema de ajuste automático basado en longitud de texto
   const textMetrics = useMemo(() => {
     const maxLength = Math.max(
       ...question.options.map((opt) => opt.text.length)
@@ -221,7 +211,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     };
   }, [question.options]);
 
-  // [modificación] useEffect para detección de dispositivo y actualización de tamaño
+  // useEffect para detección de dispositivo y actualización de tamaño
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -241,7 +231,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         width >= 768 && width <= 1399 && !isTV65Resolution;
       setIsTablet(isTabletResolution);
 
-      // [NUEVO] Detectar tablets en orientación vertical universal
+      // Detectar tablets en orientación vertical universal
       const isTabletPortraitResolution = 
         width >= 768 && width <= 1200 && 
         height > width && // Orientación vertical
@@ -249,26 +239,22 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         !isTV65Resolution;
       setIsTabletPortrait(isTabletPortraitResolution);
 
-
-
       // Debug info
       const newDebugInfo = { width, height };
       setDebugInfo(newDebugInfo);
       
-      // [NUEVO] Log para tablets verticales
       if (isTabletPortraitResolution) {
-        console.log('📱 QuestionDisplay: Tablet en orientación vertical detectada, aplicando optimizaciones universales');
+        console.log('📱 QuestionDisplay: Tablet en orientación vertical detectada, aplicando diseño optimizado');
       }
     };
 
-    // [modificación] Throttle para optimización
+    // Throttle para optimización
     let timeoutId: NodeJS.Timeout | null = null;
     const throttledResize = () => {
       if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(handleResize, 500); // [modificación] Throttle aumentado a 500ms
+      timeoutId = setTimeout(handleResize, 500);
     };
 
-    // [modificación] Ejecutar una vez al montar
     handleResize();
 
     window.addEventListener("resize", throttledResize);
@@ -276,7 +262,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       window.removeEventListener("resize", throttledResize);
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, []); // [modificación] Dependencias vacías son correctas para este caso - solo queremos ejecutar en mount
+  }, []);
 
   useEffect(() => {
     setSelectedAnswer(null);
@@ -302,7 +288,6 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
           question_id: question.id,
           answered_correctly: false,
           prize_name: undefined,
-          // [modificación] Usar admin_id real de la sesión o null
           admin_id: gameSession?.admin_id || null
         };
 
@@ -327,7 +312,6 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         } else {
           console.error('❌ QuestionDisplay: Error guardando jugada de tiempo agotado:', result.message);
           
-          // Fallback: actualizar store local
           updateCurrentParticipantScore({
             questionId: question.id,
             answeredCorrectly: false,
@@ -338,7 +322,6 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     } catch (error) {
       console.error('❌ QuestionDisplay: Error de red al guardar jugada de tiempo agotado:', error);
       
-      // Fallback: actualizar store local
       if (currentParticipant) {
         updateCurrentParticipantScore({
           questionId: question.id,
@@ -353,7 +336,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
       answeredCorrectly: false,
       explanation: question.explanation || "",
       correctOption: correctOption?.text || "",
-      prizeName: "", // SIN premios para timeout
+      prizeName: "",
     });
 
     setTimeout(() => {
@@ -395,7 +378,6 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             question_id: question.id,
             answered_correctly: correctAnswer,
             prize_name: correctAnswer ? question.prize : undefined,
-            // [modificación] Usar admin_id real de la sesión o null
             admin_id: gameSession?.admin_id || null
           };
 
@@ -418,7 +400,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
               answeredCorrectly: correctAnswer,
               explanation: !correctAnswer ? question.explanation || "" : "",
               correctOption: correctOption?.text || "",
-              prizeName: result.result.prize_awarded || "", // Usar el premio otorgado por el servidor
+              prizeName: result.result.prize_awarded || "",
             });
 
             // Actualizar el store local (mantener compatibilidad)
@@ -456,7 +438,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
             answeredCorrectly: correctAnswer,
             explanation: !correctAnswer ? question.explanation || "" : "",
             correctOption: correctOption?.text || "",
-            prizeName: "", // SIN premios en modo TV local
+            prizeName: "",
           });
         }
       } catch (error) {
@@ -467,7 +449,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
           answeredCorrectly: correctAnswer,
           explanation: !correctAnswer ? question.explanation || "" : "",
           correctOption: correctOption?.text || "",
-          prizeName: "", // SIN premios en modo fallback
+          prizeName: "",
         });
 
         if (currentParticipant) {
@@ -499,13 +481,12 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     ]
   );
 
-  // [modificación] Función para obtener clases de estilo por opción - FORZANDO ESTILOS INLINE
+  // Función para obtener clases de estilo por opción
   const getOptionClasses = useCallback(
     (option: AnswerOption) => {
       const baseClasses =
         "group relative w-full text-left transition-all duration-500 transform overflow-hidden";
 
-      // [modificación] Estados visuales según respuesta
       let stateClasses = "";
       if (!isAnswered) {
         stateClasses =
@@ -530,18 +511,17 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     [isAnswered, selectedAnswer]
   );
 
-  // [modificación] Función para obtener estilos inline según dispositivo
+  // Función para obtener estilos inline según dispositivo - TAMAÑOS REDUCIDOS
   const getOptionStyles = useCallback(() => {
     if (isTV65) {
-      // [modificación] NUEVO: Usar clamp para fuente adaptativa con mínimo garantizado
       return {
-        padding: "32px 56px", // [modificación] Padding aumentado para acomodar fuente más grande
-        minHeight: "120px", // [modificación] Altura mínima aumentada
-        maxHeight: "260px", // [modificación] Altura máxima aumentada para más espacio
+        padding: "32px 56px",
+        minHeight: "120px",
+        maxHeight: "260px",
         borderRadius: "24px",
         borderWidth: "8px",
         fontWeight: "900",
-        lineHeight: "1.1", // [modificación] Line-height optimizado
+        lineHeight: "1.1",
         textShadow:
           "0 4px 8px rgba(0, 0, 0, 0.9), 0 8px 16px rgba(0, 0, 0, 0.7)",
         boxShadow:
@@ -549,22 +529,22 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        overflow: "hidden", // [modificación] Evitar desborde del botón
-        wordBreak: "break-word" as const, // [modificación] ARREGLADO: Tipo específico para TypeScript
-        overflowWrap: "break-word" as const, // [modificación] ARREGLADO: Tipo específico para TypeScript
-        hyphens: "auto" as const, // [modificación] ARREGLADO: Tipo específico para TypeScript
+        overflow: "hidden",
+        wordBreak: "break-word" as const,
+        overflowWrap: "break-word" as const,
+        hyphens: "auto" as const,
       };
     } else if (isTabletPortrait) {
-      // [NUEVO] Estilos específicos para tablet - MÁS COMPACTOS
+      // Estilos COMPACTOS para tablet vertical
       return {
-        fontSize: textMetrics.isLong ? "0.9rem" : "1rem",
-        padding: "0.75rem 1rem",
-        minHeight: "45px",
-        maxHeight: "65px",
-        borderRadius: "0.5rem",
+        fontSize: textMetrics.isLong ? "1rem" : "1.1rem",
+        padding: "0.875rem 1.25rem",
+        minHeight: "50px",
+        maxHeight: "70px",
+        borderRadius: "0.75rem",
         borderWidth: "2px",
         fontWeight: "600",
-        lineHeight: "1.2",
+        lineHeight: "1.25",
         textShadow: "0 2px 4px rgba(0, 0, 0, 0.7)",
         boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2), inset 0 0 5px rgba(255, 255, 255, 0.05)",
         display: "flex",
@@ -596,9 +576,9 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         lineHeight: "1.4",
       };
     }
-  }, [isTV65, isTabletPortrait, isTVTouch, textMetrics]); // [NUEVO] Agregar isTabletPortrait a dependencias
+  }, [isTV65, isTabletPortrait, isTVTouch, textMetrics]);
 
-  // [modificación] Animaciones escalonadas
+  // Animaciones escalonadas
   const containerVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     visible: {
@@ -625,14 +605,14 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
     },
   };
 
-  // [modificación] Layout principal con DEBUG VISUAL - OPTIMIZADO PARA TODOS LOS DISPOSITIVOS
+  // Layout principal NUEVO - sin logo, cronómetro arriba, preguntas abajo
   return (
     <div className={`min-h-screen bg-main-gradient relative overflow-hidden ${
-      isTabletPortrait ? 'question-layout-tablet-800' : ''
+      isTabletPortrait ? 'question-layout-compact' : ''
     }`}>
-      {/* [modificación] DEBUG INFO VISUAL - SOLO EN DESARROLLO */}
+      {/* DEBUG INFO VISUAL - SOLO EN DESARROLLO */}
       {process.env.NODE_ENV === "development" && debugInfo.width > 0 && (
-        <div className="fixed top-0 left-0 bg-black/80 text-white p-4 text-lg font-bold z-50 rounded-br-lg">
+        <div className="absolute top-0 left-0 bg-black/80 text-white p-4 text-lg font-bold z-50 rounded-br-lg">
           <div>
             Resolución: {debugInfo.width}x{debugInfo.height}
           </div>
@@ -644,7 +624,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         </div>
       )}
 
-      {/* [modificación] Partículas de fondo decorativas */}
+      {/* Partículas de fondo decorativas */}
       <div className="particles-bg">
         {Array.from({ length: 12 }).map((_, i) => (
           <div
@@ -665,102 +645,66 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className={`relative z-10 min-h-screen flex flex-col ${
-          isTabletPortrait ? 'question-layout-tablet-portrait' : ''
+        className="relative z-10 min-h-screen flex flex-col"
+      >
+        {/* CRONÓMETRO CENTRADO EN LA PARTE SUPERIOR */}
+        <div className={`w-full flex justify-center items-center ${
+          isTabletPortrait ? 'pt-4 pb-2' : 'pt-8 pb-4'
         }`}>
-        {/* [modificación] Header con logo - OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
-        <header className={`w-full flex justify-center items-center ${
-                      isTabletPortrait ? 'pt-2 pb-1' : 'pt-24 pb-6'
-        }`}>
-          <div className={`w-full flex justify-center items-center ${
-            isTabletPortrait ? 'max-w-4xl' : 'max-w-5xl'
-          }`}>
-            <Logo
-              size="lg"
-              animated={true}
-              withShadow={true}
-                              className={`w-full h-auto ${isTabletPortrait ? 'logo-tablet-portrait' : ''}`} // [NUEVO] Clase específica para tablets verticales
-            />
-          </div>
-        </header>
-
-        {/* [modificación] Contenido principal OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
-        <main
-          className={`flex-1 flex flex-col justify-center items-center ${
-            isTabletPortrait ? 'py-2' : ''
-          }`}
-          style={{
-            padding: isTV65 ? "0px 64px 32px 64px" : isTabletPortrait ? "0.5rem 1rem" : "12px 32px",
-          }}
-        >
-          <div
-            className="w-full"
-            style={{
-              maxWidth: isTV65 ? "1800px" : isTabletPortrait ? "700px" : isTVTouch ? "1200px" : "1000px", // [NUEVO] Ancho máximo para tablet 800
-            }}
+          <motion.div
+            variants={itemVariants}
+            className="flex justify-center"
           >
-            <motion.div
-              variants={itemVariants}
-              className={`flex justify-center ${
-                                  isTV65 ? "timer-container-tv65" : isTabletPortrait ? "timer-tablet-portrait" : ""
-              }`}
-              style={{
-                marginBottom: isTV65 ? "6px" : isTabletPortrait ? "-1rem" : "12px", 
-                marginTop: isTV65 ? "-320px" : isTabletPortrait ? "-1rem" : isTVTouch ? "-150px" : "-120px",
-                width: isTabletPortrait ? "100%" : "auto",
-                display: isTabletPortrait ? "flex" : "block", 
-                alignItems: isTabletPortrait ? "center" : "initial",
-                justifyContent: isTabletPortrait ? "center" : "initial"
-              }}
-            >
-              <Timer
-                key={`timer-${question.id}-${
-                  currentParticipant?.id || "anonymous"
-                }`}
-                initialSeconds={timerSeconds}
-                onTimeUp={handleTimeUp}
-                isTV65={isTV65}
-                isTVTouch={isTVTouch}
-                isTabletPortrait={isTabletPortrait}
-              />
-            </motion.div>
+            <Timer
+              key={`timer-${question.id}-${currentParticipant?.id || "anonymous"}`}
+              initialSeconds={timerSeconds}
+              onTimeUp={handleTimeUp}
+              isTV65={isTV65}
+              isTVTouch={isTVTouch}
+              isTabletPortrait={isTabletPortrait}
+            />
+          </motion.div>
+        </div>
 
-            {/* [modificación] Contenedor de pregunta OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
+        {/* CONTENIDO PRINCIPAL: PREGUNTA Y OPCIONES */}
+        <main className={`flex-1 flex flex-col justify-center items-center ${
+          isTabletPortrait ? 'px-4 py-2' : 'px-8 py-4'
+        }`}>
+          <div className="w-full max-w-4xl">
+            {/* Contenedor de pregunta COMPACTO */}
             <motion.div
               variants={itemVariants}
               className={`relative ${
                 isTabletPortrait 
-                  ? 'question-container-tablet-800' 
-                  : 'bg-black/40 backdrop-blur-xl rounded-3xl border border-white/30 shadow-2xl mb-8'
+                  ? 'question-container-compact' 
+                  : 'bg-black/40 backdrop-blur-xl rounded-2xl border border-white/30 shadow-2xl mb-6'
               }`}
               style={!isTabletPortrait ? {
-                padding: isTV65 ? "44px 54px" : "32px 48px",
-                marginBottom: isTV65 ? "28px" : "32px",
+                padding: isTV65 ? "32px 40px" : "20px 32px",
+                marginBottom: isTV65 ? "24px" : "24px",
                 boxShadow: isTV65
                   ? "0 25px 50px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1)"
                   : "0 20px 40px rgba(0, 0, 0, 0.3)",
               } : {
-                padding: "1rem 1.5rem",
+                padding: "1.25rem 1.5rem",
                 marginBottom: "1rem",
                 backgroundColor: "rgba(0, 0, 0, 0.4)",
                 backdropFilter: "blur(20px)",
-                borderRadius: "1.5rem",
+                borderRadius: "1rem",
                 border: "1px solid rgba(255, 255, 255, 0.3)",
                 boxShadow: "0 10px 20px rgba(0, 0, 0, 0.3)",
               }}
             >
               <h2
-                className={`font-marineBold text-white text-center leading-tight ${
-                  isTabletPortrait ? '' : ''
-                }`}
+                className="font-marineBold text-white text-center leading-tight"
                 style={!isTabletPortrait ? {
-                  fontSize: isTV65 ? "96px" : isTVTouch ? "56px" : "36px",
-                  marginBottom: isTV65 ? "32px" : "16px",
+                  fontSize: isTV65 ? "72px" : isTVTouch ? "48px" : "28px",
+                  marginBottom: "0",
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
                   fontWeight: "900",
                 } : {
-                  fontSize: "1.4rem",
-                  marginBottom: "1rem",
+                  fontSize: "1.75rem",
+                  marginBottom: "0",
                   textShadow: "0 6px 12px rgba(0, 0, 0, 0.9), 0 12px 24px rgba(0, 0, 0, 0.7)",
                   fontWeight: "800",
                 }}
@@ -769,21 +713,21 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
               </h2>
             </motion.div>
 
-            {/* [modificación] Grid de opciones OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
+            {/* Grid de opciones COMPACTO */}
             <motion.div
               variants={itemVariants}
               className={`${
                 isTabletPortrait 
-                  ? 'options-grid-tablet-800' 
+                  ? 'options-grid-compact' 
                   : 'grid grid-cols-1'
               }`}
               style={!isTabletPortrait ? {
-                gap: isTV65 ? "24px" : "16px",
+                gap: isTV65 ? "20px" : "12px",
               } : {
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: "0.5rem",
-                maxWidth: "600px",
+                gap: "0.75rem",
+                maxWidth: "100%",
                 margin: "0 auto",
               }}
             >
@@ -791,15 +735,15 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                 <motion.div
                   key={index}
                   variants={itemVariants}
-                  whileHover={{ scale: isAnswered ? 1 : isTV65 ? 1.01 : isTabletPortrait ? 1.02 : 1.02 }} // [NUEVO] Escala para tablet 800
-                  whileTap={{ scale: isAnswered ? 1 : isTV65 ? 0.995 : isTabletPortrait ? 0.98 : 0.98 }} // [NUEVO] Escala para tablet 800
+                  whileHover={{ scale: isAnswered ? 1 : isTV65 ? 1.01 : isTabletPortrait ? 1.02 : 1.02 }}
+                  whileTap={{ scale: isAnswered ? 1 : isTV65 ? 0.995 : isTabletPortrait ? 0.98 : 0.98 }}
                 >
                   <Button
                     variant="custom"
                     onClick={() => handleAnswer(option)}
                     className={`${getOptionClasses(option)} ${
                       isTabletPortrait 
-                        ? 'answer-option-tablet-800' 
+                        ? 'answer-option-compact' 
                         : isTV65 
                         ? 'tv-65-layout' 
                         : ''
@@ -807,7 +751,7 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                     style={!isTabletPortrait ? getOptionStyles() : {}}
                     disabled={isAnswered}
                   >
-                    {/* [modificación] Layout específico para cada dispositivo */}
+                    {/* Layout específico para cada dispositivo */}
                     {isTV65 ? (
                       <>
                         {/* Layout específico para TV65 */}
@@ -851,28 +795,28 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
                         </div>
                       </>
                     ) : isTabletPortrait ? (
-                      // [NUEVO] Layout simplificado para tablet 800x1340 - usa clases CSS
+                      // Layout COMPACTO para tablet vertical
                       <>
                         <span className="flex-1 leading-tight break-words">
                           {option.text}
                         </span>
-                        <div className="option-icon">
+                        <div className="option-icon-compact">
                           {String.fromCharCode(65 + index)}
                         </div>
                       </>
                     ) : (
                       // Layout original para otros dispositivos
                       <div className="flex items-center justify-between w-full h-full">
-                        <span className={`flex-1 leading-tight break-words`}>
+                        <span className="flex-1 leading-tight break-words">
                           {option.text}
                         </span>
                         <div
                           className="ml-2 rounded-full flex items-center justify-center font-black bg-white/30 text-white"
                           style={{
-                            width: isTabletPortrait ? "24px" : isTVTouch ? "56px" : "48px",
-                            height: isTabletPortrait ? "24px" : isTVTouch ? "56px" : "48px",
-                            fontSize: isTabletPortrait ? "0.75rem" : isTVTouch ? "28px" : "24px",
-                            marginLeft: isTabletPortrait ? "8px" : isTVTouch ? "20px" : "16px",
+                            width: isTVTouch ? "56px" : "40px",
+                            height: isTVTouch ? "56px" : "40px",
+                            fontSize: isTVTouch ? "28px" : "20px",
+                            marginLeft: isTVTouch ? "20px" : "12px",
                           }}
                         >
                           {String.fromCharCode(65 + index)}
@@ -886,23 +830,13 @@ export default function QuestionDisplay({ question }: QuestionDisplayProps) {
           </div>
         </main>
 
-        {/* [modificación] Footer OPTIMIZADO PARA TODOS LOS DISPOSITIVOS */}
-        <footer
-          className={`text-center ${
-            isTabletPortrait ? 'question-footer-tablet-800' : ''
-          }`}
-          style={!isTabletPortrait ? {
-            padding: isTV65 ? "24px" : "16px",
-            minHeight: isTV65 ? "5vh" : "auto",
-          } : {}}
-        >
+        {/* Footer mínimo */}
+        <footer className={`text-center ${isTabletPortrait ? 'py-2' : 'py-4'}`}>
           <div
-            className={`text-white/60 ${
-              isTabletPortrait ? '' : ''
-            }`}
-            style={!isTabletPortrait ? {
-              fontSize: isTV65 ? "24px" : "16px",
-            } : {}}
+            className="text-white/60"
+            style={{
+              fontSize: isTV65 ? "24px" : isTabletPortrait ? "14px" : "16px",
+            }}
           >
             {currentParticipant?.nombre &&
               `Participante: ${currentParticipant.nombre}`}
