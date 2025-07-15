@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./tablet-responsive.css";
 import ShellRootClient from "@/components/layout/ShellRootClient";
 
 // [modificación] Configuración de viewport separada según Next.js 15

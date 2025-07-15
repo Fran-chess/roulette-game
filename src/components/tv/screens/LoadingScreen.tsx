@@ -10,7 +10,6 @@ export default function LoadingScreen() {
   // Si la inicialización tarda >10 s, mostramos el botón «Reintentar»
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('⏱️ LoadingScreen: 10 segundos transcurridos, mostrando botón de reintentar');
       setShowRetry(true);
     }, 10_000);
     
@@ -20,6 +19,7 @@ export default function LoadingScreen() {
   }, []);
 
   const handleRetry = () => {
+    // [soporte] Recarga manual del componente
     console.log('🔄 LoadingScreen: Ejecutando recarga manual');
     // Recarga brutal: asegura limpiar cualquier estado colgado
     window.location.reload();

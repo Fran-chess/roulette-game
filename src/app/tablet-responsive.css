@@ -1,0 +1,293 @@
+/* Optimizaciones responsivas para tablets modernos (600px-1279px) */
+/* Soporte universal para cualquier tablet sin depender de marca o modelo específico */
+
+/* Rango base para tablets modernos */
+@media screen and (min-width: 600px) and (max-width: 1279px) {
+  /* Variables CSS para tablets */
+  :root {
+    --tablet-spacing-sm: clamp(0.5rem, 2vw, 1rem);
+    --tablet-spacing-md: clamp(1rem, 3vw, 2rem);
+    --tablet-spacing-lg: clamp(1.5rem, 4vw, 3rem);
+    --tablet-font-sm: clamp(0.75rem, 2.5vw, 1.2rem);
+    --tablet-font-md: clamp(1rem, 3vw, 1.8rem);
+    --tablet-font-lg: clamp(1.5rem, 4vw, 2.5rem);
+    --tablet-font-xl: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  /* WaitingScreen optimizations */
+  .waiting-screen-tablet-portrait {
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* RouletteWheel optimizations */
+  .wheel-canvas {
+    max-width: min(85vw, 85vh);
+    width: auto !important;
+    height: auto !important;
+  }
+
+  /* QuestionDisplay optimizations */
+  .question-layout-compact {
+    padding: var(--tablet-spacing-sm);
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .question-container-modern {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+    backdrop-filter: blur(24px);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: var(--tablet-spacing-md) var(--tablet-spacing-lg);
+    margin-bottom: var(--tablet-spacing-sm);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.12),
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .options-grid-modern {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--tablet-spacing-md);
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 var(--tablet-spacing-sm); /* Padding consistente para todas las opciones */
+  }
+
+  .answer-option-modern {
+    font-size: var(--tablet-font-sm) !important;
+    padding: var(--tablet-spacing-md) var(--tablet-spacing-lg) !important;
+    min-height: 52px !important;
+    border-radius: 0.75rem !important;
+    line-height: 1.4 !important;
+    display: flex !important;
+    align-items: center !important;
+    /* Los estilos de fondo y borde son manejados por JavaScript para mantener consistencia */
+  }
+
+  .answer-option-modern span, 
+  .answer-option-modern div {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    flex: 1 !important;
+  }
+
+  /* Manejo especial para el span principal del texto */
+  .answer-option-modern > span:first-child {
+    white-space: normal !important;
+    word-break: break-word !important;
+    hyphens: auto !important;
+    line-height: 1.2 !important;
+    display: flex !important;
+    align-items: center !important;
+    flex: 1 !important;
+  }
+
+  .option-icon-modern {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    max-width: 2.5rem;
+    max-height: 2.5rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
+    color: #374151;
+    font-weight: 800;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 1rem;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 
+      0 4px 12px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Timer optimizations */
+  .timer-text-compact {
+    font-size: var(--tablet-font-md) !important;
+    line-height: 1 !important;
+  }
+
+  .timer-seconds-compact {
+    font-size: var(--tablet-font-sm) !important;
+    line-height: 1 !important;
+  }
+
+  /* PrizeModal optimizations */
+  .prize-modal-tablet-modern {
+    padding: var(--tablet-spacing-md) !important;
+    max-width: min(90vw, 600px) !important;
+  }
+
+  .prize-modal-tablet-landscape {
+    padding: var(--tablet-spacing-lg) !important;
+    max-width: min(85vw, 800px) !important;
+  }
+
+  .tablet-title-responsive {
+    font-size: var(--tablet-font-xl) !important;
+    line-height: 1.1 !important;
+  }
+
+  .tablet-landscape-title {
+    font-size: var(--tablet-font-xl) !important;
+    line-height: 1.1 !important;
+  }
+
+  .tablet-button-portrait {
+    font-size: var(--tablet-font-md) !important;
+    padding: var(--tablet-spacing-sm) var(--tablet-spacing-md) !important;
+  }
+
+  .tablet-button-landscape {
+    font-size: var(--tablet-font-lg) !important;
+    padding: var(--tablet-spacing-md) var(--tablet-spacing-lg) !important;
+  }
+
+  .prize-icon {
+    width: clamp(2rem, 8vw, 4rem) !important;
+    height: clamp(2rem, 8vw, 4rem) !important;
+  }
+}
+
+/* Tablets en orientación vertical (portrait) */
+@media screen and (min-width: 600px) and (max-width: 1279px) and (orientation: portrait) {
+  :root {
+    --tablet-font-sm: clamp(0.8rem, 2.8vw, 1.4rem);
+    --tablet-font-md: clamp(1.1rem, 3.5vw, 2rem);
+    --tablet-font-lg: clamp(1.6rem, 4.5vw, 2.8rem);
+    --tablet-font-xl: clamp(2.2rem, 5.5vw, 4rem);
+  }
+
+  .question-layout-compact {
+    padding: clamp(0.5rem, 2vw, 1rem);
+  }
+
+  .answer-option-modern {
+    min-height: 52px !important;
+    font-size: clamp(0.9rem, 3vw, 1.5rem) !important;
+    padding: clamp(1rem, 4vw, 2rem) clamp(1.5rem, 5vw, 2.5rem) !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .wheel-canvas {
+    max-width: min(80vw, 70vh);
+  }
+}
+
+/* Tablets en orientación horizontal (landscape) */
+@media screen and (min-width: 600px) and (max-width: 1279px) and (orientation: landscape) {
+  :root {
+    --tablet-font-sm: clamp(0.75rem, 2.2vw, 1.2rem);
+    --tablet-font-md: clamp(1rem, 2.8vw, 1.6rem);
+    --tablet-font-lg: clamp(1.4rem, 3.5vw, 2.2rem);
+    --tablet-font-xl: clamp(1.8rem, 4.2vw, 3rem);
+  }
+
+  .question-layout-compact {
+    padding: clamp(1rem, 3vw, 2rem);
+  }
+
+  .answer-option-modern {
+    min-height: 52px !important;
+    font-size: clamp(1rem, 2.8vw, 1.6rem) !important;
+    padding: clamp(1.2rem, 4vh, 2.5rem) clamp(1.5rem, 4vw, 3rem) !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .wheel-canvas {
+    max-width: min(60vw, 80vh);
+  }
+}
+
+/* Breakpoints específicos para tablets comunes */
+
+/* Tablets pequeñas (600px-768px) */
+@media screen and (min-width: 600px) and (max-width: 768px) {
+  .answer-option-modern {
+    padding: 1rem 1.5rem !important;
+    font-size: clamp(0.9rem, 3.2vw, 1.3rem) !important;
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .wheel-canvas {
+    max-width: min(75vw, 75vh);
+  }
+}
+
+/* Tablets medianas (769px-1024px) */
+@media screen and (min-width: 769px) and (max-width: 1024px) {
+  .answer-option-modern {
+    padding: 1.25rem 2rem !important;
+    font-size: clamp(1.1rem, 2.8vw, 1.5rem) !important;
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .wheel-canvas {
+    max-width: min(65vw, 70vh);
+  }
+}
+
+/* Tablets grandes (1025px-1279px) */
+@media screen and (min-width: 1025px) and (max-width: 1279px) {
+  .answer-option-modern {
+    padding: 1.5rem 2.5rem !important;
+    font-size: clamp(1.2rem, 2.5vw, 1.7rem) !important;
+    min-height: 52px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .wheel-canvas {
+    max-width: min(55vw, 65vh);
+  }
+}
+
+/* Optimizaciones para performance en tablets */
+@media screen and (min-width: 600px) and (max-width: 1279px) {
+  * {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+  }
+
+  .wheel-canvas {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  .answer-option-modern {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+}
+
+
+
+/* Mejoras de accesibilidad para tablets */
+@media screen and (min-width: 600px) and (max-width: 1279px) {
+  .answer-option-modern:focus {
+    outline: 3px solid rgba(64, 192, 239, 0.8) !important;
+    outline-offset: 2px !important;
+  }
+
+  .tablet-button-portrait:focus,
+  .tablet-button-landscape:focus {
+    outline: 3px solid rgba(64, 192, 239, 0.8);
+    outline-offset: 3px;
+  }
+}

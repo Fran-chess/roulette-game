@@ -7,6 +7,7 @@ import RouletteWheel from '@/components/game/RouletteWheel';
 import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
 import RouletteWheelIcon from '@/components/ui/RouletteWheelIcon';
+import Logo from '@/components/ui/Logo'; // [AGREGADO] Importar el logo
 import { Question } from '@/types';
 import { MotionDiv } from '@/components/tv/shared/MotionComponents';
 import { useGameStore } from '@/store/gameStore';
@@ -27,14 +28,29 @@ export default function TVPage() {
   // Estados del store global que necesitamos observar
   const currentQuestion = useGameStore((state) => state.currentQuestion);
   const lastSpinResultIndex = useGameStore((state) => state.lastSpinResultIndex);
-  const prizeFeedback = useGameStore((state) => state.prizeFeedback);
-  const gameState = useGameStore((state) => state.gameState);
   
   // Acciones del store
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
   const setStoreQuestions = useGameStore((state) => state.setQuestions);
+  const setGameState = useGameStore((state) => state.setGameState);
+
+  // --- FUNCIÓN CENTRALIZADA PARA CAMBIO DE PANTALLA ---
+  function goToScreen(next: TVScreen) {
+    setScreen(next);
+    // Actualizar gameState apropiadamente para cada pantalla
+    if (next === 'roulette') {
+      setGameState('roulette');
+    } else if (next === 'waiting') {
+      setGameState('screensaver');
+    } else if (next === 'prize') {
+      setGameState('prize');
+    } else if (next === 'question') {
+      setGameState('question');
+    }
+  }
+
 
   // Detectar tablets en orientación vertical
   useEffect(() => {
@@ -52,121 +68,112 @@ export default function TVPage() {
     };
 
     handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Cargar preguntas al montar
+  // Cargar preguntas desde JSON local
   useEffect(() => {
     const loadQuestions = async () => {
       try {
         const response = await fetch('/api/questions');
         if (!response.ok) throw new Error('Error al cargar preguntas');
         const data = await response.json();
-        const loadedQuestions = data.questions || [];
-        setLocalQuestions(loadedQuestions);
-        setStoreQuestions(loadedQuestions); // También guardar en el store
+        
+        
+        if (data.questions && Array.isArray(data.questions)) {
+          setLocalQuestions(data.questions);
+          setStoreQuestions(data.questions);
+        } else {
+          console.error('[TVPage] Formato de preguntas inválido:', data);
+        }
       } catch (error) {
-        console.error('Error al cargar preguntas:', error);
-        // Preguntas de respaldo con estructura correcta
-        const fallbackQuestions: Question[] = [
-          {
-            id: '1',
-            category: 'Salud General',
-            text: '¿Cuál es la mejor forma de mantener una buena salud?',
-            options: [
-              { text: 'Ejercicio regular', correct: true },
-              { text: 'Comer solo dulces', correct: false },
-              { text: 'Dormir 2 horas', correct: false },
-              { text: 'No beber agua', correct: false }
-            ],
-            explanation: 'El ejercicio regular es fundamental para mantener una buena salud.',
-            prize: 'Premio Especial'
-          }
-        ];
-        setLocalQuestions(fallbackQuestions);
-        setStoreQuestions(fallbackQuestions); // También guardar en el store
+        console.error('[TVPage] Error cargando preguntas:', error);
       }
     };
 
     loadQuestions();
   }, [setStoreQuestions]);
 
-  // Observar cambios en lastSpinResultIndex para detectar cuando la ruleta termina
+  // Limpiar al montar el componente
+  useEffect(() => {
+    resetPrizeFeedback();
+    setCurrentQuestion(null);
+    setLastSpinResultIndex(null);
+  }, [resetPrizeFeedback, setCurrentQuestion, setLastSpinResultIndex]);
+
+  // Gestionar transiciones entre pantallas basadas en el lastSpinResultIndex
   useEffect(() => {
     if (lastSpinResultIndex !== null && questions.length > 0 && screen === 'roulette') {
-      const selectedQuestion = questions[lastSpinResultIndex % questions.length];
-      if (selectedQuestion) {
-        console.log(`Ruleta se detuvo en índice: ${lastSpinResultIndex}`);
-        console.log(`Pregunta seleccionada: ${selectedQuestion.category}`);
+      console.log('[TVPage] Giro completado, mostrando pregunta. Índice:', lastSpinResultIndex);
+      
+      if (lastSpinResultIndex >= 0 && lastSpinResultIndex < questions.length) {
+        const selectedQuestion = questions[lastSpinResultIndex];
+        console.log('[TVPage] Pregunta seleccionada:', selectedQuestion);
         setCurrentQuestion(selectedQuestion);
         setScreen('question');
+      } else {
+        console.warn('[TVPage] Índice de pregunta fuera de rango:', lastSpinResultIndex);
       }
     }
   }, [lastSpinResultIndex, questions, screen, setCurrentQuestion]);
 
-  // SIMPLIFICADO: Solo manejar respuestas correctas/incorrectas - SIN premios
+  // NUEVO: Hook para navegación por touch/teclado
   useEffect(() => {
-    if (prizeFeedback.answeredCorrectly !== null && screen === 'question') {
-      const isCorrect = prizeFeedback.answeredCorrectly;
-      
-      // IMPORTANTE: Dar tiempo para ver el efecto verde/rojo antes del modal
-      console.log(isCorrect ? '✅ Respuesta correcta!' : '❌ Respuesta incorrecta!');
-      console.log('⏱️ Esperando 2 segundos para mostrar el efecto visual...');
-      
-      setTimeout(() => {
-        console.log('🎭 Mostrando modal de resultado');
-        // Sincronizar gameState global con screen local
-        const setGameState = useGameStore.getState().setGameState;
-        setGameState('prize');
-        setScreen('prize');
-      }, 2000); // 2 segundos para ver el efecto visual
-    }
-  }, [prizeFeedback.answeredCorrectly, screen]);
-
-  // SIMPLIFICADO: Manejar acciones del modal - SIN auto-cierre
-  useEffect(() => {
-    if (screen === 'prize') {
-      if (gameState === 'screensaver') {
-        // "Volver al inicio" presionado - NUEVA partida limpia
-        console.log('🏠 Volver al inicio - iniciando nueva partida');
-        setScreen('waiting');
-        setCurrentQuestion(null);
-        setLastSpinResultIndex(null);
-        resetPrizeFeedback();
-        // Resetear gameState global
-        const setGameState = useGameStore.getState().setGameState;
-        setGameState('screensaver');
-      } else if (gameState === 'roulette') {
-        // "Volver a jugar" presionado - continuar con la misma partida
-        console.log('🎮 Volver a jugar - misma partida');
-        resetPrizeFeedback();
-        setCurrentQuestion(null);
-        setLastSpinResultIndex(null);
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (screen === 'waiting' && (event.key === 'Enter' || event.key === ' ')) {
         setScreen('roulette');
       }
-    }
-  }, [gameState, screen, setCurrentQuestion, setLastSpinResultIndex, resetPrizeFeedback]);
+    };
 
-  // Función para girar la ruleta
+    const handleGlobalTouch = () => {
+      if (screen === 'waiting') {
+        setScreen('roulette');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleGlobalTouch);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleGlobalTouch);
+    };
+  }, [screen]);
+
+  // Manejar giro de la ruleta
   const handleSpin = () => {
     if (rouletteRef.current && !isSpinning) {
-      console.log('Iniciando giro de ruleta...');
+      console.log('[TVPage] Iniciando giro de ruleta');
       rouletteRef.current.spin();
     }
   };
 
-  // [MODIFICACIÓN] Pantalla de espera SIN mensaje overlay - solo funcionalidad de touch
+
+
+  const onPointerDown = () => {
+    try {
+      // [EXPERIMENTAL] Intentar entrar en modo pantalla completa si está disponible
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {
+          // Fallo silencioso - no es crítico
+        });
+      }
+    } catch (e) {
+      console.log('[TVPage] Error en fullscreen:', e);
+    }
+    
+    if (screen === 'waiting') {
+      setScreen('roulette');
+    }
+  };
+
+
+  // Pantalla de espera
   if (screen === 'waiting') {
     return (
-      <div 
-        onPointerDown={() => {
-          // Activar fullscreen y cambiar a ruleta
-          if (document.documentElement.requestFullscreen) {
-            document.documentElement.requestFullscreen().catch(console.error);
-          }
-          setScreen('roulette');
-        }} 
+      <div
+        onPointerDown={onPointerDown}
         className="h-screen flex items-center justify-center bg-[#192A6E] text-white cursor-pointer relative"
       >
         <WaitingScreen />
@@ -175,104 +182,133 @@ export default function TVPage() {
     );
   }
 
-  // [MODIFICACIÓN] Pantalla de ruleta SIN LOGO - optimizada para pantalla completa
+  // [MODIFICACIÓN] Pantalla de ruleta CON LOGO - estructura completamente refactorizada
   if (screen === 'roulette') {
     return (
-      <div className="flex flex-col min-h-screen w-full bg-main-gradient">
-        {/* ELIMINADO: Header con logo - ahora todo el espacio es para la ruleta */}
+      <div className="min-h-screen w-full bg-main-gradient flex flex-col">
 
-        {/* Contenido principal: ruleta y botón - PANTALLA COMPLETA */}
-        <main className="flex-1 flex flex-col items-center justify-center w-full min-h-0 px-2 py-4">
-          <div className="w-full flex flex-col items-center justify-center flex-1 space-y-6 md:space-y-8 lg:space-y-12">
-            <MotionDiv
-              key="tv-roulette"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="w-full flex flex-col items-center justify-center space-y-6 md:space-y-8 lg:space-y-12"
+        {/* Header centrado con logo visible y espaciado optimizado */}
+        <header className="w-full flex justify-center items-center pt-2 pb-1 px-4 flex-shrink-0">
+          <Logo 
+            size={isTabletPortrait ? "lg" : "lg"} 
+            variant="subtle"
+            animated={true}
+            withShadow={true}
+            className="transition-all duration-300 ease-out"
+          />
+        </header>
+
+        {/* Contenedor principal centrado con espaciado reducido */}
+        <main className="flex-1 flex flex-col items-center justify-start w-full px-4 py-1 gap-6">
+          
+          {/* Contenedor de la ruleta con animación */}
+          <MotionDiv
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="w-full flex justify-center items-center"
+          >
+            <div 
+              className="aspect-square max-w-full"
+              style={{
+                width: isTabletPortrait 
+                  ? 'min(480px, 75vw)' 
+                  : 'min(65vmin, 85vw)',
+                maxWidth: isTabletPortrait ? '480px' : '65vmin'
+              }}
             >
-              {/* Contenedor de la ruleta - TAMAÑO MAXIMIZADO PARA TODA LA PANTALLA */}
-              <MotionDiv
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-                className="w-full aspect-square flex justify-center"
-                style={{
-                  maxWidth: isTabletPortrait ? '600px' : '70vmin',
-                  width: isTabletPortrait ? 'min(600px, 90vw)' : 'min(70vmin, 90vw)',
-                  height: isTabletPortrait ? 'min(600px, 90vw)' : 'min(70vmin, 90vw)'
-                }}
-              >
-                {questions.length > 0 ? (
-                  <RouletteWheel 
-                    questions={questions}
-                    ref={rouletteRef}
-                    onSpinStateChange={setIsSpinning}
-                  />
-                ) : (
+              {questions.length > 0 ? (
+                <RouletteWheel 
+                  questions={questions}
+                  ref={rouletteRef}
+                  onSpinStateChange={setIsSpinning}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
                   <div className="text-white text-center font-bold text-lg md:text-xl lg:text-2xl">
                     Cargando categorías...
                   </div>
-                )}
-              </MotionDiv>
+                </div>
+              )}
+            </div>
+          </MotionDiv>
 
-              {/* Botón "¡Girar la Ruleta!" - TAMAÑO AUMENTADO */}
-              <MotionDiv
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
-                className="relative flex justify-center w-full"
-              >
-                <button
+          {/* Botón "¡Girar la Ruleta!" con animación */}
+          <MotionDiv
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="w-full flex justify-center"
+          >
+            <button
+              className={`
+                neomorphic-button
+                ${isTabletPortrait ? 'neomorphic-button-tablet' : 'neomorphic-button-mobile'}
+                font-bold text-white
+                bg-gradient-to-r from-blue-600 to-purple-600
+                hover:from-blue-700 hover:to-purple-700
+                transition-all duration-300
+                ${isSpinning ? 'opacity-50 cursor-not-allowed spinning-state' : 'ready-to-spin'}
+                ${isTabletPortrait 
+                  ? 'text-xl px-8 py-4 min-h-[70px] min-w-[320px] rounded-2xl' 
+                  : 'text-lg px-6 py-3 min-h-[60px] min-w-[240px] rounded-xl'
+                }
+                shadow-2xl hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300
+              `}
+              onClick={handleSpin}
+              disabled={isSpinning}
+            >
+              <span className="inline-flex items-center gap-3">
+                <RouletteWheelIcon 
                   className={`
-                    font-bold lg:font-black text-white
-                    bg-gradient-to-r from-blue-600 to-purple-600
-                    hover:from-blue-700 hover:to-purple-700
-                    text-lg md:text-xl lg:text-2xl xl:text-3xl
-                    px-6 py-3 md:px-8 md:py-4 lg:px-12 lg:py-6
-                    min-h-[60px] md:min-h-[80px] lg:min-h-[100px]
-                    min-w-[200px] md:min-w-[300px] lg:min-w-[400px]
-                    rounded-xl md:rounded-2xl lg:rounded-3xl
-                    shadow-2xl transform transition-all duration-200
-                    hover:scale-105 hover:shadow-xl
-                    focus:outline-none focus:ring-4 focus:ring-blue-300
-                    ${isSpinning ? 'opacity-50 cursor-not-allowed' : ''}
+                    roulette-icon-container
+                    ${isSpinning ? 'roulette-icon-spinning' : 'roulette-icon-idle'}
+                    ${isTabletPortrait ? 'w-7 h-7' : 'w-6 h-6'}
                   `}
-                  onClick={handleSpin}
-                  disabled={isSpinning}
-                >
-                  <span className="inline-block mr-2 md:mr-3 lg:mr-4 -mt-1 align-middle">
-                    <RouletteWheelIcon 
-                      className="w-6 h-6 md:w-8 md:h-8 lg:w-10 lg:h-10"
-                      size={isTabletPortrait ? 24 : 32}
-                    />
-                  </span>
+                  size={isTabletPortrait ? 28 : 24}
+                />
+                <span className="font-bold">
                   {isSpinning ? '¡Girando...' : '¡Girar la Ruleta!'}
-                </button>
-              </MotionDiv>
-            </MotionDiv>
-          </div>
+                </span>
+              </span>
+            </button>
+          </MotionDiv>
+
         </main>
 
-        {/* Footer mínimo */}
-        <footer className="w-full flex-shrink-0 py-2 text-center">
-          <div className="text-white/60 text-sm md:text-base lg:text-lg">
+        {/* Footer minimalista centrado */}
+        <footer className="w-full flex-shrink-0 py-3 text-center">
+          <div className={`
+            text-white/50 font-light tracking-wide
+            ${isTabletPortrait ? 'text-sm' : 'text-xs'}
+          `}>
             Modo de prueba local
           </div>
         </footer>
+
       </div>
     );
   }
 
   // Pantalla de pregunta
   if (screen === 'question' && currentQuestion) {
-    return <QuestionDisplay question={currentQuestion} />;
+    return (
+      <QuestionDisplay 
+        question={currentQuestion}
+        onAnswered={() => {
+          setTimeout(() => {
+            goToScreen('prize');
+          }, 2500);
+        }}
+      />
+    );
   }
 
   // Pantalla de premio
   if (screen === 'prize') {
     return (
       <div className="min-h-screen relative">
-        <PrizeModal />
+        <PrizeModal onGoToScreen={goToScreen} />
       </div>
     );
   }

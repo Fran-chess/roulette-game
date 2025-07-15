@@ -86,11 +86,6 @@ export default function TVRouletteScreen() {
       setIsTabletPortrait(isTabletPortraitResolution);
       setWindowSize({ width, height });
       
-      if (isTV65Resolution) {
-        console.log(`🎉 TVRouletteScreen: Confetti optimizado para TV65 activado - ${width}x${height}`);
-      } else if (isTabletPortraitResolution) {
-        console.log(`🎉 TVRouletteScreen: Confetti optimizado para tablets verticales activado - ${width}x${height}`);
-      }
     };
 
     handleResize();

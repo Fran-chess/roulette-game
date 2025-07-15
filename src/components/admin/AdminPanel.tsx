@@ -53,21 +53,14 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
   // [modificación] Usar fetchGameSessions del store global
   const fetchActiveSessions = useCallback(async () => {
     if (!adminData?.id) {
-// //       console.log(
-// //         "AdminPanel: fetchActiveSessions - adminData.id NO disponible. No se llamará a la API."
-// //       );
       return;
     }
 
-// //     console.log(
-// //       `AdminPanel: fetchActiveSessions - Llamando a la función del store global para adminData.id: ${adminData.id}`
-// //     );
     await fetchGameSessions();
   }, [adminData?.id, fetchGameSessions]);
 
   // [modificación] Nueva función para cargar estadísticas de participantes
   const loadParticipantsStats = useCallback(async () => {
-// //     console.log('AdminPanel: Cargando estadísticas de participantes...');
     await fetchParticipantsStats();
   }, [fetchParticipantsStats]);
 
@@ -113,10 +106,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
             filter: `admin_id=eq.${adminData.id}`,
           },
           (payload: PayloadUpdate) => {
-// //             console.log(
-// //               "AdminPanel: INSERT detectado por suscripción:",
-// //               payload
-// //             );
             fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
             loadParticipantsStats();
 
@@ -140,10 +129,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
             filter: `admin_id=eq.${adminData.id}`,
           },
           (payload: PayloadUpdate) => {
-// //             console.log(
-// //               "AdminPanel: UPDATE detectado por suscripción:",
-// //               payload
-// //             );
             fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
             loadParticipantsStats();
 
@@ -185,10 +170,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
             filter: `admin_id=eq.${adminData.id}`,
           },
           (payload: PayloadUpdate) => {
-// //             console.log(
-// //               "AdminPanel: DELETE detectado por suscripción:",
-// //               payload
-// //             );
             fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
             loadParticipantsStats();
 
@@ -214,20 +195,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
               "Error de conexión en tiempo real. Los datos podrían no estar actualizados consistentemente."
             );
           } else {
-// //             console.log(
-// //               "AdminPanel: Suscrito a cambios en plays para admin:",
-// //               adminData.id,
-// //               "Estado:",
-// //               status
-// //             );
           }
         });
 
       return () => {
-// //         console.log(
-// //           "AdminPanel: Removiendo canal de suscripción a plays para admin:",
-// //           adminData.id
-// //         );
         supabaseAdminClient.removeChannel(playsChannel);
       };
     }
@@ -275,7 +246,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
   const handleLogoutCallback =
     onLogout ||
     (() => {
-// //       console.log("AdminPanel: Ejecutando logout por defecto");
       // Aquí podrías limpiar el estado de Zustand (adminUser) si es necesario
       // useGameStore.getState().setAdminUser(null);
       // localStorage.removeItem('adminUser'); // Esto ya debería estar en la page.tsx
@@ -339,7 +309,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
                 <div className="flex gap-2 mt-2">
                   <button 
                     onClick={async () => {
-// //                       console.log('🔧 Admin: Forzando recarga de sesiones...');
                       await fetchActiveSessions();
                     }}
                     className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs"
@@ -349,11 +318,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
                   {adminState.currentSession && (
                     <button 
                       onClick={async () => {
-// //                         console.log('🔧 Admin: Cambiando estado para probar conectividad con TV...');
                         const newStatus = adminState.currentSession?.status === 'playing' ? 'player_registered' : 'playing';
                         await updateSessionStatus(adminState.currentSession!.session_id, newStatus);
                         setTimeout(() => {
-// //                           console.log('📺 TV debería haber cambiado de pantalla ahora');
                         }, 1000);
                       }}
                       className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs"

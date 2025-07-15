@@ -33,6 +33,9 @@ const config: Config = {
         "rosado-lila": "#D5A7CD",
         "main-dark": "#121F4B",
       },
+      backgroundImage: {
+        'main-gradient': 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f172a 50%, #1e293b 75%, #334155 100%)',
+      },
       fontFamily: {
         sans: ["Marine-Regular", "sans-serif"],
         marineBold: ["Marine-Bold", "sans-serif"],

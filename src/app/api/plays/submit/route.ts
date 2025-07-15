@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       admin_id
     } = await request.json();
 
+    // [soporte] Logs de auditoría para seguimiento de jugadas
     console.log('🎮 SUBMIT-PLAY: Iniciando procesamiento de jugada');
     console.log('   - Participante:', participant_id);
     console.log('   - Sesión:', session_id);
@@ -88,10 +89,12 @@ export async function POST(request: Request) {
       yaGano = previousWins && previousWins.length > 0;
       
       if (yaGano) {
+        // [soporte] Tracking de premios múltiples
         console.log('🚫 SUBMIT-PLAY: El participante ya ganó un premio anteriormente');
         console.log('   - Premio anterior:', previousWins[0].premio_ganado);
         console.log('   - Fecha:', previousWins[0].created_at);
       } else {
+        // [soporte] Participante elegible para premio
         console.log('✅ SUBMIT-PLAY: Participante elegible para recibir premio');
       }
     }
@@ -99,6 +102,7 @@ export async function POST(request: Request) {
     // Determinar el premio final basado en la lógica de negocio
     const premioFinal = (answered_correctly && prize_name && !yaGano) ? prize_name : null;
 
+    // [soporte] Resultado final del procesamiento
     console.log('🎯 SUBMIT-PLAY: Resultado del procesamiento:');
     console.log('   - Respuesta correcta:', answered_correctly);
     console.log('   - Ya ganó anteriormente:', yaGano);
@@ -142,7 +146,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('✅ SUBMIT-PLAY: Jugada guardada exitosamente:', savedPlay.id);
+    // [soporte] Confirmación de jugada guardada\n    console.log('✅ SUBMIT-PLAY: Jugada guardada exitosamente:', savedPlay.id);
 
     // Respuesta con información completa para el frontend
     return NextResponse.json({

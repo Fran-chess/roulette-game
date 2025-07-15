@@ -92,7 +92,6 @@ export default function GamePage() {
 
         // [modificación] Actualizar estado a 'playing' si no está ya en ese estado
         if (session.status !== 'playing') {
-// //           console.log(`Actualizando estado de sesión ${sessionId} a 'playing' desde el juego`);
           try {
             const updateResponse = await fetch('/api/admin/sessions/update-status', {
               method: 'POST',
@@ -106,11 +105,12 @@ export default function GamePage() {
             });
 
             if (updateResponse.ok) {
-// //               console.log(`Estado de sesión ${sessionId} actualizado exitosamente a 'playing'`);
             } else {
+              // [soporte] Error al actualizar estado de sesión
               console.warn(`No se pudo actualizar el estado de la sesión ${sessionId} a 'playing'`);
             }
           } catch (updateError) {
+            // [soporte] Error al actualizar estado de sesión
             console.warn('Error al actualizar estado de sesión:', updateError);
           }
         }
@@ -125,7 +125,6 @@ export default function GamePage() {
         // ⚠️ SOLUCIONADO: Solo cambiar gameState en la carga inicial, no en cada render
         const currentGameState = useGameStore.getState().gameState;
         if (currentGameState === "screensaver" || currentGameState === "register") {
-          console.log(`[GamePage] Carga inicial: Cambiando gameState de '${currentGameState}' a 'roulette'`);
           setGameStateRef.current("roulette");
         }
       } catch (error: Error | unknown) {
@@ -162,22 +161,14 @@ export default function GamePage() {
 
   // Al girar la ruleta, mostrar la pregunta correspondiente
   useEffect(() => {
-    // [modificación] Log para rastrear el estado del juego y el índice del resultado del giro
-// //     console.log("[GamePage] useEffect for lastSpinResultIndex triggered. lastSpinResultIndex:", lastSpinResultIndex, "questions.length:", questions.length);
     if (lastSpinResultIndex !== null && questionsRef.current && questionsRef.current.length > 0) {
       const indexToUse = lastSpinResultIndex;
-      // [modificación] Log para rastrear el índice a usar
-// //       console.log("[GamePage] Valid conditions met. indexToUse:", indexToUse);
       if (indexToUse >= 0 && indexToUse < questionsRef.current.length) {
         const questionToSet = questionsRef.current[indexToUse];
-        // [modificación] Log para rastrear la pregunta a establecer
-// //         console.log("[GamePage] Setting current question:", questionToSet);
         setCurrentQuestionRef.current(questionToSet);
-        // [modificación] Log para rastrear el cambio de estado del juego
-// //         console.log("[GamePage] Setting gameState to 'question'");
         setGameStateRef.current("question");
       } else {
-        // [modificación] Advertencia si el índice está fuera de los límites
+        // [soporte] Advertencia si el índice está fuera de los límites
         console.warn("[GamePage] lastSpinResultIndex is out of bounds:", indexToUse, "questionsRef.current.length:", questionsRef.current.length);
       }
     }
@@ -189,17 +180,26 @@ export default function GamePage() {
   // [NUEVO] Estado para controlar cuando la ruleta está girando
   const [isSpinning, setIsSpinning] = useState(false);
   
-  // [NUEVO] Hook neumórfico para el botón (detectar si es móvil/tablet/desktop)
+  // [NUEVO] Estados de dispositivo consistentes con GameLayout
   const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'tv' | 'desktop'>('desktop');
   
   // [NUEVO] Hook neumórfico para el botón
   const rouletteButtonState = useRouletteButton(isSpinning, deviceType);
 
-  // [NUEVO] Detectar tipo de dispositivo
+  // [NUEVO] Detectar tipo de dispositivo - consistente con GameLayout
   useEffect(() => {
     const detectDevice = () => {
       const width = window.innerWidth;
-      if (width < 768) {
+      const height = window.innerHeight;
+      
+      // Detectar TV65 igual que en GameLayout
+      const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
+      
+      
+      // Asignar deviceType
+      if (isTV65Resolution) {
+        setDeviceType('tv');
+      } else if (width < 768) {
         setDeviceType('mobile');
       } else if (width >= 768 && width <= 1280) {
         setDeviceType('tablet');
@@ -295,54 +295,100 @@ export default function GamePage() {
   }
 
   // Vista principal: ruleta/pregunta según el estado
-  // [modificación] Log para rastrear el estado del juego y la pregunta actual antes de renderizar
-// //   console.log("[GamePage] Rendering. gameState:", gameState, "currentQuestion:", currentQuestion, "lastSpinResultIndex:", lastSpinResultIndex);
   return (
     <GameLayout>
-      <div className="w-full flex flex-col items-center max-w-[520px] mx-auto">
-        {/* [modificación] Muestra la ruleta cuando es estado roulette O cuando está en transición inicial pero ya tenemos preguntas */}
-        {(gameState === "roulette" || 
-          ((gameState === "screensaver" || gameState === "register") && questions && questions.length > 0)) && (
-          <>
-            <div className="w-full flex justify-center mb-2.5">
+      {/* Layout centrado perfecto para la ruleta */}
+      {(gameState === "roulette" || 
+        ((gameState === "screensaver" || gameState === "register") && questions && questions.length > 0)) && (
+        <div className="h-full w-full flex flex-col items-center justify-between">
+          {/* Contenedor de la ruleta - ocupa el espacio principal */}
+          <div className="flex-1 flex items-center justify-center w-full min-h-0">
+            <div className={`
+              w-full h-full flex items-center justify-center
+              ${deviceType === 'mobile' ? 'max-w-[400px] max-h-[400px]' : 
+                deviceType === 'tablet' ? 'max-w-[500px] max-h-[500px]' : 
+                deviceType === 'tv' ? 'max-w-[800px] max-h-[800px]' : 'max-w-[600px] max-h-[600px]'}
+              p-4
+            `}>
               <RouletteWheel 
                 questions={questions} 
                 ref={rouletteRef}
                 onSpinStateChange={handleSpinStateChange}
               />
             </div>
-            <div className="relative">
-              {/* [NUEVO] Botón neumórfico con efectos dinámicos */}
-              <button
-                className={`${rouletteButtonState.buttonClasses} text-white font-extrabold focus:outline-none focus:ring-4 focus:ring-blue-300`}
-                onClick={handleSpin}
-                onTouchStart={rouletteButtonState.handleRippleEffect}
-                onMouseDown={rouletteButtonState.handleRippleEffect}
-                disabled={rouletteButtonState.isDisabled}
-                aria-label={rouletteButtonState.buttonText}
-                style={{ position: 'relative', overflow: 'hidden' }}
-              >
-                <span className={`inline-block mr-3 -mt-1 align-middle ${rouletteButtonState.iconClasses}`}>
-                  <RouletteWheelIcon className="w-7 h-7" />
-                </span>
-                {rouletteButtonState.buttonText}
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* [modificación] Muestra la pregunta si el estado es "question" */}
-        {gameState === "question" && currentQuestion && (
-          <div className="w-full mt-6">
-            <QuestionDisplay question={currentQuestion} />
           </div>
-        )}
+          
+          {/* Botón de girar - siempre visible debajo */}
+          <div className={`
+            flex justify-center items-center shrink-0
+            ${deviceType === 'mobile' ? 'pb-4 pt-2' : 
+              deviceType === 'tablet' ? 'pb-6 pt-4' : 
+              deviceType === 'tv' ? 'pb-12 pt-8' : 'pb-8 pt-6'}
+          `}>
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className={`
+                relative overflow-hidden font-black text-white
+                focus:outline-none focus:ring-4 focus:ring-blue-300/50
+                ${deviceType === 'mobile' ? 'px-10 py-5 text-lg rounded-xl' : 
+                  deviceType === 'tablet' ? 'px-14 py-6 text-xl rounded-2xl' : 
+                  deviceType === 'tv' ? 'px-24 py-10 text-4xl rounded-3xl' : 'px-16 py-7 text-2xl rounded-2xl'}
+                bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700
+                hover:from-blue-400 hover:via-blue-500 hover:to-blue-600
+                border-2 border-blue-300/60
+                shadow-2xl hover:shadow-blue-500/25
+                transition-all duration-300 ease-out
+                disabled:opacity-50 disabled:cursor-not-allowed
+                backdrop-blur-sm
+                transform-gpu
+              `}
+              style={{
+                textShadow: '0 3px 6px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.9)',
+                boxShadow: `
+                  0 12px 40px rgba(0,0,0,0.25),
+                  0 6px 20px rgba(59, 130, 246, 0.2),
+                  inset 0 2px 0 rgba(255,255,255,0.25),
+                  inset 0 -2px 0 rgba(0,0,0,0.2),
+                  inset 0 0 40px rgba(255,255,255,0.05)
+                `,
+              }}
+              onClick={handleSpin}
+              onTouchStart={rouletteButtonState.handleRippleEffect}
+              onMouseDown={rouletteButtonState.handleRippleEffect}
+              disabled={rouletteButtonState.isDisabled}
+              aria-label={rouletteButtonState.buttonText}
+            >
+              <span className={`
+                inline-flex items-center justify-center gap-3
+                ${deviceType === 'tv' ? 'gap-6' : ''}
+              `}>
+                <RouletteWheelIcon className={`
+                  ${deviceType === 'mobile' ? 'w-7 h-7' : 
+                    deviceType === 'tablet' ? 'w-9 h-9' : 
+                    deviceType === 'tv' ? 'w-16 h-16' : 'w-11 h-11'}
+                  filter drop-shadow(0 3px 6px rgba(0,0,0,0.6))
+                `} />
+                <span className="font-black tracking-wide letter-spacing-wide">
+                  {rouletteButtonState.buttonText}
+                </span>
+              </span>
+            </motion.button>
+          </div>
+        </div>
+      )}
 
-        {/* [modificación] Muestra el modal de premio cuando el estado es "prize" */}
-        {gameState === "prize" && (
-          <PrizeModal />
-        )}
-      </div>
+      {/* Muestra la pregunta si el estado es "question" */}
+      {gameState === "question" && currentQuestion && (
+        <div className="w-full h-full flex items-center justify-center">
+          <QuestionDisplay question={currentQuestion} />
+        </div>
+      )}
+
+      {/* Muestra el modal de premio cuando el estado es "prize" */}
+      {gameState === "prize" && (
+        <PrizeModal />
+      )}
     </GameLayout>
   );
 }

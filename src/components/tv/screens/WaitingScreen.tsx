@@ -65,26 +65,24 @@ export default function WaitingScreen() {
   const [isTabletPortrait, setIsTabletPortrait] = useState(false);
   const [debugInfo, setDebugInfo] = useState({ width: 0, height: 0 });
 
-  // [NUEVO] useEffect para detección universal de tablets en orientación vertical
+  // [OPTIMIZADO] useEffect para detección universal de tablets modernos
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
       const height = window.innerHeight;
 
-      // [NUEVO] Detectar tablets en orientación vertical universal
-      const isTabletPortraitResolution = 
-        width >= 768 && width <= 1200 && 
-        height > width && // Orientación vertical
-        height >= 1000 && // Altura mínima para tablets
+      // [OPTIMIZADO] Detectar tablets modernos (600px-1279px) en cualquier orientación
+      const isTabletModern = 
+        width >= 600 && width <= 1279 && 
         !((width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160)); // Excluir TV65
+
+      // Detectar orientación específica para tablets verticales
+      const isTabletPortraitResolution = 
+        isTabletModern && height > width && height >= 800;
 
       setIsTabletPortrait(isTabletPortraitResolution);
       setDebugInfo({ width, height });
 
-      // [NUEVO] Log para tablets verticales
-      if (isTabletPortraitResolution) {
-        console.log('📱 WaitingScreen: Tablet en orientación vertical detectada, aplicando optimizaciones universales');
-      }
     };
 
     handleResize();
@@ -92,14 +90,9 @@ export default function WaitingScreen() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // [modificación] Log para debugging cuando se muestra la pantalla de espera con video
   useEffect(() => {
     if (isMounted) {
-      console.log('📺 WaitingScreen: Pantalla de espera montada - video en pantalla completa optimizado universalmente');
-      console.log('📺 WaitingScreen: Reproduciendo DarSaludPanallaLed.mp4 en loop automático');
-      if (isTabletPortrait) {
-        console.log('📱 WaitingScreen: Optimizaciones para tablet vertical aplicadas');
-      }
+      // Component mounted
     }
   }, [isMounted, isTabletPortrait]);
 
@@ -116,6 +109,10 @@ export default function WaitingScreen() {
       className={`relative min-h-screen w-full bg-black overflow-hidden tv-portrait:min-h-screen ${
         isTabletPortrait ? 'waiting-screen-tablet-portrait' : ''
       }`}
+      style={{
+        // Optimización universal para tablets (600px-1279px)
+        minHeight: window.innerWidth >= 600 && window.innerWidth <= 1279 ? '100dvh' : '100vh'
+      }}
       role="main"
       aria-label="Pantalla de espera con video en pantalla completa optimizada universalmente para tablets verticales"
     >

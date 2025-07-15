@@ -1,159 +1,438 @@
 [
+ 
   {
-    "id": "bact1",
-    "category": "Bacterias",
-    "text": "¿Cuál de las siguientes bacterias es una de las principales causas de infecciones asociadas a cuidados de salud en pacientes con internación domiciliaria prolongada?",
-    "options": [
-      { "text": "Escherichia coli", "correct": false },
-      { "text": "Klebsiella pneumoniae BLEE", "correct": true },
-      { "text": "Streptococcus pyogenes", "correct": false },
-      { "text": "Salmonella typhi", "correct": false }
-    ],
-    "prize": "Libreta",
-    "explanation": "Klebsiella pneumoniae BLEE es una de las bacterias más relevantes en infecciones asociadas a cuidados de salud prolongados en domicilio."
-  },
-  {
-    "id": "bact2",
-    "category": "Bacterias",
-    "text": "¿Cuál de las siguientes prácticas contribuye significativamente al desarrollo de bacterias multirresistentes en el ámbito domiciliario?",
-    "options": [
-      { "text": "Finalizar el tratamiento antibiótico según indicación médica", "correct": false },
-      { "text": "Uso adecuado de elementos de protección personal", "correct": false },
-      { "text": "Automedicación con antibióticos sin diagnóstico", "correct": true },
-      { "text": "Aislamiento respiratorio en pacientes con infecciones virales", "correct": false }
-    ],
-    "prize": "Taza",
-    "explanation": "La automedicación con antibióticos promueve la selección y proliferación de bacterias resistentes en el hogar."
-  },
-  {
-    "id": "vac1",
-    "category": "Vacunación",
-    "text": "¿Cuál de estas vacunas está especialmente recomendada para mayores de 65 años que reciben atención domiciliaria?",
-    "options": [
-      { "text": "Triple viral", "correct": false },
-      { "text": "Antitetánica", "correct": false },
-      { "text": "Antineumocócica conjugada", "correct": true },
-      { "text": "Varicela", "correct": false }
-    ],
-    "prize": "Neceser",
-    "explanation": "La vacuna antineumocócica conjugada es clave en la prevención de neumonía en adultos mayores con internación domiciliaria."
-  },
-  {
-    "id": "vac2",
-    "category": "Vacunación",
-    "text": "¿Cuál de estas vacunas es prioritaria en pacientes pediátricos con internación domiciliaria para prevenir infecciones respiratorias graves?",
-    "options": [
-      { "text": "Hepatitis A", "correct": false },
-      { "text": "Neumococo conjugada", "correct": true },
-      { "text": "Triple viral", "correct": false },
-      { "text": "Varicela", "correct": false }
-    ],
-    "prize": "Libreta",
-    "explanation": "La vacuna contra el neumococo es esencial para prevenir infecciones respiratorias graves en niños bajo cuidado domiciliario."
-  },
-  {
-    "id": "prev1",
+    "id": "prevg1",
     "category": "Prevención",
-    "text": "¿Cuál de las siguientes medidas es fundamental para prevenir infecciones asociadas al cuidado de la salud (IAAS) en internación domiciliaria?",
+    "text": "¿Cuál es la herramienta estandarizada más utilizada para evaluar fragilidad en personas mayores?",
     "options": [
-      { "text": "Uso de guantes todo el tiempo", "correct": false },
-      { "text": "Lavado de manos según protocolo OMS", "correct": true },
-      { "text": "Ventilación cruzada constante", "correct": false },
-      { "text": "Uso de desinfectante en el calzado", "correct": false }
+      { "text": "Índice de Barthel", "correct": false },
+      { "text": "Escala de Lawton y Brody", "correct": false },
+      { "text": "Test de Velocidad de Marcha", "correct": false },
+      { "text": "Escala de Fragilidad de Edmonton (EFS)", "correct": true }
     ],
-    "prize": "Taza",
-    "explanation": "El lavado de manos siguiendo las recomendaciones de la OMS es la medida más efectiva para prevenir infecciones."
+    "prize": "Libreta",
+    "explanation": "La Escala de Fragilidad de Edmonton es la herramienta más utilizada para evaluar fragilidad en adultos mayores."
   },
   {
-    "id": "prev2",
+    "id": "prevg2",
     "category": "Prevención",
-    "text": "En un contexto de internación domiciliaria, ¿qué acción del entorno familiar puede reforzar la prevención de infecciones?",
+    "text": "En el contexto de internación domiciliaria, ¿qué medida es más efectiva para prevenir el síndrome de inmovilidad?",
     "options": [
-      { "text": "Uso exclusivo de utensilios descartables", "correct": false },
-      { "text": "Ventilar los ambientes al menos dos veces al día", "correct": true },
-      { "text": "Colocar cortinas oscuras para limitar la luz", "correct": false },
-      { "text": "Usar alcohol en gel solo al finalizar cada visita", "correct": false }
-    ],
-    "prize": "Neceser",
-    "explanation": "Ventilar ambientes con frecuencia reduce la concentración de patógenos y mejora la calidad del aire."
-  },
-  {
-    "id": "anti1",
-    "category": "Antibióticos",
-    "text": "¿Cuál de estos antibióticos puede administrarse por vía oral en tratamientos domiciliarios de infecciones urinarias no complicadas?",
-    "options": [
-      { "text": "Meropenem", "correct": false },
-      { "text": "Ciprofloxacina", "correct": true },
-      { "text": "Vancomicina", "correct": false },
-      { "text": "Imipenem", "correct": false }
-    ],
-    "prize": "Libreta",
-    "explanation": "Ciprofloxacina es un antibiótico eficaz y disponible en formulación oral para uso domiciliario."
-  },
-  {
-    "id": "anti2",
-    "category": "Antibióticos",
-    "text": "¿Qué indica la sigla ESBL (BLEE en español), comúnmente asociada a ciertas bacterias resistentes?",
-    "options": [
-      { "text": "Estructura Suplementaria de Bacterias Locales", "correct": false },
-      { "text": "Enzimas Sintéticas de Bajo Límite", "correct": false },
-      { "text": "Bacterias de Lenta Evolución", "correct": false },
-      { "text": "Beta-lactamasas de espectro extendido", "correct": true }
+      { "text": "Sedación nocturna para garantizar el descanso", "correct": false },
+      { "text": "Movilización temprana, progresiva y adaptada", "correct": true },
+      { "text": "Restricción del espacio físico para evitar caídas", "correct": false },
+      { "text": "Rotación pasiva cada 8 horas", "correct": false }
     ],
     "prize": "Taza",
-    "explanation": "Las beta-lactamasas de espectro extendido son enzimas que otorgan resistencia a numerosos antibióticos."
+    "explanation": "La movilización temprana, progresiva y adaptada es la medida más efectiva para prevenir el síndrome de inmovilidad."
   },
   {
-    "id": "fiebre1",
-    "category": "Fiebre",
-    "text": "¿Qué signo requiere derivación inmediata a un centro hospitalario en un paciente febril atendido en domicilio?",
+    "id": "prevg3",
+    "category": "Prevención",
+    "text": "¿Cuál de las siguientes no es una dimensión considerada en el enfoque de Atención Centrada en la Persona (ACP)?",
     "options": [
-      { "text": "Fiebre persistente por más de 3 días", "correct": false },
-      { "text": "Deshidratación leve", "correct": false },
-      { "text": "Signos de sepsis como hipotensión o taquicardia", "correct": true },
-      { "text": "Sudoración nocturna", "correct": false }
+      { "text": "Autonomía", "correct": false },
+      { "text": "Funcionalidad motora", "correct": true },
+      { "text": "Biografía personal", "correct": false },
+      { "text": "Preferencias", "correct": false }
     ],
     "prize": "Neceser",
-    "explanation": "La presencia de sepsis requiere intervención urgente en un centro hospitalario."
+    "explanation": "La funcionalidad motora no se considera una dimensión clave en el enfoque de ACP."
   },
   {
-    "id": "fiebre2",
-    "category": "Fiebre",
-    "text": "¿Cuál de los siguientes signos en un niño con fiebre bajo internación domiciliaria requiere evaluación médica urgente?",
+    "id": "prevg4",
+    "category": "Prevención",
+    "text": "¿Qué condición es indicativa de sarcopenia según los criterios EWGSOP2?",
     "options": [
-      { "text": "Fiebre de 38°C con buen estado general", "correct": false },
-      { "text": "Irritabilidad leve y apetito reducido", "correct": false },
-      { "text": "Somnolencia excesiva, decaimiento y piel moteada", "correct": true },
-      { "text": "Tos seca con temperatura de 37,8°C", "correct": false }
+      { "text": "Pérdida ponderal leve con IMC normal", "correct": false },
+      { "text": "Fuerza muscular reducida", "correct": true },
+      { "text": "Aumento de la grasa visceral sin pérdida de fuerza", "correct": false },
+      { "text": "Hipovitaminosis D sin alteración funcional", "correct": false }
     ],
     "prize": "Libreta",
-    "explanation": "Somnolencia, decaimiento y piel moteada son signos de alarma que requieren evaluación médica inmediata."
+    "explanation": "La reducción de fuerza muscular es un criterio diagnóstico clave de sarcopenia según EWGSOP2."
   },
   {
-    "id": "factor1",
-    "category": "Factores de riesgo",
-    "text": "¿Cuál de los siguientes factores aumenta el riesgo de infecciones por hongos oportunistas en internación domiciliaria?",
+    "id": "prevg5",
+    "category": "Prevención",
+    "text": "¿Cuál es el principal objetivo del cuidado paliativo en el contexto geriátrico domiciliario?",
     "options": [
-      { "text": "Uso prolongado de corticoides", "correct": true },
-      { "text": "Contacto con mascotas", "correct": false },
-      { "text": "Cambios de estación", "correct": false },
-      { "text": "Uso de ventiladores", "correct": false }
+      { "text": "Extender la sobrevida sin considerar la calidad de vida", "correct": false },
+      { "text": "Minimizar los costos hospitalarios", "correct": false },
+      { "text": "Garantizar una atención integral que alivie el sufrimiento y promueva la dignidad, autonomía y calidad de vida", "correct": true },
+      { "text": "Priorizar el tratamiento oncológico curativo", "correct": false }
     ],
     "prize": "Taza",
-    "explanation": "El uso prolongado de corticoides suprime el sistema inmune y favorece infecciones por hongos."
+    "explanation": "El objetivo del cuidado paliativo es brindar atención integral, alivio del sufrimiento y respeto por la dignidad y autonomía."
   },
   {
-    "id": "factor2",
-    "category": "Factores de riesgo",
-    "text": "¿Cuál de los siguientes pacientes presenta mayor riesgo de desarrollar infecciones asociadas al cuidado en salud en el domicilio?",
+    "id": "prevg6",
+    "category": "Prevención",
+    "text": "¿Qué alteración cognitiva leve suele pasar desapercibida en evaluaciones clínicas rápidas?",
     "options": [
-      { "text": "Paciente activo con diabetes controlada", "correct": false },
-      { "text": "Paciente joven con fractura ortopédica", "correct": false },
-      { "text": "Paciente con EPOC y oxigenoterapia domiciliaria", "correct": true },
-      { "text": "Paciente en seguimiento psicológico", "correct": false }
+      { "text": "Apraxia", "correct": false },
+      { "text": "El deterioro de las funciones ejecutivas", "correct": true },
+      { "text": "Alucinaciones visuales", "correct": false },
+      { "text": "Trastorno de ansiedad", "correct": false }
     ],
     "prize": "Neceser",
-    "explanation": "Pacientes con EPOC y oxigenoterapia domiciliaria tienen inmunosupresión y mayor riesgo de infecciones."
+    "explanation": "El deterioro de funciones ejecutivas suele pasar desapercibido en evaluaciones clínicas rápidas."
+  },
+  {
+    "id": "prevg7",
+    "category": "Prevención",
+    "text": "¿Cuál es una bandera roja para derivación geriátrica urgente en domicilio?",
+    "options": [
+      { "text": "Semi dependiente de las AVD", "correct": false },
+      { "text": "Delirio agudo (confusión mental súbita) con deterioro funcional rápido", "correct": true },
+      { "text": "Pérdida del apetito leve", "correct": false },
+      { "text": "Dolor crónico", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "El delirio agudo con deterioro funcional rápido es un signo de urgencia geriátrica."
+  },
+  {
+    "id": "prevg8",
+    "category": "Prevención",
+    "text": "¿Cuál de los siguientes factores es clave para mantener la reserva cognitiva?",
+    "options": [
+      { "text": "Estimulación intelectual continua", "correct": true },
+      { "text": "Uso prolongado de psicofármacos", "correct": false },
+      { "text": "Sueño interrumpido con siestas prolongadas", "correct": false },
+      { "text": "Restricción de actividades para evitar fatiga", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "La estimulación intelectual continua ayuda a mantener la reserva cognitiva."
+  },
+
+  {
+    "id": "critg1",
+    "category": "Criterios clínicos",
+    "text": "¿Cuál de los siguientes pacientes sería candidato adecuado para internación domiciliaria?",
+    "options": [
+      { "text": "Paciente con sepsis severa e hipotensión persistente", "correct": false },
+      { "text": "Adulto mayor con EPOC estable post-agudización", "correct": true },
+      { "text": "Persona con delirio hiperactivo y riesgo de fuga", "correct": false },
+      { "text": "Paciente con fractura de cadera sin cirugía", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "Un adulto mayor con EPOC estable tras agudización es un buen candidato para internación domiciliaria."
+  },
+  {
+    "id": "critg2",
+    "category": "Criterios clínicos",
+    "text": "¿Qué antibiótico requiere mayor precaución en el domicilio por riesgo de interacciones y toxicidad en mayores?",
+    "options": [
+      { "text": "Amoxicilina", "correct": false },
+      { "text": "Ciprofloxacina (y otras fluoroquinolonas)", "correct": true },
+      { "text": "Azitromicina", "correct": false },
+      { "text": "Nitrofurantoína", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "Las fluoroquinolonas requieren mucha precaución en mayores por su riesgo de toxicidad y múltiples interacciones."
+  },
+  {
+    "id": "critg3",
+    "category": "Criterios clínicos",
+    "text": "¿Uno de los factores esenciales para iniciar nutrición enteral domiciliaria?",
+    "options": [
+      { "text": "Que el paciente esté solo pero lúcido", "correct": false },
+      { "text": "Que cuente con red de apoyo entrenada y seguimiento profesional", "correct": true },
+      { "text": "Que haya perdido menos del 5% de peso", "correct": false },
+      { "text": "Que no presente trastornos deglutorios", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "Para iniciar nutrición enteral se requiere red de apoyo entrenada y seguimiento profesional."
+  },
+  {
+    "id": "critg4",
+    "category": "Criterios clínicos",
+    "text": "¿Cuál es la vía más segura para la administración de morfina en domicilio en pacientes paliativos?",
+    "options": [
+      { "text": "Intravenosa contínua", "correct": false },
+      { "text": "Vía oral o subcutánea según tolerancia", "correct": true },
+      { "text": "Rectal", "correct": false },
+      { "text": "Inhalatoria", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "La vía oral o subcutánea es la más segura y recomendada en domicilio para la administración de morfina."
+  },
+  {
+    "id": "critg5",
+    "category": "Criterios clínicos",
+    "text": "¿Cuál es una complicación frecuente del uso prolongado de sonda vesical en domicilio?",
+    "options": [
+      { "text": "Hipotensión", "correct": false },
+      { "text": "Hipernatremia", "correct": false },
+      { "text": "Infecciones urinarias recurrentes", "correct": true },
+      { "text": "Impactación fecal", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "Las infecciones urinarias recurrentes son una complicación frecuente del uso prolongado de sonda vesical."
+  },
+  {
+    "id": "critg6",
+    "category": "Criterios clínicos",
+    "text": "¿Qué condición clínica requiere un plan de prevención específico para un paciente postrado en domicilio?",
+    "options": [
+      { "text": "Hipotiroidismo controlado", "correct": false },
+      { "text": "El riesgo de úlceras por presión (UPP)", "correct": true },
+      { "text": "Hipertensión arterial controlada", "correct": false },
+      { "text": "Gonartrosis leve", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "El riesgo de úlceras por presión requiere planes de prevención específicos en pacientes postrados."
+  },
+  {
+    "id": "critg7",
+    "category": "Criterios clínicos",
+    "text": "¿Qué intervención mejora la adherencia al tratamiento en personas mayores polimedicadas?",
+    "options": [
+      { "text": "Suspensión de fármacos sin evaluación", "correct": false },
+      { "text": "Administración por diferentes cuidadores", "correct": false },
+      { "text": "La revisión periódica y conciliación de la medicación con participación activa de la persona y/o su cuidador/a", "correct": true },
+      { "text": "Cambios constantes en los horarios", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "La revisión periódica y conciliación de la medicación mejora la adherencia al tratamiento en personas mayores."
+  },
+  {
+    "id": "critg8",
+    "category": "Criterios clínicos",
+    "text": "En caso de delirio, ¿qué intervención NO se recomienda como primera línea en domicilio?",
+    "options": [
+      { "text": "Presencia familiar calmante", "correct": false },
+      { "text": "Reorientación constante", "correct": false },
+      { "text": "El uso de antipsicóticos como intervención inicial", "correct": true },
+      { "text": "Minimizar estímulos innecesarios", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "El uso de antipsicóticos no es recomendado como primera línea en el manejo del delirio domiciliario."
+  },
+
+  
+  {
+    "id": "interg1",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Cuál es el rol del terapista ocupacional en un plan de internación domiciliaria?",
+    "options": [
+      { "text": "Supervisar la administración de medicación", "correct": false },
+      { "text": "Intervenir en la adaptación del entorno y actividades significativas", "correct": true },
+      { "text": "Indicar dietas específicas", "correct": false },
+      { "text": "Realizar curaciones complejas", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "El terapista ocupacional adapta el entorno y las actividades para mejorar la calidad de vida en domicilio."
+  },
+  {
+    "id": "interg2",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué aspecto debe evaluar el kinesiólogo antes de indicar ejercicios físicos en domicilio?",
+    "options": [
+      { "text": "Preferencias familiares", "correct": false },
+      { "text": "Gasto calórico diario", "correct": false },
+      { "text": "Capacidad funcional actual y riesgo de caídas", "correct": true },
+      { "text": "Estado nutricional exclusivamente", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "El kinesiólogo debe evaluar la capacidad funcional y el riesgo de caídas antes de indicar ejercicios."
+  },
+  {
+    "id": "interg3",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué estrategia fortalece la coordinación entre equipo de salud y cuidadores no profesionales?",
+    "options": [
+      { "text": "Delegación de funciones sin supervisión", "correct": false },
+      { "text": "Reuniones clínicas y capacitaciones breves", "correct": true },
+      { "text": "Comunicación sólo ante emergencias", "correct": false },
+      { "text": "Utilización de lenguaje técnico sin aclaraciones", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "Las reuniones clínicas y capacitaciones breves fortalecen la coordinación entre el equipo de salud y cuidadores."
+  },
+  {
+    "id": "interg4",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué profesional lidera la toma de decisiones en situaciones complejas en el Modelo de Atención Integral en Salud en internación domiciliaria?",
+    "options": [
+      { "text": "Enfermero/a", "correct": false },
+      { "text": "Trabajador/a social", "correct": false },
+      { "text": "El equipo interdisciplinario, con liderazgo clínico del/la médico/a tratante, en diálogo horizontal con los demás integrantes del equipo.", "correct": true },
+      { "text": "Familia del paciente", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "El liderazgo clínico es del médico tratante, pero la toma de decisiones es interdisciplinaria y horizontal."
+  },
+  {
+    "id": "interg5",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué intervención del equipo de enfermería es clave en la prevención de úlceras por presión?",
+    "options": [
+      { "text": "Aplicar alcohol en zonas de riesgo", "correct": false },
+      { "text": "La realización sistemática de cambios posturales y el monitoreo del estado de la piel", "correct": true },
+      { "text": "Colocar doble sábana para mejorar la movilidad", "correct": false },
+      { "text": "Fomentar el reposo en horas nocturnas", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "Los cambios posturales y el monitoreo de la piel son clave en la prevención de úlceras por presión."
+  },
+  {
+    "id": "interg6",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué indicador refleja buena comunicación institucional en internación domiciliaria?",
+    "options": [
+      { "text": "Se refleja en que todas las intervenciones están alineadas, sin contradicciones ni vacíos de información.", "correct": true },
+      { "text": "Número de pacientes internados simultáneamente", "correct": false },
+      { "text": "Rotación del equipo de profesionales", "correct": false },
+      { "text": "Cantidad de insumos utilizados", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "La buena comunicación institucional se refleja en la coherencia y alineación de las intervenciones."
+  },
+  {
+    "id": "interg7",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué situación requiere evaluación por trabajo social?",
+    "options": [
+      { "text": "Paciente con cobertura médica completa y red familiar sólida", "correct": false },
+      { "text": "La ausencia o sobrecarga del entorno familiar o de cuidados", "correct": true },
+      { "text": "Control clínico estable sin complicaciones", "correct": false },
+      { "text": "Diagnóstico reciente de infección urinaria", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "La ausencia o sobrecarga familiar o de cuidados debe ser evaluada por trabajo social."
+  },
+  {
+    "id": "interg8",
+    "category": "Cuidado interdisciplinario",
+    "text": "¿Qué valor agregado aporta el enfoque interdisciplinario?",
+    "options": [
+      { "text": "Reduce la autonomía del paciente", "correct": false },
+      { "text": "Fragmenta la atención", "correct": false },
+      { "text": "Atención integral y personalizada", "correct": true },
+      { "text": "Aumenta la medicalización", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "El enfoque interdisciplinario permite una atención integral y personalizada."
+  },
+
+  
+  {
+    "id": "eticag1",
+    "category": "Ética y derechos",
+    "text": "¿Qué principio ético respalda el respeto a la voluntad de la persona mayor sobre su tratamiento?",
+    "options": [
+      { "text": "Justicia", "correct": false },
+      { "text": "Autonomía", "correct": true },
+      { "text": "No maleficencia", "correct": false },
+      { "text": "Beneficencia", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "La autonomía respalda el respeto a la voluntad de la persona mayor."
+  },
+  {
+    "id": "eticag2",
+    "category": "Ética y derechos",
+    "text": "¿Qué instrumento legal permite anticipar decisiones sobre el cuidado al final de la vida?",
+    "options": [
+      { "text": "Historia clínica electrónica", "correct": false },
+      { "text": "Voluntades anticipadas", "correct": true },
+      { "text": "Informe de alta hospitalaria", "correct": false },
+      { "text": "Ficha de enfermería", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "Las voluntades anticipadas permiten dejar establecidas las decisiones sobre el cuidado al final de la vida."
+  },
+  {
+    "id": "eticag3",
+    "category": "Ética y derechos",
+    "text": "En caso de conflicto entre paciente lúcido y familia, ¿qué debe primar?",
+    "options": [
+      { "text": "La decisión familiar", "correct": false },
+      { "text": "El costo del tratamiento", "correct": false },
+      { "text": "La opinión médica", "correct": false },
+      { "text": "La decisión informada del paciente", "correct": true }
+    ],
+    "prize": "Taza",
+    "explanation": "Siempre debe primar la decisión informada del paciente lúcido."
+  },
+  {
+    "id": "eticag4",
+    "category": "Ética y derechos",
+    "text": "¿Cuál de estas acciones podría considerarse vulneración de derechos en domicilio?",
+    "options": [
+      { "text": "Aplicar medidas de contención física", "correct": true },
+      { "text": "Acompañar en decisiones difíciles", "correct": false },
+      { "text": "Respetar las creencias del paciente", "correct": false },
+      { "text": "Brindar información clara y comprensible", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "Las medidas de contención física pueden vulnerar los derechos de la persona mayor."
+  },
+  {
+    "id": "eticag5",
+    "category": "Ética y derechos",
+    "text": "¿Qué es el consentimiento informado en el contexto domiciliario?",
+    "options": [
+      { "text": "Un formulario administrativo", "correct": false },
+      { "text": "Una decisión compartida basada en información adecuada", "correct": true },
+      { "text": "Una orden médica obligatoria", "correct": false },
+      { "text": "Un trámite que firma la familia", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "El consentimiento informado es una decisión compartida y basada en información adecuada."
+  },
+  {
+    "id": "eticag6",
+    "category": "Ética y derechos",
+    "text": "¿Qué situación puede implicar riesgo de maltrato hacia la persona mayor en domicilio?",
+    "options": [
+      { "text": "Supervisión médica semanal", "correct": false },
+      { "text": "Rechazo del paciente a bañarse", "correct": false },
+      { "text": "La sobrecarga del cuidador/a sin apoyo emocional, físico ni económico", "correct": true },
+      { "text": "Control del entorno para evitar caídas", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "La sobrecarga del cuidador sin apoyo puede implicar riesgo de maltrato."
+  },
+  {
+    "id": "eticag7",
+    "category": "Ética y derechos",
+    "text": "¿Qué rol tiene la familia en la toma de decisiones éticas?",
+    "options": [
+      { "text": "Imponer su voluntad en todos los casos", "correct": false },
+      { "text": "Apoyar al paciente sin intervenir", "correct": false },
+      { "text": "Participar activamente sin reemplazar la autonomía del adulto mayor", "correct": true },
+      { "text": "Tomar decisiones por el equipo de salud", "correct": false }
+    ],
+    "prize": "Neceser",
+    "explanation": "La familia debe participar activamente pero sin reemplazar la autonomía del adulto mayor."
+  },
+  {
+    "id": "eticag8",
+    "category": "Ética y derechos",
+    "text": "¿Qué valor ético se pone en juego al priorizar el alta domiciliaria sin condiciones adecuadas?",
+    "options": [
+      { "text": "Justicia", "correct": false },
+      { "text": "Autonomía", "correct": false },
+      { "text": "No maleficencia", "correct": true },
+      { "text": "Empatía", "correct": false }
+    ],
+    "prize": "Libreta",
+    "explanation": "La no maleficencia se ve comprometida si se prioriza el alta domiciliaria sin condiciones adecuadas."
+  },
+  {
+    "id": "eticag9",
+    "category": "Ética y derechos",
+    "text": "¿Cuales son, en el Modelo de derecho en el adulto mayor, los principios rectores?",
+    "options": [
+      { "text": "Cuidado centrado en la persona", "correct": true },
+      { "text": "Participación pasiva de las decisiones de cuidado", "correct": false },
+      { "text": "Consentimiento informado oral", "correct": false },
+      { "text": "Discontinuidad del cuidado acorde a su obra social", "correct": false }
+    ],
+    "prize": "Taza",
+    "explanation": "El cuidado centrado en la persona es un principio rector en el modelo de derechos del adulto mayor."
   },
   {
     "id": "dar1",

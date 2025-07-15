@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('sessionId');
 
-    console.log(`Verificando sesión: ${sessionId}`);
+    // [soporte] Verificación de sesión iniciada\n    console.log(`Verificando sesión: ${sessionId}`);
 
     // Validar el parámetro sessionId
     if (!sessionId) {
@@ -50,6 +50,7 @@ export async function GET(request: Request) {
 
     // Si no se encuentra la sesión
     if (!sessionData) {
+      // [soporte] Sesión no encontrada
       console.log(`❌ Sesión ${sessionId} no encontrada en game_sessions`);
       return NextResponse.json(
         { message: 'Sesión no encontrada', valid: false },
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Sesión encontrada
+    // [soporte] Sesión encontrada - detalles para auditoría
     console.log(`✅ Sesión ${sessionId} encontrada:`, {
       id: sessionData.id,
       status: sessionData.status,

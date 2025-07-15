@@ -54,7 +54,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // [modificación] Actualizar setGameSession para evitar actualizaciones innecesarias
   setGameSession: (sessionData: PlaySession | null) => {
     if (!sessionData) {
-// //       console.log('GameStore: Limpiando sesión de juego activa.');
       set({
         gameSession: null,
         currentParticipant: null,
@@ -73,15 +72,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         currentSession.id === sessionData.id && 
         currentSession.status === sessionData.status &&
         currentSession.updated_at === sessionData.updated_at) {
-// //       console.log('GameStore: Sesión ya establecida con mismo estado, evitando actualización redundante');
       return;
     }
 
     // [modificación] Si solo hay cambios menores en participante, evitar log repetitivo
     if (currentSession && currentSession.id === sessionData.id && currentParticipant) {
-// //       console.log('GameStore: Actualizando datos de sesión existente');
     } else {
-// //       console.log('GameStore: Estableciendo sesión de juego:', sessionData);
     }
     
     // [modificación] IMPORTANTE: Ya no extraemos datos del participante desde sessionData

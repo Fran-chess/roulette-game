@@ -11,7 +11,6 @@ import {
   TrophyIcon,        // Para todos los premios físicos
   HeartIcon,         // Para agradecimiento cuando no hay premio
 } from "@heroicons/react/24/solid";
-import { useRouter } from "next/navigation";
 import { useRef, useEffect, useState, useMemo } from "react";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
 import { tvLogger } from "@/utils/tvLogger";
@@ -27,8 +26,11 @@ const getPrizeIcon = (prizeName: string | undefined) => {
   return HeartIcon; // [modificación] HeartIcon para mostrar agradecimiento por jugar
 };
 
-export default function PrizeModal() {
-  const router = useRouter();
+interface PrizeModalProps {
+  onGoToScreen?: (screen: 'waiting' | 'roulette' | 'question' | 'prize') => void;
+}
+
+export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
 
   // [modificación] Estados para detección de tipo de pantalla
   const [isTablet, setIsTablet] = useState(false);
@@ -61,7 +63,7 @@ export default function PrizeModal() {
   const { answeredCorrectly, explanation, correctOption, prizeName } =
     prizeFeedback;
 
-  // [modificación] useEffect para detección de tipo de pantalla y windowSize
+  // [OPTIMIZADO] useEffect para detección mejorada de tablets modernos
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -72,23 +74,22 @@ export default function PrizeModal() {
         (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
 
       setIsTV65(isTV65Resolution);
-      setIsTablet(width >= 601 && width <= 1024 && !isTV65Resolution);
-      setIsTVTouch(width >= 1025 && !isTV65Resolution);
+      setIsTVTouch(width >= 1280 && !isTV65Resolution);
       
-      // [NUEVO] Detectar tablets en orientación vertical universal
+      // [OPTIMIZADO] Detectar tablets en orientación vertical con mejor rango PRIMERO
       const isTabletPortraitResolution = 
-        width >= 768 && width <= 1200 && 
+        width >= 600 && width <= 1279 && 
         height > width && // Orientación vertical
-        height >= 1000 && // Altura mínima para tablets
+        height >= 800 && // Altura mínima optimizada
         !isTV65Resolution;
       setIsTabletPortrait(isTabletPortraitResolution);
       
+      // [OPTIMIZADO] Detectar tablets modernos (600px-1279px) DESPUÉS
+      const isTabletModern = width >= 600 && width <= 1279 && !isTV65Resolution && !isTabletPortraitResolution;
+      setIsTablet(isTabletModern);
+      
       setWindowSize({ width, height });
 
-      // [NUEVO] Log para tablets verticales
-      if (isTabletPortraitResolution) {
-        console.log(`🎁 PrizeModal: Tablet en orientación vertical detectada, aplicando optimizaciones universales`);
-      }
     };
 
     handleResize();
@@ -96,17 +97,18 @@ export default function PrizeModal() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // [modificación] Estilos responsivos basados en tipo de pantalla
+  // [OPTIMIZADO] Estilos responsivos mejorados para tablets modernos
   const modalContainerClasses = useMemo(() => {
     if (isTV65) {
       return "w-full max-w-7xl mx-auto p-20 rounded-4xl shadow-3xl text-center bg-black/15 backdrop-blur-xl border-4 border-white/60";
     } else if (isTabletPortrait) {
-      // [NUEVO] Estilos específicos para tablet 800x1340
-      return "w-full max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center bg-black/15 backdrop-blur-xl border-2 border-white/40 prize-modal-tablet-800";
+      // [OPTIMIZADO] Estilos responsive para tablets verticales (600px-1279px)
+      return `w-full max-w-2xl mx-auto rounded-2xl shadow-2xl text-center bg-black/15 backdrop-blur-xl border-2 border-white/40 prize-modal-tablet-modern`;
     } else if (isTVTouch) {
       return "w-full max-w-3xl mx-auto p-12 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
     } else if (isTablet) {
-      return "w-full max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
+      // [OPTIMIZADO] Estilos para tablets horizontales (600px-1279px)
+      return "w-full max-w-3xl mx-auto p-10 rounded-2xl shadow-2xl text-center bg-black/12 backdrop-blur-lg border-2 border-white/35 prize-modal-tablet-landscape";
     }
     return "w-full max-w-md mx-auto p-6 md:p-10 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
@@ -115,15 +117,18 @@ export default function PrizeModal() {
     if (isTV65) {
       return "w-32 h-32 mx-auto mb-8";
     } else if (isTabletPortrait) {
-      // [NUEVO] Tamaño específico para tablet 800x1340
-      return "w-20 h-20 mx-auto mb-6";
+      // [OPTIMIZADO] Tamaño responsive para tablets verticales
+      const size = Math.max(20, Math.min(32, windowSize.width * 0.08));
+      return `w-${Math.round(size/4)*4} h-${Math.round(size/4)*4} mx-auto mb-6`;
     } else if (isTVTouch) {
       return "w-24 h-24 mx-auto mb-6";
     } else if (isTablet) {
-      return "w-20 h-20 mx-auto mb-5";
+      // [OPTIMIZADO] Tamaño para tablets horizontales
+      const size = Math.max(24, Math.min(28, windowSize.width * 0.035));
+      return `w-${Math.round(size/4)*4} h-${Math.round(size/4)*4} mx-auto mb-5`;
     }
     return "w-16 h-16 mx-auto mb-4";
-  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
+  }, [isTV65, isTabletPortrait, isTVTouch, isTablet, windowSize.width]);
 
   // [modificación] Icono específico para el premio
   const prizeIconClasses = useMemo(() => {
@@ -147,12 +152,13 @@ export default function PrizeModal() {
     if (isTV65) {
       return `${baseClasses} text-[10rem] font-extrabold mb-12 text-shadow-ultra-strong`;
     } else if (isTabletPortrait) {
-      // [NUEVO] Tamaño específico para tablet 800x1340
-      return `${baseClasses} text-tablet-800-xl mb-6`;
+      // [OPTIMIZADO] Tamaño responsive para tablets verticales
+      return `${baseClasses} font-extrabold mb-4 tablet-title-responsive`;
     } else if (isTVTouch) {
       return `${baseClasses} text-[5rem] lg:text-[6rem] mb-8`;
     } else if (isTablet) {
-      return `${baseClasses} text-[3.5rem] lg:text-[4.5rem] mb-6`;
+      // [OPTIMIZADO] Tamaño para tablets horizontales
+      return `${baseClasses} font-extrabold mb-6 tablet-landscape-title`;
     }
     return `${baseClasses} text-3xl md:text-4xl`;
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
@@ -323,12 +329,13 @@ export default function PrizeModal() {
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-strong`;
     } else if (isTabletPortrait) {
-      // [NUEVO] Botón específico para tablet 800x1340
-      return `${baseClasses} text-tablet-800-md py-4 px-8 rounded-xl border-2 modal-button`;
+      // [OPTIMIZADO] Botón responsive para tablets verticales
+      return `${baseClasses} rounded-xl border-2 tablet-button-portrait`;
     } else if (isTVTouch) {
       return `${baseClasses} text-[2.6rem] lg:text-[3.2rem] py-8 px-12`;
     } else if (isTablet) {
-      return `${baseClasses} text-[2.1rem] lg:text-[2.5rem] py-6 px-10`;
+      // [OPTIMIZADO] Botón para tablets horizontales
+      return `${baseClasses} rounded-xl border-3 tablet-button-landscape`;
     }
     return `${baseClasses} text-xl py-3`;
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
@@ -371,122 +378,51 @@ export default function PrizeModal() {
     }
   }, [gameState, answeredCorrectly, gameSession]);
 
-  // Función para volver a jugar - mantiene el mismo participante y va a la ruleta
   const handlePlayAgain = async () => {
     tvLogger.debug(`handlePlayAgain iniciado`);
     tvLogger.info("Preparando para volver a jugar con el mismo participante...");
-
-    // Orden optimizado para minimizar re-renders
     tvLogger.debug(`Limpiando currentQuestion`);
     setCurrentQuestion(null);
-
     tvLogger.debug(`Limpiando lastSpinResultIndex`);
     setLastSpinResultIndex(null);
-
-    // NO limpiar confetti inmediatamente - dejarlo por más tiempo para una celebración completa
     tvLogger.debug(`Confetti se mantendrá por 5 segundos más para celebración completa`);
     setTimeout(() => {
       tvLogger.debug(`Limpiando showConfetti después de celebración extendida`);
       setShowConfetti(false);
     }, 5000);
-
-    // Cambiar al estado de ruleta en setTimeout para evitar conflictos
     setTimeout(() => {
       tvLogger.debug(`Estableciendo gameState a 'roulette'`);
-      setGameState("roulette");
-
-      // Resetear prizeFeedback después del cambio de estado
+      if (onGoToScreen) {
+        onGoToScreen('roulette');
+      } else {
+        setGameState("roulette");
+      }
       tvLogger.debug(`Reseteando prizeFeedback`);
       resetPrizeFeedback();
-
       tvLogger.debug(`handlePlayAgain completado`);
     }, 50);
-
     tvLogger.info("Volviendo a la ruleta con el mismo participante");
   };
 
-  // Función corregida para volver al inicio - Resetear participante pero mantener sesión activa
   const handleGoHome = async () => {
     tvLogger.debug(`handleGoHome iniciado - preparando para siguiente participante`);
     tvLogger.info("Preparando para siguiente participante en la misma sesión...");
-
-    // Preservar gameSession para mantener la sesión activa
-    const sessionForNext = gameSession;
-
-    tvLogger.debug(`Manteniendo sesión activa para siguiente participante: ${sessionForNext?.session_id}`);
-
-    try {
-      // CRUCIAL: Llamar endpoint para resetear solo el participante y volver la sesión a estado 'pending_player_registration'
-      if (sessionForNext?.session_id) {
-        tvLogger.info("Llamando API para resetear participante y preparar sesión para siguiente jugador...");
-
-        const response = await fetch(
-          "/api/admin/sessions/prepare-next-player",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionId: sessionForNext.session_id,
-              adminId: sessionForNext.admin_id || "auto_system",
-            }),
-          }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          tvLogger.error("Error al preparar sesión para siguiente participante:", data);
-          throw new Error(
-            data.message ||
-              "Error al preparar sesión para siguiente participante"
-          );
-        }
-
-        tvLogger.info("Sesión preparada exitosamente para siguiente participante:", data);
-        tvLogger.info("La TV debería volver a WaitingScreen y estar lista para el próximo registro");
-      }
-    } catch (error) {
-      tvLogger.error("Error preparando sesión para siguiente participante:", error);
-      // Continuar con limpieza local aunque falle la API
-    }
-
     // Limpiar solo el estado del participante actual, NO la sesión
-    tvLogger.debug(`Limpiando estado del participante actual...`);
-
+    tvLogger.debug("Limpiando estado del participante actual...");
     setCurrentParticipant(null);
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
-
-    // Mantener confetti por un momento antes de limpiar
     tvLogger.debug(`Confetti se mantendrá por 3 segundos más antes de ir al inicio`);
     setTimeout(() => {
       tvLogger.debug(`Limpiando showConfetti antes de ir al inicio`);
       setShowConfetti(false);
     }, 3000);
-
-    // Verificar si estamos en contexto de TV
-    const isTV = window.location.pathname.includes("/tv");
-
-    if (isTV) {
-      tvLogger.info("Estamos en TV, volviendo a WaitingScreen pero manteniendo sesión activa para siguiente participante");
-      // En TV, NO limpiar gameSession - solo cambiar a estado de espera
-      // La API ya habrá actualizado la base de datos, esto es solo UI local
-      setGameState("screensaver"); // Usar 'screensaver' para volver a waiting
-      // NO limpiar setGameSession(null) - mantener la sesión activa
+    if (onGoToScreen) {
+      onGoToScreen('waiting');
     } else {
-      tvLogger.info(`Redirigiendo a pantalla de registro para siguiente participante en la misma sesión`);
-      // En tablet/admin, navegar de vuelta al formulario de registro
-      // manteniendo la misma sessionId para permitir nuevo participante
-      if (sessionForNext?.session_id) {
-        router.push(`/register/${sessionForNext.session_id}`);
-      } else {
-        // Fallback si no hay sessionId
-        router.push(`/tv`);
-      }
-      // NO limpiar gameSession ni currentSession - mantener para siguiente participante
+      setGameState('screensaver');
     }
-
     tvLogger.debug(`handleGoHome completado - sesión mantenida activa para siguiente participante`);
   };
 

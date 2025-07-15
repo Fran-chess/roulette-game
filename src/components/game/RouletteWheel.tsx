@@ -35,9 +35,11 @@ const rouletteColors = [
 
 // Mapeo específico para categorías solicitadas
 const specificCategoryColors: { [key: string]: string } = {
-  "Dar Salud": "#192A6E",          // azul-intenso (EXCLUSIVO para Dar Salud)
-  "Bacterias": "#40C0EF",          // celeste-medio
-  "Factores de riesgo": "#F2BD35", // amarillo-ds
+  "Dar Salud": "#192A6E",              // azul-intenso (EXCLUSIVO para Dar Salud)
+  "Prevención": "#5ACCC1",             // verde-salud
+  "Criterios clínicos": "#40C0EF",     // celeste-medio
+  "Cuidado interdisciplinario": "#F2BD35", // amarillo-ds
+  "Ética y derechos": "#D5A7CD",       // rosado-lila
 };
 
 // Función para asignar colores evitando adyacencia repetida
@@ -230,7 +232,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     const numSegments = wheelSegments.length;
     const anglePerSegment = numSegments > 0 ? (2 * Math.PI) / numSegments : 0;
 
-    // Detectar dispositivo
+    // [OPTIMIZADO] Detectar dispositivo con soporte mejorado para tablets
     useEffect(() => {
       if (!canUseDOM) return;
       
@@ -238,21 +240,25 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
         const width = window.innerWidth;
         const height = window.innerHeight;
         setIsLandscape(width > height);
-        setIsTablet(width >= 768 && width <= 1280);
-        setIsMobile(width < 768);
         
-        // [NUEVO] Detectar tablets en orientación vertical universal
+        // Detectar TV65
+        const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
+        
+        // Detectar TV Touch
+        const isTVTouchResolution = width >= 1400 && !isTV65Resolution;
+        
+        // [OPTIMIZADO] Mejor detección para tablets modernos (600px-1279px)
+        const isTabletModern = width >= 600 && width <= 1279 && !isTV65Resolution && !isTVTouchResolution;
+        setIsTablet(isTabletModern);
+        setIsMobile(width < 600);
+        
+        // [OPTIMIZADO] Detectar tablets en orientación vertical con mejor rango
         const isTabletPortraitResolution = 
-          width >= 768 && width <= 1200 && 
+          isTabletModern && 
           height > width && // Orientación vertical
-          height >= 1000 && // Altura mínima para tablets
-          !((width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160)); // Excluir TV65
+          height >= 800; // Altura mínima optimizada
         
         setIsTabletPortrait(isTabletPortraitResolution);
-        
-        if (isTabletPortraitResolution) {
-          console.log('🎰 RouletteWheel: Tablet en orientación vertical detectada, aplicando optimizaciones universales');
-        }
       };
       
       handleDeviceDetection();
@@ -296,14 +302,17 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
         ctx.clearRect(0, 0, size, size);
 
-        // Fuente base optimizada según dispositivo
+        // [OPTIMIZADO] Fuente base responsive para tablets modernos - AUMENTADA para mejor visibilidad
         let baseFontSize;
-                  if (isTabletPortrait) {
-            // [NUEVO] Tamaño optimizado para tablets verticales - AUMENTADO más para ruleta más grande
-            baseFontSize = Math.max(20, radius * 0.12);
-          } else {
-          // Fuente base existente para otros dispositivos
-          baseFontSize = Math.max(20, radius * (isMobile ? 0.08 : 0.12));
+        if (isTabletPortrait) {
+          // Tablets verticales: fuente escalada según ancho - AUMENTADA
+          baseFontSize = Math.max(18, Math.min(radius * 0.15, window.innerWidth * 0.04));
+        } else if (isTablet && !isTabletPortrait) {
+          // Tablets horizontales: fuente optimizada - AUMENTADA
+          baseFontSize = Math.max(22, Math.min(radius * 0.13, window.innerWidth * 0.03));
+        } else {
+          // Fuente base existente para otros dispositivos - AUMENTADA
+          baseFontSize = Math.max(24, radius * (isMobile ? 0.10 : 0.14));
         }
         ctx.textBaseline = "middle";
         ctx.textAlign = "center";
@@ -366,7 +375,15 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           const textAngle = startAngle + anglePerSegment / 2;
           ctx.rotate(textAngle);
 
-                      const textX = radius * (isTabletPortrait ? 0.58 : isMobile ? 0.52 : 0.62); // [NUEVO] Posición ajustada para tablets verticales
+          // [OPTIMIZADO] Posición de texto responsive para tablets - ACERCADO AL CENTRO
+          let textX;
+          if (isTabletPortrait) {
+            textX = radius * 0.55; // Tablets verticales - ACERCADO AL CENTRO
+          } else if (isTablet && !isTabletPortrait) {
+            textX = radius * 0.53; // Tablets horizontales - ACERCADO AL CENTRO
+          } else {
+            textX = radius * (isMobile ? 0.48 : 0.57); // Otros dispositivos - ACERCADO AL CENTRO
+          }
 
           // Capitaliza cada palabra
           const displayText = segment.text
@@ -380,7 +397,8 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
           // Disminuye tamaño de fuente hasta que quepa el texto
           let fontSizeLocal = baseFontSize;
           ctx.font = `400 ${fontSizeLocal}px "Marine-Regular", Arial, sans-serif`;
-                      const minFontSize = isTabletPortrait ? 10 : 8; // [NUEVO] Tamaño mínimo ajustado para tablets verticales
+          // [OPTIMIZADO] Tamaño mínimo de fuente para tablets
+          const minFontSize = isTabletPortrait ? 12 : isTablet ? 10 : 8;
           while (
             ctx.measureText(displayText).width > radius * 0.75 &&
             fontSizeLocal > minFontSize
@@ -651,7 +669,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
 
       },
-      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, isSpinning, winnerGlowIntensity, isTabletPortrait]
+      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, isSpinning, winnerGlowIntensity, isTabletPortrait, isTablet]
     );
 
     // Ajuste de tamaño del canvas optimizado para diferentes dispositivos
@@ -666,18 +684,20 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       // Siempre el tamaño máximo cuadrado posible dentro del contenedor
       let size = Math.min(containerWidth, containerHeight);
 
-      // Ajuste mínimos optimizados según dispositivo
-              if (isTabletPortrait) {
-          // [NUEVO] Tamaños optimizados para tablets en orientación vertical
-          size = Math.max(350, Math.min(size, 450));
-          console.log('🎰 RouletteWheel: Aplicando tamaño para tablets verticales:', size);
-        } else if (isMobile) {
-        size = Math.max(300, Math.min(size, 500));
+      // [OPTIMIZADO] Ajuste de tamaños para tablets modernos (600px-1279px) - AUMENTADOS para mejor visibilidad
+      if (isTabletPortrait) {
+        // Tablets en orientación vertical: tamaño responsivo basado en ancho - AUMENTADO
+        const tabletPortraitSize = Math.max(350, Math.min(size, containerWidth * 0.95));
+        size = Math.min(tabletPortraitSize, 520);
+      } else if (isMobile) {
+        size = Math.max(350, Math.min(size, 580)); // AUMENTADO de 280-480 a 350-580
       } else if (isTablet) {
-        size = Math.max(450, Math.min(size, 700));
+        // Tablets horizontales: aprovechar mejor el espacio disponible - AUMENTADO
+        const tabletLandscapeSize = Math.max(500, Math.min(size, containerWidth * 0.7));
+        size = Math.min(tabletLandscapeSize, 800);
       } else {
-        // Para desktop/TV: tamaños mucho más grandes para 4K, especialmente para 55vh
-        size = Math.max(800, Math.min(size, 2200)); // Aumentado de 1000 a 2200 para soportar 55vh
+        // Para desktop/TV: tamaños mucho más grandes para 4K, especialmente para 55vh - AUMENTADO
+        size = Math.max(900, Math.min(size, 2400)); // Aumentado de 800-2200 a 900-2400
       }
 
       // Asigna el size cuadrado
@@ -855,7 +875,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     if (!isDOMReady || !canUseDOM) {
       return (
         <div className="flex flex-col items-center justify-center w-full min-h-[400px]">
-          <div className="text-white text-lg">Preparando ruleta...</div>
+          <div className="text-white text-lg">Preparando ruleta mejorada...</div>
         </div>
       );
     }
@@ -864,30 +884,26 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     return (
       <motion.div
         ref={containerRef}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        // maxHeight evita desbordes, minHeight:0 soluciona problemas de flexbox
-        className="flex flex-col items-center justify-center w-full"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, type: "spring", stiffness: 100 }}
+        className="w-full h-full flex items-center justify-center"
         style={{
-          maxHeight: "calc(100vh - 110px)",
           minHeight: 0,
+          maxHeight: "100%",
         }}
       >
-        <div
-          className="relative w-full flex items-center justify-center"
-          style={{
-            height: "100%", // El canvas ajusta el tamaño cuadrado máximo posible
-          }}
-        >
+        <div className="relative w-full h-full flex items-center justify-center">
           <canvas
             ref={canvasRef}
-            className="rounded-full wheel-canvas touch-optimized"
+            className="rounded-full wheel-canvas touch-optimized drop-shadow-2xl"
             style={{
               width: "100%",
-              height: "auto",
+              height: "100%",
               maxWidth: "100%",
+              maxHeight: "100%",
               display: "block",
+              objectFit: "contain",
             }}
             aria-label="Ruleta de selección de categoría"
             role="img"
