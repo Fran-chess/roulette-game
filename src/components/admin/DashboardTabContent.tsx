@@ -1,24 +1,13 @@
 // src/components/admin/DashboardTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiUsers, FiActivity, FiPlusCircle, FiLogOut } from 'react-icons/fi';
-import { IconType } from 'react-icons';
+import { FiUsers, FiPlusCircle, FiLogOut, FiPlay, FiX } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 import { useState } from 'react';
 import ParticipantsModal from './ParticipantsModal';
 import { useGameStore } from '@/store/gameStore';
+import { PlaySession } from '@/types';
 
-// [modificación] - Interfaz para definir el tipo de los elementos de estadísticas
-interface StatItem {
-  title: string;
-  value: number;
-  icon: IconType;
-  color: string;
-  iconColor: string;
-  description: string;
-  onClick: () => void;
-  isClickable: boolean; // [modificación] - Propiedad agregada
-}
 
 interface DashboardTabContentProps {
   participantsCount: number;
@@ -31,7 +20,6 @@ interface DashboardTabContentProps {
 
 const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
   participantsCount,
-  activeSessionsCount,
   onInitiateNewSession,
   onLogout,
   isLoading,
@@ -41,8 +29,11 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
   const { 
     adminState, 
-    fetchParticipantsList 
+    fetchParticipantsList,
+    closeActiveSession
   } = useGameStore();
+
+  const activeSession: PlaySession | null = adminState.currentSession;
 
   const handleShowParticipants = async () => {
     setShowParticipantsModal(true);
@@ -51,29 +42,18 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     }
   };
 
-  // [modificación] - Array reducido a solo 2 cards: "Total de Participantes" y "Sesiones"
-  const stats: StatItem[] = [
-    { 
-      title: 'Total de Participantes', 
-      value: participantsCount, 
-      icon: FiUsers, 
-      color: 'bg-black/5',
-      iconColor: 'text-slate-800',
-      description: 'Jugadores que han participado',
-      onClick: handleShowParticipants,
-      isClickable: true
-    },
-    { 
-      title: 'Sesiones', 
-      value: activeSessionsCount, 
-      icon: FiActivity, 
-      color: 'bg-black/5',
-      iconColor: 'text-slate-800',
-      description: 'Juegos activos disponibles',
-      onClick: onNavigateToSessions,
-      isClickable: true
-    },
-  ];
+  const handleCloseActiveSession = async () => {
+    if (activeSession) {
+      await closeActiveSession(activeSession.session_id);
+    }
+  };
+
+  const handleContinueSession = () => {
+    if (activeSession) {
+      onNavigateToSessions();
+    }
+  };
+
 
   return (
     <>
@@ -87,62 +67,90 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
         exit="exit"
         variants={staggerContainer}
       >
-        <div className="p-4 md:p-6 admin-content-spacing">
-          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold mb-4 md:mb-6 text-white admin-dashboard-title">
+        <div className="p-6 md:p-8 space-y-8">
+          <motion.h3 variants={fadeInUp} className="text-xl md:text-2xl font-marineBold text-white admin-dashboard-title">
             Panel Principal
           </motion.h3>
-          <motion.p variants={fadeInUp} className="text-slate-300 mb-6 font-sans admin-dashboard-subtitle">
+          <motion.p variants={fadeInUp} className="text-slate-300 font-sans admin-dashboard-subtitle">
             Gestiona tus juegos y supervisa la actividad de los participantes
           </motion.p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 admin-section-spacing">
-            {stats.map(item => (
-              <motion.div
-                key={item.title}
-                variants={fadeInUp}
-                whileHover={{ 
-                  scale: 1.03, 
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)",
-                  backgroundColor: "rgba(255, 255, 255, 0.15)"
-                }}
-                className={`p-4 rounded-xl shadow-lg flex flex-col bg-white/10 backdrop-blur-sm border border-white/20 hover:border-white/40 transition-all duration-300 admin-stats-card ${item.isClickable ? 'cursor-pointer' : ''}`}
-                onClick={item.isClickable ? item.onClick : undefined}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm text-slate-200 font-marineBold">{item.title}</h3>
-                  <div className={`${item.iconColor} bg-white/10 p-2 rounded-full`}>
-                    <item.icon size={20} className="text-blue-300" />
-                  </div>
-                </div>
-                <p className="text-3xl md:text-4xl font-marineBlack text-white mb-1">{item.value}</p>
-                <span className="text-xs text-slate-300 font-sans">{item.description}</span>
-                {item.isClickable && (
-                  <span className="text-xs text-blue-300 mt-2 font-marineBold">
-                    Click para ver detalle
-                  </span>
-                )}
-              </motion.div>
-            ))}
-          </div>
           
-          <motion.div variants={fadeInUp} className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 admin-section-spacing">
-            <Button
-              onClick={onInitiateNewSession}
-              variant="custom"
-              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
-              disabled={isLoading}
-            >
-              <FiPlusCircle className="mr-3" size={20} />
-              {isLoading ? 'Creando Juego...' : 'Iniciar Nuevo Juego'}
-            </Button>
-            
-            <Button
-              onClick={onLogout}
-              variant="custom"
-              className="bg-white/10 hover:bg-white/20 text-white font-marineBold py-3 px-5 rounded-lg shadow-lg text-base flex items-center justify-center border border-white/20 transition-colors duration-300 admin-dashboard-button"
-            >
-              <FiLogOut className="mr-3" size={20} />
-              Cerrar Sesión
-            </Button>
+          {/* Card de participantes */}
+          <motion.div
+            variants={fadeInUp}
+            className="p-6 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 shadow-lg transition-all duration-200 admin-stats-card cursor-pointer"
+            onClick={handleShowParticipants}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm text-slate-200 font-marineBold">Total de Participantes</h3>
+              <div className="p-2 rounded-full bg-white/5">
+                <FiUsers size={16} className="text-blue-300" />
+              </div>
+            </div>
+            <p className="text-3xl md:text-4xl font-marineBlack text-white mb-2">{participantsCount}</p>
+            <span className="text-xs text-slate-300 font-sans">Jugadores que han participado</span>
+            <span className="text-xs text-blue-300 mt-2 font-marineBold block">
+              Click para ver detalle
+            </span>
+          </motion.div>
+
+          {/* Botones de acción */}
+          <motion.div variants={fadeInUp} className="space-y-3">
+            {activeSession ? (
+              /* Botones para cuando hay una sesión activa */
+              <>
+                <Button
+                  onClick={handleContinueSession}
+                  variant="custom"
+                  className="w-full bg-gradient-to-r from-green-400 to-emerald-500 text-white font-marineBold py-2 px-4 rounded-xl shadow-lg text-base flex items-center justify-start border-0 transition-all duration-200 admin-dashboard-button"
+                  disabled={isLoading}
+                >
+                  <FiPlay className="mr-3" size={16} />
+                  Continuar Partida
+                </Button>
+                
+                <Button
+                  onClick={handleCloseActiveSession}
+                  variant="custom"
+                  className="w-full bg-red-500/80 text-white font-marineBold py-2 px-4 rounded-lg shadow-md text-sm flex items-center justify-start border-0 transition-all duration-200 admin-dashboard-button"
+                  disabled={isLoading}
+                >
+                  <FiX className="mr-3" size={14} />
+                  {isLoading ? 'Cerrando...' : 'Cerrar Partida'}
+                </Button>
+                
+                <Button
+                  onClick={onLogout}
+                  variant="custom"
+                  className="w-full bg-transparent text-slate-400 font-marineBold py-2 px-4 rounded-lg text-sm flex items-center justify-start border border-slate-500/20 transition-all duration-200 admin-dashboard-button"
+                >
+                  <FiLogOut className="mr-3" size={12} />
+                  Cerrar Sesión de Admin
+                </Button>
+              </>
+            ) : (
+              /* Botones para cuando no hay sesión activa */
+              <>
+                <Button
+                  onClick={onInitiateNewSession}
+                  variant="custom"
+                  className="w-full bg-gradient-to-r from-blue-500 to-teal-500 text-white font-marineBold py-2 px-4 rounded-xl shadow-lg text-base flex items-center justify-start border-0 transition-all duration-200 admin-dashboard-button"
+                  disabled={isLoading}
+                >
+                  <FiPlusCircle className="mr-3" size={16} />
+                  {isLoading ? 'Creando Juego...' : 'Iniciar Nuevo Juego'}
+                </Button>
+                
+                <Button
+                  onClick={onLogout}
+                  variant="custom"
+                  className="w-full bg-transparent text-slate-400 font-marineBold py-2 px-4 rounded-lg text-sm flex items-center justify-start border border-slate-500/20 transition-all duration-200 admin-dashboard-button"
+                >
+                  <FiLogOut className="mr-3" size={12} />
+                  Cerrar Sesión
+                </Button>
+              </>
+            )}
           </motion.div>
         </div>
       </motion.div>

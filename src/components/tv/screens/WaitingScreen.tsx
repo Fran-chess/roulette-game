@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useIsMounted } from '@/hooks/useIsMounted';
+import { useGameStore } from '@/store/gameStore';
 import { MotionDiv } from '../shared/MotionComponents';
 
 /**
@@ -60,6 +61,7 @@ function FullScreenVideo() {
  */
 export default function WaitingScreen() {
   const isMounted = useIsMounted();
+  const { waitingQueue } = useGameStore();
   
   // [NUEVO] Estados para detección de dispositivo universal
   const [isTabletPortrait, setIsTabletPortrait] = useState(false);
@@ -126,6 +128,43 @@ export default function WaitingScreen() {
             Resolución: {debugInfo.width}x{debugInfo.height}
           </div>
           <div>Tablet Vertical: {isTabletPortrait ? "SÍ" : "NO"}</div>
+          <div>Cola de espera: {waitingQueue.length} participantes</div>
+        </div>
+      )}
+
+      {/* [NUEVO] Información de cola de espera */}
+      {waitingQueue.length > 0 && (
+        <div className="absolute bottom-6 left-6 right-6 bg-black/80 text-white p-4 rounded-lg z-40">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold mb-2">Próximos participantes</h3>
+              <p className="text-sm text-gray-300">
+                {waitingQueue.length} {waitingQueue.length === 1 ? 'participante' : 'participantes'} en cola
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-green-400">
+                {waitingQueue.length}
+              </div>
+            </div>
+          </div>
+          
+          {/* Mostrar primeros 3 participantes */}
+          <div className="mt-4 space-y-2">
+            {waitingQueue.slice(0, 3).map((participant, index) => (
+              <div key={participant.id} className="flex items-center gap-3 text-sm">
+                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold">
+                  {index + 1}
+                </div>
+                <span>{participant.nombre} {participant.apellido}</span>
+              </div>
+            ))}
+            {waitingQueue.length > 3 && (
+              <div className="text-xs text-gray-400 mt-2">
+                ...y {waitingQueue.length - 3} más
+              </div>
+            )}
+          </div>
         </div>
       )}
 

@@ -105,8 +105,8 @@ export async function POST(request: Request) {
     console.log('📱 REGISTER: ✅ Email disponible para registro en esta sesión');
 
     // Verificar que la sesión esté en estado correcto para recibir nuevos participantes
-    // CORREGIDO: Permitir registros tanto en 'pending_player_registration' como en 'player_registered'
-    const allowedStatesForRegistration = ['pending_player_registration', 'player_registered'];
+    // CORREGIDO: Para single session, permitir registros en todos los estados activos
+    const allowedStatesForRegistration = ['pending_player_registration', 'player_registered', 'playing'];
     const sessionStatus = existingSession.status as string;
     if (!allowedStatesForRegistration.includes(sessionStatus)) {
       console.log('📱 REGISTER: Sesión no está disponible para registro, estado actual:', sessionStatus);
@@ -206,7 +206,7 @@ export async function POST(request: Request) {
     const updateTimestamp = new Date().toISOString();
     
     // CORREGIDO: Solo cambiar a 'player_registered' si viene de 'pending_player_registration'
-    // Si ya está en 'player_registered', mantener ese estado para múltiples participantes
+    // Si ya está en 'player_registered' o 'playing', mantener ese estado para múltiples participantes
     const newStatus = sessionStatus === 'pending_player_registration' ? 'player_registered' : sessionStatus;
     
     const { data: updatedSession, error: updateError } = await supabaseAdmin

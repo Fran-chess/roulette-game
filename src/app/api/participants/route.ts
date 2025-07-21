@@ -85,4 +85,69 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function PUT(request: Request) {
+  try {
+    // Verificar que supabaseAdmin esté disponible
+    if (!supabaseAdmin) {
+      return NextResponse.json(
+        { message: 'Error en la conexión con la base de datos' },
+        { status: 500 }
+      );
+    }
+    
+    const body = await request.json();
+    const { id, status, completed_at } = body;
+    
+    if (!id) {
+      return NextResponse.json(
+        { message: 'ID de participante es requerido' },
+        { status: 400 }
+      );
+    }
+    
+    // Preparar los datos a actualizar
+    const updateData: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    
+    if (status) {
+      updateData.status = status;
+    }
+    
+    if (completed_at) {
+      updateData.completed_at = completed_at;
+    }
+    
+    // Actualizar participante en la base de datos
+    const { data, error } = await supabaseAdmin
+      .from('participants')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error al actualizar participante:', error);
+      return NextResponse.json(
+        { message: 'Error al actualizar participante', details: error.message },
+        { status: 500 }
+      );
+    }
+    
+    console.log(`📊 API-PARTICIPANTS: Participante ${id} actualizado exitosamente`);
+    
+    return NextResponse.json({
+      message: 'Participante actualizado exitosamente',
+      participant: data
+    });
+    
+  } catch (err: Error | unknown) {
+    console.error('Error del servidor en participants PUT:', err);
+    return NextResponse.json(
+      { message: 'Error interno del servidor', details: err instanceof Error ? err.message : 'Error desconocido' },
+      { status: 500 }
+    );
+  }
 } 

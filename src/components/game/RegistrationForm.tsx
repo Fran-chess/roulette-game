@@ -16,6 +16,9 @@ export default function RegistrationForm({
 }: RegistrationFormProps) {
   const startPlaySession = useGameStore((state) => state.startPlaySession);
   const setGameState = useGameStore((state) => state.setGameState);
+  const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
+  const addToQueue = useGameStore((state) => state.addToQueue);
+  const loadQueueFromDB = useGameStore((state) => state.loadQueueFromDB);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -148,18 +151,19 @@ export default function RegistrationForm({
             const verifyData = await verifyResponse.json();
             throw new Error(verifyData.message || "Sesión no disponible");
           }
-          const sessionData = await verifyResponse.json();
-          if (
-            sessionData.data &&
-            sessionData.data.status === "player_registered" &&
-            sessionData.data.nombre &&
-            sessionData.data.email
-          ) {
-            if (onPlayerRegistered) {
-              onPlayerRegistered(sessionData.data.nombre);
-              return;
-            }
-          }
+          await verifyResponse.json();
+          // **REMOVIDO**: Esta verificación impedía que se ejecutara el sistema de cola
+          // if (
+          //   sessionData.data &&
+          //   sessionData.data.status === "player_registered" &&
+          //   sessionData.data.nombre &&
+          //   sessionData.data.email
+          // ) {
+          //   if (onPlayerRegistered) {
+          //     onPlayerRegistered(sessionData.data.nombre);
+          //     return;
+          //   }
+          // }
         } catch (verifyError: Error | unknown) {
           setErrors({
             general: `Error al verificar la sesión: ${
@@ -188,11 +192,63 @@ export default function RegistrationForm({
           );
         }
 
+        // **NUEVO: Usar sistema de cola automáticamente**
+        console.log('🔄 REGISTRO: Verificando datos de respuesta:', data);
+        
+        if (data.participant) {
+          console.log('🔄 REGISTRO: Agregando participante a cola automáticamente');
+          console.log('🔄 REGISTRO: Participante recibido:', data.participant);
+          
+          // [FIX] Verificar estado del currentParticipant y limpiar si es necesario
+          const currentStore = useGameStore.getState();
+          console.log('🔄 REGISTRO: Estado actual antes de registrar:');
+          console.log('🔄 REGISTRO: currentParticipant actual:', currentStore.currentParticipant?.nombre || 'null');
+          console.log('🔄 REGISTRO: gameState actual:', currentStore.gameState);
+          
+          // Si hay un participante activo pero está en estado "completed" o es diferente al que se registra
+          if (currentStore.currentParticipant) {
+            console.log('🔄 REGISTRO: Hay participante activo, verificando si debe limpiarse...');
+            
+            // Si es el mismo participante, limpiar para re-registro
+            if (currentStore.currentParticipant.email === data.participant.email) {
+              console.log('🔄 REGISTRO: Mismo participante detectado, limpiando estado anterior');
+              setCurrentParticipant(null);
+              setGameState('waiting');
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            // Si es diferente participante pero parece estar "atorado", también limpiar
+            else if (currentStore.gameState === 'waiting') {
+              console.log('🔄 REGISTRO: Estado inconsistente detectado (participante activo pero gameState waiting), limpiando...');
+              setCurrentParticipant(null);
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+          }
+          
+          // Cargar cola actual desde BD
+          if (sessionId) {
+            console.log('🔄 REGISTRO: Cargando cola desde BD para sesión:', sessionId);
+            await loadQueueFromDB(sessionId);
+          }
+          
+          // Agregar participante a cola (esto activará automáticamente si no hay participante activo)
+          console.log('🔄 REGISTRO: Llamando addToQueue...');
+          await addToQueue(data.participant);
+          
+          console.log('✅ REGISTRO: Participante agregado a cola exitosamente');
+          
+          // Usar getState() para obtener el estado más actualizado
+          const gameStore = useGameStore.getState();
+          console.log('📊 REGISTRO: Estado actual - Participante activo:', gameStore.currentParticipant ? 'Sí' : 'No');
+          console.log('📊 REGISTRO: Cola actual:', gameStore.waitingQueue.length, 'participantes');
+        } else {
+          console.log('❌ REGISTRO: No se encontraron datos de participante en la respuesta');
+        }
+
         await new Promise((resolve) => setTimeout(resolve, 500));
         if (onPlayerRegistered) {
           onPlayerRegistered(formData.nombre.trim());
         } else {
-          setGameState("roulette");
+          setGameState("inGame");
         }
       } else {
         await startPlaySession(
@@ -202,7 +258,7 @@ export default function RegistrationForm({
             email: formData.email.trim(),
             especialidad: formData.especialidad.trim() || undefined,
           },
-          () => setGameState("roulette"),
+          () => setGameState("inGame"),
           (error) => {
             setErrors({
               general:
@@ -372,11 +428,11 @@ export default function RegistrationForm({
         )}
 
         {/* Botón */}
-        <div className={isTabletVertical800x1340 || isTabletLarge ? "mt-4" : "mt-2 sm:mt-4"}>
+        <div className={`flex justify-center ${isTabletVertical800x1340 || isTabletLarge ? "mt-4" : "mt-2 sm:mt-4"}`}>
           <Button
             type="submit"
             variant="gradient"
-            className={`w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-4 px-6 text-xl' : 'py-3.5 px-6 text-xl'} font-bold rounded-2xl flex items-center justify-center gap-2`}
+            className={`w-full max-w-none ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-4 px-6 text-xl' : 'py-3.5 px-6 text-xl'} font-bold rounded-2xl flex items-center justify-center gap-2`}
             loading={isSubmitting}
             loadingText="Registrando..."
           >

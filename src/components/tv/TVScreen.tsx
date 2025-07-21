@@ -42,6 +42,7 @@ type DatabaseRecord = {
 
 
 export default function TVScreen() {
+  console.log('🚨 TV-INIT: TVScreen component rendering');
   const isMounted = useIsMounted();
   const currentTime = useClock();
   // ⚠️ SOLUCIONADO: Simplificar selector para evitar ciclo infinito en Zustand
@@ -131,24 +132,40 @@ export default function TVScreen() {
       });
       
       if (eventType === 'INSERT' && record.status === 'registered') {
-        // ⚠️ REMOVIDO: getCurrentSession ya no es necesario
-        
-        // Por simplicidad, aceptar cualquier participante registrado
         console.log('👤 TV-PARTICIPANT: ✅ Nuevo participante registrado detectado via realtime');
-        console.log('👤 TV-PARTICIPANT: Auto-cargando participante sin polling ni reintentos');
+        console.log('👤 TV-PARTICIPANT: Datos del participante:', record);
         
         const participant = record as unknown as Participant;
-        // ⚠️ SOLUCIONADO: Usar getState() para evitar dependencia reactiva
         const gameStore = useGameStore.getState();
-        gameStore.setCurrentParticipant(participant);
-        gameStore.setGameState('roulette');
+        
+        console.log('👤 TV-PARTICIPANT: Estado actual - Participante activo:', gameStore.currentParticipant ? 'Sí' : 'No');
+        console.log('👤 TV-PARTICIPANT: Cola actual:', gameStore.waitingQueue.length, 'participantes');
+        console.log('👤 TV-PARTICIPANT: GameState actual:', gameStore.gameState);
+        
+        // [MEJORADO] Usar addToQueue que maneja automáticamente la lógica de activación
+        console.log('👤 TV-PARTICIPANT: Usando addToQueue para manejo automático');
+        gameStore.addToQueue(participant);
+        
+        // [NUEVO] Garantizar que la UI se actualice inmediatamente
+        console.log('👤 TV-PARTICIPANT: Forzando actualización de UI');
+        setTimeout(() => {
+          const updatedState = useGameStore.getState();
+          console.log('👤 TV-PARTICIPANT: Estado después de addToQueue:', {
+            currentParticipant: updatedState.currentParticipant?.nombre,
+            gameState: updatedState.gameState,
+            queueLength: updatedState.waitingQueue.length
+          });
+        }, 100);
       }
       
       if (eventType === 'UPDATE' && record.status === 'completed') {
         console.log('👤 TV-PARTICIPANT: Participante completado detectado via realtime');
-        console.log('👤 TV-PARTICIPANT: Limpiando participante del store');
+        console.log('👤 TV-PARTICIPANT: Activando siguiente participante en cola');
         // ⚠️ SOLUCIONADO: Usar getState() para evitar dependencia reactiva
-        useGameStore.getState().setCurrentParticipant(null);
+        const gameStore = useGameStore.getState();
+        
+        // Mover al siguiente participante en la cola
+        gameStore.moveToNext();
       }
     }
   }, []); // ⚠️ SOLUCIONADO: Array vacío para evitar recreación del callback
@@ -258,6 +275,31 @@ export default function TVScreen() {
               await loadCurrentParticipantRef.current(validatedSession.session_id);
             }
           }
+          
+          // Cargar cola inicial desde BD
+          console.log('📺 TV-INIT: Cargando cola inicial desde BD...');
+          const gameStore = useGameStore.getState();
+          if (gameStore.loadQueueFromDB) {
+            await gameStore.loadQueueFromDB(validatedSession.session_id);
+          }
+          
+          // Cargar participante actual desde BD si existe
+          console.log('📺 TV-INIT: Verificando participante actual desde BD...');
+          try {
+            const participantResponse = await fetch(`/api/admin/sessions/participants?sessionId=${validatedSession.session_id}`);
+            const participantData = await participantResponse.json();
+            
+            if (participantResponse.ok && participantData.participants) {
+              const activeParticipant = participantData.participants.find((p: Participant) => p.status === 'playing');
+              if (activeParticipant) {
+                console.log('📺 TV-INIT: Participante activo encontrado:', activeParticipant.nombre);
+                gameStore.setCurrentParticipant(activeParticipant);
+                gameStore.setGameState('roulette');
+              }
+            }
+          } catch (error) {
+            console.error('📺 TV-INIT: Error cargando participante actual:', error);
+          }
         } catch (validationError) {
           console.error('📺 TV-INIT: Error validando sesión:', validationError);
           setCurrentSession(result.data as unknown as GameSession);
@@ -277,6 +319,15 @@ export default function TVScreen() {
           (payload) => {
             if (handleSessionEventRef.current) {
               handleSessionEventRef.current(payload as RealtimePostgresChangesPayload<DatabaseRecord>);
+            }
+            
+            // Sincronizar cola cuando cambie el campo waiting_queue
+            if (payload.new?.waiting_queue !== payload.old?.waiting_queue) {
+              const gameStore = useGameStore.getState();
+              const sessionId = payload.new?.session_id;
+              if (sessionId && gameStore.syncQueueWithDB) {
+                gameStore.syncQueueWithDB(sessionId);
+              }
             }
           }
         )
@@ -352,6 +403,7 @@ export default function TVScreen() {
       });
 
       participantsChannel.subscribe((status: string) => {
+        console.log('🔄 TV-REALTIME: Estado canal participants:', status);
         if (status === 'SUBSCRIBED') {
           console.log('✅ TV-REALTIME: Suscripción a participants activa');
           checkAllReady();
@@ -395,8 +447,13 @@ export default function TVScreen() {
 
   // [SOLUCIONADO] useEffect simplificado para inicialización
   useEffect(() => {
-    if (!isMounted || !supabaseClient) return;
+    console.log('🚨 TV-INIT: useEffect de inicialización ejecutándose', { isMounted, supabaseClient: !!supabaseClient });
+    if (!isMounted || !supabaseClient) {
+      console.log('🚨 TV-INIT: No se puede inicializar - isMounted:', isMounted, 'supabaseClient:', !!supabaseClient);
+      return;
+    }
     
+    console.log('🚨 TV-INIT: Iniciando TVScreen...');
     const cleanup = initializeTVViewRef.current ? initializeTVViewRef.current() : Promise.resolve(() => {});
     return () => {
       cleanup.then(fn => fn());
@@ -438,44 +495,82 @@ export default function TVScreen() {
 
   // [modificación] Usar hook reactivo para gameState en lugar de getState()
   const gameState = useGameStore((state) => state.gameState);
+  const currentParticipant = useGameStore((state) => state.currentParticipant);
+  const waitingQueue = useGameStore((state) => state.waitingQueue);
+  
+  // Debug logs para ver cambios de estado
+  useEffect(() => {
+    console.log('🔥 TV-STATE: gameState cambió a:', gameState);
+    console.log('🔥 TV-STATE: currentParticipant:', currentParticipant ? currentParticipant.nombre : 'None');
+    console.log('🔥 TV-STATE: waitingQueue:', waitingQueue.length, 'participantes');
+    console.log('🔥 TV-STATE: renderScreen debería mostrar:', gameState === 'inGame' && currentParticipant ? 'TVRouletteScreen' : 'WaitingScreen');
+  }, [gameState, currentParticipant, waitingQueue]);
+  
+  // Cross-tab synchronization listener
+  useEffect(() => {
+    const handleGameStoreUpdate = (event: CustomEvent) => {
+      console.log('📺 TV-SYNC: Recibido evento cross-tab:', event.detail.type);
+      
+      if (event.detail.type === 'QUEUE_UPDATE') {
+        const gameStore = useGameStore.getState();
+        console.log('📺 TV-SYNC: Sincronizando estado desde otro tab');
+        
+        // Sync state from other tab
+        if (event.detail.currentParticipant) {
+          gameStore.setCurrentParticipant(event.detail.currentParticipant);
+        }
+        if (event.detail.gameState) {
+          gameStore.setGameState(event.detail.gameState);
+        }
+        // waitingQueue se sincroniza automáticamente desde BD
+      }
+    };
+    
+    window.addEventListener('gameStoreUpdate', handleGameStoreUpdate as EventListener);
+    return () => window.removeEventListener('gameStoreUpdate', handleGameStoreUpdate as EventListener);
+  }, []);
 
-  // [modificación] Determinar qué pantalla mostrar según el estado (simplificado)
+  // [SIMPLIFICADO] Determinar qué pantalla mostrar basándose SOLO en el store (fuente única de verdad)
   const renderScreen = () => {
     if (!isMounted) {
-      // [modificación] Renderizar pantalla de carga mientras no esté montado
       return <LoadingScreen />;
     }
 
-    // [SOLUCIONADO] Usar gameState reactivo para evitar lecturas desactualizadas
-    // [modificación] Si gameState es 'screensaver', mostrar WaitingScreen independientemente de la sesión
-    if (gameState === 'screensaver') {
-      return <WaitingScreen />;
-    }
-
-    if (!currentSession) {
-      return <WaitingScreen />;
-    }
-
-    // [modificación] Flujo mejorado: WaitingScreen → TVRouletteScreen → GameCompleted
-    switch (currentSession.status) {
-      case 'pending_player_registration':
+    // [FUENTE ÚNICA DE VERDAD] Usar solo el gameState del store para determinar qué mostrar
+    console.log('🔥 TV-RENDER: Evaluando renderScreen - gameState:', gameState, 'currentParticipant:', currentParticipant?.nombre || 'None');
+    
+    switch (gameState) {
+      case 'screensaver':
+        console.log('🔥 TV-RENDER: Mostrando WaitingScreen (screensaver)');
         return <WaitingScreen />;
       
-      case 'player_registered':
+      case 'waiting':
+        console.log('🔥 TV-RENDER: Mostrando WaitingScreen (waiting)');
+        return <WaitingScreen />;
+      
+      case 'inGame':
+      case 'roulette':
+        // Si hay participante activo, mostrar ruleta
+        if (currentParticipant) {
+          console.log('🔥 TV-RENDER: Mostrando TVRouletteScreen (participante activo)');
+          return <TVRouletteScreen />;
+        }
+        // Si no hay participante pero gameState dice que debería haberlo, mostrar waiting
+        console.log('🔥 TV-RENDER: Mostrando WaitingScreen (inGame pero sin participante)');
+        return <WaitingScreen />;
+      
+      case 'question':
+        // TVRouletteScreen maneja internamente la transición a pregunta
+        console.log('🔥 TV-RENDER: Mostrando TVRouletteScreen (question)');
         return <TVRouletteScreen />;
       
-      case 'playing':
+      case 'prize':
+        // TVRouletteScreen maneja internamente la transición a premio
+        console.log('🔥 TV-RENDER: Mostrando TVRouletteScreen (prize)');
         return <TVRouletteScreen />;
-      
-      case 'completed':
-      case 'archived':
-        // [modificación] Cuando se completa, volver a waiting room después de un tiempo
-        setTimeout(() => {
-          setCurrentSession(null);
-        }, 5000);
-        return <GameCompletedScreen currentSession={currentSession} />;
       
       default:
+        console.log('🔥 TV-RENDER: Mostrando WaitingScreen (default)');
         return <WaitingScreen />;
     }
   };

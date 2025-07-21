@@ -99,14 +99,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Determinar el premio final basado en la lógica de negocio
-    const premioFinal = (answered_correctly && prize_name && !yaGano) ? prize_name : null;
+    // No asignamos premios específicos - se entregan presencialmente
+    const premioFinal = null;
 
     // [soporte] Resultado final del procesamiento
     console.log('🎯 SUBMIT-PLAY: Resultado del procesamiento:');
     console.log('   - Respuesta correcta:', answered_correctly);
-    console.log('   - Ya ganó anteriormente:', yaGano);
-    console.log('   - Premio a otorgar:', premioFinal || 'Ninguno');
+    console.log('   - Premios se entregan presencialmente');
 
     // Crear la jugada en la base de datos
     const playData = {

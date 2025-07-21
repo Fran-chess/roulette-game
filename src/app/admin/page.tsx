@@ -27,7 +27,9 @@ export default function AdminPage() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        const res = await fetch('/api/admin/profile');
+        const res = await fetch('/api/admin/profile', {
+          credentials: 'include'
+        });
         if (res.ok) {
           const { admin } = await res.json();
           setAdminData(admin);
@@ -67,7 +69,10 @@ export default function AdminPage() {
     setUser(null);
 
     try {
-      await fetch('/api/admin/logout', { method: 'POST' });
+      await fetch('/api/admin/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     } finally {

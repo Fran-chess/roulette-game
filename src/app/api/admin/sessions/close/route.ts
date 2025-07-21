@@ -60,11 +60,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // CORREGIDO: Actualizar el estado en game_sessions
+    // CORREGIDO: Actualizar el estado en game_sessions a 'archived'
     const { data: updatedSession, error: updateError } = await supabaseAdmin
       .from('game_sessions')
       .update({
-        status: 'completed',
+        status: 'archived',
         updated_at: new Date().toISOString()
       })
       .eq('session_id', sessionId)
@@ -79,11 +79,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // También marcar como completadas las jugadas relacionadas (si existen)
+    // También marcar como cerradas las jugadas relacionadas (si existen)
     const { error: playsUpdateError } = await supabaseAdmin
       .from('plays')
       .update({
-        status: 'completed',
+        status: 'archived',
         updated_at: new Date().toISOString()
       })
       .eq('session_id', sessionId);

@@ -18,7 +18,7 @@ export interface PrizeFeedback {
   answeredCorrectly: boolean | null;
   explanation: string;
   correctOption: string;
-  prizeName: string;
+  prizeName: string; // Mantener por compatibilidad, pero siempre será vacío
 }
 
 export interface Play {
@@ -26,7 +26,7 @@ export interface Play {
   session_id: string;
   participant_id?: string;
   admin_id?: string;
-  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived' | 'closed';
   score?: number;
   premio_ganado?: string;
   lastquestionid?: string;
@@ -40,7 +40,7 @@ export interface PlaySession {
   id: string;
   session_id: string;
   admin_id: string;
-  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived';
+  status: 'pending_player_registration' | 'player_registered' | 'playing' | 'completed' | 'archived' | 'closed';
   created_at: string;
   updated_at: string;
   game_data?: Record<string, unknown>;
@@ -98,11 +98,11 @@ export interface Question {
   category: string;
   text: string;
   options: AnswerOption[];
-  prize?: string;
+  prize?: string; // Mantener por compatibilidad, pero no se usará
   explanation?: string;
 }
 
-export type GameState = 'screensaver' | 'register' | 'roulette' | 'question' | 'prize' | 'ended';
+export type GameState = 'waiting' | 'inGame' | 'ended' | 'screensaver' | 'register' | 'roulette' | 'question' | 'prize';
 
 export interface GameStore {
   gameState: GameState;
@@ -116,6 +116,9 @@ export interface GameStore {
   adminState: AdminState;
   prizeFeedback: PrizeFeedback;
   showConfetti: boolean;
+  
+  // NUEVA: Cola de participantes
+  waitingQueue: Participant[];
   setGameState: (state: GameState) => void;
   addParticipant: (participantData: Omit<Participant, 'id' | 'created_at'>) => void;
   startPlaySession: (
@@ -140,11 +143,25 @@ export interface GameStore {
   setAdminLoading: (type: 'sessionsList' | 'sessionAction' | 'participants', isLoading: boolean) => void;
   setAdminNotification: (type: 'error' | 'success', message: string | null) => void;
   clearAdminNotifications: () => void;
+  fetchActiveSession: () => Promise<PlaySession | null>;
   createNewSession: () => Promise<string | null>;
+  closeActiveSession: (sessionId: string) => Promise<boolean>;
   updateSessionStatus: (sessionId: string, status: string) => Promise<boolean>;
   fetchParticipantsStats: () => Promise<ParticipantsStats>;
   fetchParticipantsList: () => Promise<Participant[]>;
   setParticipantsStats: (stats: ParticipantsStats) => void;
+  
+  // NUEVOS: Handlers de cola
+  addToQueue: (participant: Participant) => Promise<void>;
+  removeFromQueue: (participantId: string) => Promise<void>;
+  moveToNext: () => Promise<void>;
+  reorderQueue: (newOrder: Participant[]) => Promise<void>;
+  
+  // NUEVOS: Sincronización BD
+  loadQueueFromDB: (sessionId: string) => Promise<void>;
+  saveQueueToDB: (sessionId: string) => Promise<void>;
+  syncQueueWithDB: (sessionId: string) => Promise<void>;
+  cleanupCompletedFromQueue: () => Promise<void>;
 }
 
 // --- NUEVA INTERFAZ AÑADIDA ---

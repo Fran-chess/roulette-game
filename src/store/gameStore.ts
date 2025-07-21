@@ -14,7 +14,7 @@ import { tvLogger, tvProdLogger } from '@/utils/tvLogger';
 // --- ACCIONES DEL STORE PARA EL JUEGO ---
 export const useGameStore = create<GameStore>((set, get) => ({
   // Estados principales del juego
-  gameState: 'roulette' as GameState,
+  gameState: 'waiting' as GameState,
   participants: [], // Lista de participantes (podría no ser necesaria si solo gestionas uno a la vez)
   currentParticipant: null,
   currentQuestion: null,
@@ -22,6 +22,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentPlay: null,
   questions: [], // [modificación] Lista de preguntas para la ruleta
   gameSession: null, // [modificación] Guarda la PlaySession activa para el juego actual
+  
+  // NUEVA: Cola de participantes
+  waitingQueue: [],
 
   // [modificación] Estado para feedback del premio
   prizeFeedback: {
@@ -129,7 +132,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resetCurrentGameData: () => set({
     currentQuestion: null,
     lastSpinResultIndex: null,
-    gameState: 'roulette' as GameState,
+    gameState: 'inGame' as GameState,
   }),
 
   // [modificación] Funciones para gestionar el feedback del premio
@@ -148,7 +151,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // [modificación] Actualizar clearCurrentGame para resetear completamente el juego
   resetCurrentGame: () => set({
-    gameState: 'roulette' as GameState,
+    gameState: 'inGame' as GameState,
     currentParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
@@ -165,7 +168,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Función de reseteo completo (incluido para compatibilidad)
   resetAllData: () => set({
-    gameState: 'roulette' as GameState,
+    gameState: 'waiting' as GameState,
     participants: [],
     currentParticipant: null,
     currentQuestion: null,
@@ -215,7 +218,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, participants: true }, error: null } }));
     try {
       tvLogger.debug('Store: Iniciando fetchParticipantsStats...');
-      const response = await fetch('/api/participants');
+      const response = await fetch('/api/participants?detail=true');
       if (!response.ok) {
         const errorData = await response.json();
         tvProdLogger.error('Store: Error en fetchParticipantsStats response:', errorData);
@@ -304,6 +307,58 @@ export const useGameStore = create<GameStore>((set, get) => ({
     adminState: { ...state.adminState, error: null, success: null }
   })),
 
+  // Función para obtener la sesión activa
+  fetchActiveSession: async () => {
+    const sessionState = useSessionStore.getState();
+    const adminId = sessionState.user?.id;
+    
+    if (!adminId) {
+      tvLogger.warn("Store: fetchActiveSession - No adminId available.");
+      return null;
+    }
+    
+    set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, sessionsList: true }, error: null } }));
+    
+    try {
+      const response = await fetch('/api/admin/sessions/active');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error ${response.status} al obtener sesión activa`);
+      }
+      const data = await response.json();
+      
+      if (data.hasActiveSession && data.activeSession) {
+        set(state => ({ 
+          adminState: { 
+            ...state.adminState, 
+            currentSession: data.activeSession,
+            isLoading: { ...state.adminState.isLoading, sessionsList: false }
+          }
+        }));
+        return data.activeSession;
+      } else {
+        set(state => ({ 
+          adminState: { 
+            ...state.adminState, 
+            currentSession: null,
+            isLoading: { ...state.adminState.isLoading, sessionsList: false }
+          }
+        }));
+        return null;
+      }
+    } catch (error: Error | unknown) {
+      tvProdLogger.error("Store: fetchActiveSession error:", error);
+      set(state => ({ 
+        adminState: { 
+          ...state.adminState, 
+          error: error instanceof Error ? error.message : 'Error desconocido',
+          isLoading: { ...state.adminState.isLoading, sessionsList: false }
+        }
+      }));
+      return null;
+    }
+  },
+
   createNewSession: async () => {
     // [modificación] Obtener adminId desde sessionStore en lugar de adminUser
     const sessionState = useSessionStore.getState();
@@ -321,11 +376,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adminId }),
       });
+      
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // Manejar el caso específico de sesión ya activa
+        if (response.status === 409 && errorData.cannotCreate) {
+          get().setAdminNotification('error', 'Ya existe una partida activa. Debes continuar con la partida existente o cerrarla primero.');
+          // Actualizar la sesión actual con la sesión activa encontrada
+          if (errorData.activeSession) {
+            get().setAdminCurrentSession(errorData.activeSession);
+          }
+          return null;
+        }
+        
         const errorMessage = errorData.details ? `${errorData.message} Det: ${errorData.details}` : errorData.message;
         throw new Error(errorMessage || 'Error al crear el juego.');
       }
+      
       const data = await response.json();
       let gameSessionUUID = '';
       if (data && data.sessionId) gameSessionUUID = data.sessionId;
@@ -345,6 +413,42 @@ export const useGameStore = create<GameStore>((set, get) => ({
       tvProdLogger.error("Store: createNewSession error:", error);
       get().setAdminNotification('error', error instanceof Error ? error.message : 'Error desconocido');
       return null;
+    } finally {
+      get().setAdminLoading('sessionAction', false);
+    }
+  },
+
+  // Función para cerrar la sesión activa
+  closeActiveSession: async (sessionId: string) => {
+    get().setAdminLoading('sessionAction', true);
+    get().clearAdminNotifications();
+    
+    try {
+      const response = await fetch('/api/admin/sessions/close', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al cerrar la sesión');
+      }
+      
+      await response.json();
+      get().setAdminNotification('success', 'Partida cerrada exitosamente.');
+      
+      // Limpiar la sesión actual
+      get().setAdminCurrentSession(null);
+      
+      // Actualizar la lista de sesiones
+      await get().fetchGameSessions();
+      
+      return true;
+    } catch (error: Error | unknown) {
+      tvProdLogger.error("Store: closeActiveSession error:", error);
+      get().setAdminNotification('error', error instanceof Error ? error.message : 'Error desconocido');
+      return false;
     } finally {
       get().setAdminLoading('sessionAction', false);
     }
@@ -412,6 +516,292 @@ export const useGameStore = create<GameStore>((set, get) => ({
     } catch (error: Error | unknown) {
       tvProdLogger.error('Error en startPlaySession:', error);
       if (onError) onError(error);
+    }
+  },
+
+  // --- HANDLERS DE COLA ---
+  addToQueue: async (participant: Participant) => {
+    console.log('🔄 QUEUE: Agregando participante a cola:', participant.nombre);
+    console.log('🔄 QUEUE: Cola actual antes:', get().waitingQueue.length);
+    console.log('🔄 QUEUE: Participante activo antes:', get().currentParticipant?.nombre || 'No');
+    console.log('🔄 QUEUE: GameState antes:', get().gameState);
+    
+    const currentParticipant = get().currentParticipant;
+    
+    if (!currentParticipant) {
+      // Si no hay participante activo, activar directamente
+      console.log('🔄 QUEUE: No hay participante activo, activando directamente');
+      set({ currentParticipant: participant, gameState: 'inGame' });
+      
+      // Actualizar estado del participante a playing
+      try {
+        await fetch('/api/admin/sessions/update-participant-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId: participant.id,
+            status: 'playing'
+          }),
+        });
+      } catch (error) {
+        console.error('Error al activar participante:', error);
+      }
+    } else {
+      // Si hay participante activo, agregar a la cola
+      console.log('🔄 QUEUE: Hay participante activo, agregando a cola');
+      set((state) => {
+        const newQueue = [...state.waitingQueue, participant];
+        return { waitingQueue: newQueue };
+      });
+    }
+    
+    // Sync a BD
+    const currentSession = get().gameSession;
+    if (currentSession) {
+      await get().saveQueueToDB(currentSession.session_id);
+    }
+    
+    // Broadcast state change to other tabs/windows
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('gameStoreUpdate', {
+        detail: {
+          type: 'QUEUE_UPDATE',
+          currentParticipant: get().currentParticipant,
+          waitingQueue: get().waitingQueue,
+          gameState: get().gameState
+        }
+      }));
+    }
+    
+    console.log('✅ QUEUE: Participante procesado - Cola final:', get().waitingQueue.length);
+    console.log('✅ QUEUE: Participante activo final:', get().currentParticipant ? 'Sí' : 'No');
+  },
+
+  removeFromQueue: async (participantId: string) => {
+    set((state) => {
+      const newQueue = state.waitingQueue.filter(p => p.id !== participantId);
+      return { waitingQueue: newQueue };
+    });
+    
+    // Sync a BD
+    const currentSession = get().gameSession;
+    if (currentSession) {
+      await get().saveQueueToDB(currentSession.session_id);
+    }
+  },
+
+  moveToNext: async () => {
+    const { waitingQueue, currentParticipant } = get();
+    
+    console.log('🔄 MOVE-TO-NEXT: Iniciando transición de participante');
+    console.log('🔄 MOVE-TO-NEXT: Participante actual:', currentParticipant?.nombre || 'null');
+    console.log('🔄 MOVE-TO-NEXT: Cola actual:', waitingQueue.length, 'participantes');
+    if (waitingQueue.length > 0) {
+      console.log('🔄 MOVE-TO-NEXT: Participantes en cola:', waitingQueue.map(p => p.nombre));
+    }
+    
+    // 1. Mover participante actual a completed si existe
+    if (currentParticipant) {
+      console.log('🔄 MOVE-TO-NEXT: Marcando participante actual como completed:', currentParticipant.nombre);
+      
+      try {
+        await fetch('/api/admin/sessions/update-participant-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId: currentParticipant.id,
+            status: 'completed'
+          }),
+        });
+        console.log('✅ MOVE-TO-NEXT: Participante marcado como completed exitosamente');
+      } catch (error) {
+        console.error('❌ MOVE-TO-NEXT: Error al actualizar estado de participante:', error);
+        tvProdLogger.error('Error al actualizar estado de participante:', error);
+      }
+    }
+    
+    // 2. Tomar siguiente de la cola
+    if (waitingQueue.length > 0) {
+      const nextParticipant = waitingQueue[0];
+      console.log('🔄 MOVE-TO-NEXT: Activando siguiente participante:', nextParticipant.nombre);
+      
+      // Crear una copia del participante con status actualizado
+      const updatedNextParticipant = {
+        ...nextParticipant,
+        status: 'playing' as const
+      };
+      
+      // Remover de la cola y activar participante
+      set((state) => ({
+        waitingQueue: state.waitingQueue.slice(1),
+        currentParticipant: updatedNextParticipant,
+        gameState: 'inGame' as GameState
+      }));
+      
+      console.log('✅ MOVE-TO-NEXT: Estado actualizado - nuevo participante activo');
+      
+      // Actualizar estado del participante a playing en la base de datos
+      try {
+        await fetch('/api/admin/sessions/update-participant-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId: nextParticipant.id,
+            status: 'playing'
+          }),
+        });
+        console.log('✅ MOVE-TO-NEXT: Nuevo participante marcado como playing exitosamente');
+      } catch (error) {
+        console.error('❌ MOVE-TO-NEXT: Error al activar participante:', error);
+        tvProdLogger.error('Error al activar participante:', error);
+      }
+    } else {
+      // Cola vacía, volver a waiting
+      console.log('🔄 MOVE-TO-NEXT: Cola vacía, estableciendo currentParticipant a null');
+      set({
+        currentParticipant: null,
+        gameState: 'screensaver' as GameState
+      });
+      console.log('✅ MOVE-TO-NEXT: Estado actualizado - sin participante activo');
+    }
+    
+    // Verificar estado final
+    const finalState = get();
+    console.log('🔄 MOVE-TO-NEXT: Estado final:');
+    console.log('   - Participante activo:', finalState.currentParticipant?.nombre || 'null');
+    console.log('   - Cola restante:', finalState.waitingQueue.length, 'participantes');
+    console.log('   - GameState:', finalState.gameState);
+    
+    // Sync a BD
+    const currentSession = get().gameSession;
+    if (currentSession) {
+      await get().saveQueueToDB(currentSession.session_id);
+    }
+  },
+
+  reorderQueue: async (newOrder: Participant[]) => {
+    set({ waitingQueue: newOrder });
+    
+    // Sync a BD
+    const currentSession = get().gameSession;
+    if (currentSession) {
+      await get().saveQueueToDB(currentSession.session_id);
+    }
+  },
+
+  // --- SINCRONIZACIÓN BD ---
+  loadQueueFromDB: async (sessionId: string) => {
+    console.log('📥 LOAD-QUEUE: Iniciando carga desde BD para sesión:', sessionId);
+    try {
+      const response = await fetch(`/api/admin/sessions/queue?sessionId=${sessionId}`);
+      if (!response.ok) {
+        throw new Error('Error al cargar cola desde BD');
+      }
+      
+      const data = await response.json();
+      const queueIds = data.waitingQueue || [];
+      console.log('📥 LOAD-QUEUE: IDs de cola desde BD:', queueIds);
+      
+      // También cargar el participante activo de la sesión
+      try {
+        const participantResponse = await fetch(`/api/admin/sessions/participants?sessionId=${sessionId}`);
+        const participantData = await participantResponse.json();
+        
+        if (participantResponse.ok && participantData.participants) {
+          const activeParticipant = participantData.participants.find((p: Participant) => p.status === 'playing');
+          if (activeParticipant) {
+            console.log('📥 LOAD-QUEUE: Participante activo encontrado:', activeParticipant.nombre);
+            set({ currentParticipant: activeParticipant });
+          } else {
+            console.log('📥 LOAD-QUEUE: No hay participante con status playing');
+          }
+        }
+      } catch (error) {
+        console.error('📥 LOAD-QUEUE: Error cargando participante activo:', error);
+      }
+      
+      // Reconstruir cola desde IDs
+      if (queueIds.length > 0) {
+        console.log('📥 LOAD-QUEUE: Reconstruyendo cola desde IDs...');
+        const participantsResponse = await fetch('/api/participants?detail=true');
+        const participantsData = await participantsResponse.json();
+        const allParticipants = participantsData.participants || [];
+        
+        // Reconstruir cola en orden y eliminar duplicados, filtrando participantes completados
+        const reconstructedQueue = queueIds
+          .map((id: string) => allParticipants.find((p: Participant) => p.id === id))
+          .filter((p: Participant | undefined) => p !== undefined && p.status !== 'completed' && p.status !== 'disqualified');
+        
+        console.log('📥 LOAD-QUEUE: Cola reconstruida (antes de duplicados):', reconstructedQueue.map((p: Participant) => `${p.nombre}(${p.status})`));
+        
+        // Eliminar duplicados basándose en el ID
+        const uniqueQueue = reconstructedQueue.filter((participant: Participant, index: number, self: Participant[]) => 
+          index === self.findIndex((p: Participant) => p.id === participant.id)
+        );
+        
+        console.log('📥 LOAD-QUEUE: Cola final (después de limpiar duplicados):', uniqueQueue.map((p: Participant) => `${p.nombre}(${p.status})`));
+        set({ waitingQueue: uniqueQueue });
+      } else {
+        console.log('📥 LOAD-QUEUE: No hay IDs en cola, estableciendo cola vacía');
+        set({ waitingQueue: [] });
+      }
+    } catch (error) {
+      console.error('📥 LOAD-QUEUE: Error al cargar cola desde BD:', error);
+      tvProdLogger.error('Error al cargar cola desde BD:', error);
+    }
+  },
+
+  saveQueueToDB: async (sessionId: string) => {
+    try {
+      const { waitingQueue } = get();
+      // Solo guardar participantes que no estén completados o descalificados
+      const activeQueueIds = waitingQueue
+        .filter(p => p.status !== 'completed' && p.status !== 'disqualified')
+        .map(p => p.id);
+      
+      await fetch('/api/admin/sessions/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          waitingQueue: activeQueueIds
+        }),
+      });
+    } catch (error) {
+      tvProdLogger.error('Error al guardar cola en BD:', error);
+    }
+  },
+
+  syncQueueWithDB: async (sessionId: string) => {
+    await get().loadQueueFromDB(sessionId);
+  },
+
+  // Nueva función para limpiar participantes completados de la cola
+  cleanupCompletedFromQueue: async () => {
+    const { waitingQueue, gameSession } = get();
+    
+    console.log('🧹 QUEUE-CLEANUP: Iniciando limpieza automática');
+    console.log('🧹 QUEUE-CLEANUP: Cola actual:', waitingQueue.map((p: Participant) => `${p.nombre}(${p.status || 'sin-status'})`));
+    
+    // Filtrar solo participantes activos (no completados ni descalificados)
+    const activeQueue = waitingQueue.filter(p => 
+      p.status !== 'completed' && p.status !== 'disqualified'
+    );
+    
+    // Solo actualizar si hay cambios
+    if (activeQueue.length !== waitingQueue.length) {
+      console.log('🧹 QUEUE-CLEANUP: Removiendo participantes completados de la cola');
+      console.log(`   - Cola antes: ${waitingQueue.length}, Cola después: ${activeQueue.length}`);
+      console.log('   - Participantes removidos:', waitingQueue.filter((p: Participant) => p.status === 'completed' || p.status === 'disqualified').map((p: Participant) => p.nombre));
+      
+      set({ waitingQueue: activeQueue });
+      
+      // Sync a BD si hay sesión activa
+      if (gameSession) {
+        await get().saveQueueToDB(gameSession.session_id);
+      }
+    } else {
+      console.log('🧹 QUEUE-CLEANUP: No hay participantes completados para limpiar');
     }
   },
 }));

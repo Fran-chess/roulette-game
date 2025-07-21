@@ -62,6 +62,8 @@ export async function setAdminCookie(adminId: string) {
     httpOnly: true,
     sameSite: 'strict',
     path: '/',
+    maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+    secure: process.env.NODE_ENV === 'production',
   });
 }
 

@@ -413,7 +413,7 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
             session_id: currentParticipant.session_id,
             question_id: question.id,
             answered_correctly: correctAnswer,
-            prize_name: correctAnswer ? question.prize : undefined,
+            prize_name: undefined, // No hay premios específicos
             admin_id: gameSession?.admin_id || null
           };
 
@@ -429,19 +429,19 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
 
           if (response.ok) {
 
-            // Actualizar el feedback con la información del servidor
+            // Actualizar el feedback - solo resultado de pregunta, no premios
             setPrizeFeedback({
               answeredCorrectly: correctAnswer,
               explanation: !correctAnswer ? question.explanation || "" : "",
               correctOption: correctOption?.text || "",
-              prizeName: result.result.prize_awarded || "",
+              prizeName: "", // No mostramos premios específicos
             });
 
-            // Actualizar el store local (mantener compatibilidad)
+            // Actualizar el store local (sin premios)
             updateCurrentParticipantScore({
               questionId: question.id,
               answeredCorrectly: correctAnswer,
-              prizeWon: result.result.prize_awarded,
+              prizeWon: undefined, // No hay premios específicos
             });
 
             // Si ya había ganado un premio, mostrar mensaje especial en el log
@@ -451,18 +451,18 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
           } else {
             console.error('❌ QuestionDisplay: Error guardando jugada:', result.message);
             
-            // Fallback: usar lógica local si falla el servidor
+            // Fallback: usar lógica local si falla el servidor (sin premios)
             setPrizeFeedback({
               answeredCorrectly: correctAnswer,
               explanation: !correctAnswer ? question.explanation || "" : "",
               correctOption: correctOption?.text || "",
-              prizeName: correctAnswer ? question.prize || "" : "",
+              prizeName: "", // No hay premios específicos
             });
 
             updateCurrentParticipantScore({
               questionId: question.id,
               answeredCorrectly: correctAnswer,
-              prizeWon: correctAnswer ? question.prize : undefined,
+              prizeWon: undefined, // No hay premios específicos
             });
           }
         } else {
@@ -490,7 +490,7 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
           updateCurrentParticipantScore({
             questionId: question.id,
             answeredCorrectly: correctAnswer,
-            prizeWon: correctAnswer ? question.prize : undefined,
+            prizeWon: undefined, // No hay premios específicos
           });
         }
       }
@@ -502,7 +502,6 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
     [
       isAnswered,
       question.id,
-      question.prize,
       question.explanation,
       question.options,
       currentParticipant,

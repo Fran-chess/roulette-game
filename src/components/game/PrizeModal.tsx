@@ -7,24 +7,11 @@ import Button from "@/components/ui/Button";
 import {
   CheckCircleIcon,
   XCircleIcon,
-  // [modificación] Solo dos iconos: trofeo para premios físicos y corazón para agradecimiento
-  TrophyIcon,        // Para todos los premios físicos
-  HeartIcon,         // Para agradecimiento cuando no hay premio
 } from "@heroicons/react/24/solid";
 import { useRef, useEffect, useState, useMemo } from "react";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
 import { tvLogger } from "@/utils/tvLogger";
 
-// [modificación] Función simplificada para obtener el icono: trofeo para premios, corazón para agradecimiento
-const getPrizeIcon = (prizeName: string | undefined) => {
-  // Si hay un premio específico, mostrar trofeo
-  if (prizeName) {
-    return TrophyIcon; // [modificación] Trofeo dorado para todos los premios físicos
-  }
-  
-  // Si no hay premio, mostrar corazón de agradecimiento
-  return HeartIcon; // [modificación] HeartIcon para mostrar agradecimiento por jugar
-};
 
 interface PrizeModalProps {
   onGoToScreen?: (screen: 'waiting' | 'roulette' | 'question' | 'prize') => void;
@@ -46,9 +33,6 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
 
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
-  const setCurrentParticipant = useGameStore(
-    (state) => state.setCurrentParticipant
-  );
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
@@ -59,8 +43,9 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   const gameSession = useGameStore((state) => state.gameSession);
   const gameState = useGameStore((state) => state.gameState);
   const showConfetti = useGameStore((state) => state.showConfetti);
+  const moveToNext = useGameStore((state) => state.moveToNext);
 
-  const { answeredCorrectly, explanation, correctOption, prizeName } =
+  const { answeredCorrectly, explanation, correctOption } =
     prizeFeedback;
 
   // [OPTIMIZADO] useEffect para detección mejorada de tablets modernos
@@ -130,20 +115,6 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     return "w-16 h-16 mx-auto mb-4";
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet, windowSize.width]);
 
-  // [modificación] Icono específico para el premio
-  const prizeIconClasses = useMemo(() => {
-    if (isTV65) {
-      return "w-40 h-40 mx-auto mb-8";
-    } else if (isTabletPortrait) {
-      // [NUEVO] Tamaño específico para tablet 800x1340
-      return "w-24 h-24 mx-auto mb-6 prize-icon";
-    } else if (isTVTouch) {
-      return "w-32 h-32 mx-auto mb-6";
-    } else if (isTablet) {
-      return "w-28 h-28 mx-auto mb-5";
-    }
-    return "w-20 h-20 mx-auto mb-4";
-  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const titleClasses = useMemo(() => {
     const baseClasses =
@@ -261,37 +232,20 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     return `${baseClasses} text-lg`;
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
-  // [modificación] Mejorar el tamaño de "Has ganado:"
-  const hasGanadoClasses = useMemo(() => {
-    const baseClasses = "font-marineBold text-white mb-3";
+  // Clases para mensaje de felicitaciones
+  const congratulationsMessageClasses = useMemo(() => {
+    const baseClasses = "font-marineBold text-white mb-6";
 
     if (isTV65) {
-      return `${baseClasses} text-[6.5rem] mb-8 text-shadow-strong`;
+      return `${baseClasses} text-[6rem] mb-8 text-shadow-strong`;
     } else if (isTabletPortrait) {
-      // [NUEVO] Tamaño específico para tablet 800x1340
-      return `${baseClasses} text-tablet-800-lg mb-4`;
+      return `${baseClasses} text-tablet-800-lg mb-6`;
     } else if (isTVTouch) {
-      return `${baseClasses} text-[3.2rem] lg:text-[3.8rem] mb-5`;
+      return `${baseClasses} text-[3rem] lg:text-[3.5rem] mb-6`;
     } else if (isTablet) {
-      return `${baseClasses} text-[2.6rem] lg:text-[3rem] mb-4`;
+      return `${baseClasses} text-[2.5rem] lg:text-[3rem] mb-6`;
     }
     return `${baseClasses} text-xl md:text-2xl`;
-  }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
-
-  const prizeNameClasses = useMemo(() => {
-    const baseClasses = "font-marineBold text-white";
-
-    if (isTV65) {
-      return `${baseClasses} text-[7rem] mb-12 text-shadow-strong`;
-    } else if (isTabletPortrait) {
-      // [NUEVO] Tamaño específico para tablet 800x1340
-      return `${baseClasses} text-tablet-800-xl mb-6`;
-    } else if (isTVTouch) {
-      return `${baseClasses} text-[3.5rem] lg:text-[4rem] mb-8`;
-    } else if (isTablet) {
-      return `${baseClasses} text-[3rem] lg:text-[3.5rem] mb-6`;
-    }
-    return `${baseClasses} text-2xl md:text-3xl mb-5`;
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   // [modificación] Eliminar prizeInstructionsClasses ya que no mostraremos las instrucciones del mostrador
@@ -391,11 +345,11 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
       setShowConfetti(false);
     }, 5000);
     setTimeout(() => {
-      tvLogger.debug(`Estableciendo gameState a 'roulette'`);
+      tvLogger.debug(`Estableciendo gameState a 'inGame'`);
       if (onGoToScreen) {
         onGoToScreen('roulette');
       } else {
-        setGameState("roulette");
+        setGameState("inGame");
       }
       tvLogger.debug(`Reseteando prizeFeedback`);
       resetPrizeFeedback();
@@ -407,23 +361,35 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   const handleGoHome = async () => {
     tvLogger.debug(`handleGoHome iniciado - preparando para siguiente participante`);
     tvLogger.info("Preparando para siguiente participante en la misma sesión...");
-    // Limpiar solo el estado del participante actual, NO la sesión
-    tvLogger.debug("Limpiando estado del participante actual...");
-    setCurrentParticipant(null);
+    
+    console.log("🏠 PRIZE-HOME: Moviendo al siguiente participante usando moveToNext()");
+    console.log("🏠 PRIZE-HOME: Participante actual antes de moveToNext():", currentParticipant?.nombre);
+    
+    // Usar moveToNext() que maneja correctamente la transición de participantes
+    await moveToNext();
+    
+    // Limpiar estados relacionados con el premio y la pregunta
+    console.log("🏠 PRIZE-HOME: Limpiando estados del juego...");
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
+    
+    // Verificar que la transición fue exitosa
+    setTimeout(() => {
+      const store = useGameStore.getState();
+      console.log("🏠 PRIZE-HOME: Verificación después de moveToNext():");
+      console.log("🏠 PRIZE-HOME: currentParticipant:", store.currentParticipant?.nombre || 'null');
+      console.log("🏠 PRIZE-HOME: waitingQueue length:", store.waitingQueue?.length || 0);
+      console.log("🏠 PRIZE-HOME: gameState:", store.gameState);
+    }, 200);
+    
     tvLogger.debug(`Confetti se mantendrá por 3 segundos más antes de ir al inicio`);
     setTimeout(() => {
       tvLogger.debug(`Limpiando showConfetti antes de ir al inicio`);
       setShowConfetti(false);
     }, 3000);
-    if (onGoToScreen) {
-      onGoToScreen('waiting');
-    } else {
-      setGameState('screensaver');
-    }
-    tvLogger.debug(`handleGoHome completado - sesión mantenida activa para siguiente participante`);
+    
+    tvLogger.debug(`handleGoHome completado - moveToNext() ejecutado`);
   };
 
   // [modificación] Verificación más estricta para evitar renders innecesarios
@@ -437,10 +403,10 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
       gameState === "prize" &&
       (answeredCorrectly === null || typeof answeredCorrectly === "undefined")
     ) {
-      tvLogger.warn(`Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a roulette`);
+      tvLogger.warn(`Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a inGame`);
       // Reset automático para evitar loops
       setTimeout(() => {
-        setGameState("roulette");
+        setGameState("inGame");
         resetPrizeFeedback();
       }, 0);
     }
@@ -545,7 +511,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
             </div>
           </motion.div>
         ) : (
-          // --- Vista: Respuesta Correcta (con o sin premio) ---
+          // --- Vista: Respuesta Correcta (solo felicitaciones) ---
           <motion.div
             variants={contentVariants}
             initial="hidden"
@@ -558,40 +524,13 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
             </h2>
             <h3 className={correctAnswerTitleClasses}>¡Respuesta correcta!</h3>
 
-            {prizeName && (
-              <>
-                {/* [modificación] Mostrar icono específico del premio */}
-                {(() => {
-                  const PrizeIcon = getPrizeIcon(prizeName);
-                  return (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{
-                        opacity: 1,
-                        scale: 1,
-                        transition: { delay: 0.3, duration: 0.4 },
-                      }}
-                      className="mb-6"
-                    >
-                      <PrizeIcon
-                        className={`${prizeIconClasses} ${PrizeIcon === HeartIcon ? 'text-red-400' : 'text-yellow-500'}`}
-                      />
-                    </motion.div>
-                  );
-                })()}
-
-                <p className={hasGanadoClasses}>Has ganado:</p>
-                <p className={prizeNameClasses}>{prizeName}</p>
-
-                {/* [modificación] Eliminar completamente el texto del mostrador */}
-              </>
-            )}
-
-            {!prizeName && (
-              <p className={subtitleClasses}>
-                ¡Excelente! Respuesta correcta. ¡Sigue jugando y divirtiéndote!
-              </p>
-            )}
+            {/* Mensaje de felicitaciones */}
+            <p className={congratulationsMessageClasses}>
+              ¡Excelente trabajo, gracias por acercarte a jugar!
+            </p>
+            <p className={subtitleClasses}>
+              ¡Sigue jugando y divirtiéndote!
+            </p>
 
             <div className={buttonContainerClasses}>
               <Button
@@ -614,9 +553,9 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
         )}
       </motion.div>
 
-      {/* [modificación] - Sistema de confetti masivo desde todos los bordes usando componente reutilizable */}
+      {/* [modificación] - Sistema de confetti masivo solo para respuestas correctas */}
       <MassiveConfetti
-        show={showConfetti}
+        show={showConfetti && answeredCorrectly === true}
         windowSize={windowSize}
         isTV65={isTV65}
         isTabletPortrait={isTabletPortrait}

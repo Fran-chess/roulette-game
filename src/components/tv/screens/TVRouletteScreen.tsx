@@ -112,14 +112,14 @@ export default function TVRouletteScreen() {
     if (
       lastSpinResultIndex !== null &&
       questions.length > 0 &&
-      gameState === 'roulette' &&
+      (gameState === 'roulette' || gameState === 'inGame') &&
       !currentQuestion
     ) {
       const selectedQuestion = questions[lastSpinResultIndex % questions.length];
       if (selectedQuestion) {
         tvLogger.game(`Ruleta se detuvo en índice: ${lastSpinResultIndex}`);
         tvLogger.game(`Pregunta seleccionada: ${selectedQuestion.category}`);
-        tvLogger.game('Cambiando gameState de "roulette" a "question"');
+        tvLogger.game(`Cambiando gameState de "${gameState}" a "question"`);
         setCurrentQuestion(selectedQuestion);
         setGameState('question');
       }
@@ -150,16 +150,17 @@ export default function TVRouletteScreen() {
       return;
     }
     
-    // Caso 1: Asegurar gameState 'roulette' cuando hay participante registrado
+    // [ACTUALIZADO] Caso 1: Asegurar gameState 'inGame' cuando hay participante registrado
     if (
       currentParticipant &&
       gameSession &&
       (gameSession.status === 'player_registered' || gameSession.status === 'playing') &&
+      gameState !== 'inGame' &&
       gameState !== 'roulette' &&
       gameState !== 'question' &&
       !(gameState === 'prize' && prizeFeedback.answeredCorrectly !== null)
     ) {
-      tvLogger.game(`Forzando gameState a 'roulette' para participante: ${currentParticipant.nombre}`);
+      tvLogger.game(`Forzando gameState a 'inGame' para participante: ${currentParticipant.nombre}`);
       
       // Limpiar estado residual si es necesario
       if (gameState === 'prize' && prizeFeedback.answeredCorrectly === null) {
@@ -168,7 +169,7 @@ export default function TVRouletteScreen() {
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
       }
-      setGameState('roulette');
+      setGameState('inGame');
       return; // Evitar ejecutar el segundo caso en el mismo render
     }
 
@@ -184,9 +185,9 @@ export default function TVRouletteScreen() {
         setCurrentQuestion(null);
         setLastSpinResultIndex(null);
 
-        if (gameState !== 'roulette') {
-          tvLogger.game(`Estableciendo gameState a 'roulette' para nuevo participante`);
-          setGameState('roulette');
+        if (gameState !== 'inGame' && gameState !== 'roulette') {
+          tvLogger.game(`Estableciendo gameState a 'inGame' para nuevo participante`);
+          setGameState('inGame');
         }
       } else {
         tvLogger.debug(`Participante ${currentParticipant.nombre} está en estado válido (${gameState}), NO limpiando estados`);
@@ -207,7 +208,7 @@ export default function TVRouletteScreen() {
   const handleSpin = () => {
     if (rouletteRef.current && !rouletteButtonState.isDisabled) {
       tvLogger.game('Iniciando giro de ruleta desde TV...');
-      setGameState('roulette');
+      setGameState('inGame');
       rouletteRef.current.spin();
     } else {
       tvLogger.warn('No se pudo acceder a la referencia de la ruleta o botón deshabilitado');
@@ -270,9 +271,9 @@ export default function TVRouletteScreen() {
   ) {
     return (
       <div className="min-h-screen relative">
-        {/* [modificación] - Sistema de confetti masivo usando componente reutilizable */}
+        {/* [modificación] - Sistema de confetti masivo solo para respuestas correctas */}
         <MassiveConfetti 
-          show={showConfetti} 
+          show={showConfetti && prizeFeedback.answeredCorrectly === true} 
           windowSize={windowSize} 
           isTV65={isTV65}
           isTabletPortrait={isTabletPortrait}
@@ -286,9 +287,9 @@ export default function TVRouletteScreen() {
   if (gameState === 'question' && currentQuestion) {
     return (
       <div className="min-h-screen relative">
-        {/* [modificación] - Sistema de confetti masivo usando componente reutilizable */}
+        {/* [modificación] - Sistema de confetti masivo solo para respuestas correctas */}
         <MassiveConfetti 
-          show={showConfetti} 
+          show={showConfetti && prizeFeedback.answeredCorrectly === true} 
           windowSize={windowSize} 
           isTV65={isTV65}
           isTabletPortrait={isTabletPortrait}

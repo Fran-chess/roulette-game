@@ -46,6 +46,35 @@ export async function POST(request: Request) {
       );
     }
 
+    // Verificar si ya existe una sesión activa
+    const { data: existingSession, error: checkError } = await supabaseAdmin
+      .from('game_sessions')
+      .select('*')
+      .eq('admin_id', adminId)
+      .not('status', 'in', '(completed,archived,closed)')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error al verificar sesiones existentes:', checkError);
+      return NextResponse.json(
+        { message: 'Error al verificar sesiones existentes' },
+        { status: 500 }
+      );
+    }
+
+    if (existingSession) {
+      return NextResponse.json(
+        { 
+          message: 'Ya existe una partida activa', 
+          activeSession: existingSession,
+          cannotCreate: true 
+        },
+        { status: 409 }
+      );
+    }
+
     // CORREGIDO: Crear nueva sesión en game_sessions, NO en plays
     const sessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const currentTime = new Date().toISOString();

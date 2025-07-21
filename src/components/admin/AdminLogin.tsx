@@ -214,11 +214,12 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               )}
 
               {/* [modificación] - Botón mejorado con animaciones y gradiente */}
-              <motion.div variants={fieldItemVariants} className="pt-2">
+              <motion.div variants={fieldItemVariants} className="pt-2 w-full flex justify-center">
                 <motion.div
                   variants={buttonVariants}
                   whileHover="hover"
                   whileTap="tap"
+                  className='w-full flex justify-center'
                 >
                   <Button
                     type="submit"

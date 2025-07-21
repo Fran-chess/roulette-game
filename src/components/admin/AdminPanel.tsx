@@ -1,6 +1,6 @@
 // src/components/admin/AdminPanel.tsx
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabaseAdminClient } from "@/lib/supabase-admin"; // Cliente de Supabase específico para admin
 import { useGameStore } from "@/store/gameStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import SessionDetailView from "./SessionDetailView";
 import { fadeInUp } from "@/utils/animations";
 import { PlaySession } from "@/types";
 import SnackbarNotification from "../ui/SnackbarNotification";
+
 
 interface AdminData {
   id: string;
@@ -32,11 +33,13 @@ interface AdminPanelProps {
 const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
   type ActiveTabType = "dashboard" | "sessions" | "new-session";
   const [activeTab, setActiveTab] = useState<ActiveTabType>("dashboard");
+  const isInitializedRef = useRef(false);
 
   // Extraer estados y funciones del store global
   const {
     adminState,
     fetchGameSessions,
+    fetchActiveSession,
     setAdminCurrentSession,
     setAdminNotification,
     clearAdminNotifications,
@@ -58,11 +61,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
 
     await fetchGameSessions();
   }, [adminData?.id, fetchGameSessions]);
-
-  // [modificación] Nueva función para cargar estadísticas de participantes
-  const loadParticipantsStats = useCallback(async () => {
-    await fetchParticipantsStats();
-  }, [fetchParticipantsStats]);
 
   const [snackbar, setSnackbar] = useState<{
     type: "success" | "error";
@@ -89,128 +87,136 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     }
   }, [snackbar]);
 
-  // [modificación] Cargar datos iniciales incluyendo estadísticas de participantes
+  // [modificación] Cargar datos iniciales - Solo ejecutar una vez por adminId
   useEffect(() => {
-    if (adminData?.id) {
-      fetchActiveSessions(); // Carga inicial de sesiones
-      loadParticipantsStats(); // [modificación] Carga inicial de estadísticas de participantes
-
-      const playsChannel = supabaseAdminClient
-        .channel(`admin_plays_changes_${adminData.id}`)
-        .on<Partial<PlaySession>>(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "plays",
-            filter: `admin_id=eq.${adminData.id}`,
-          },
-          (payload: PayloadUpdate) => {
-            fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
-            loadParticipantsStats();
-
-            if (payload.new && payload.new.session_id) {
-              setAdminNotification(
-                "success",
-                `Nuevo juego ${String(payload.new.session_id).substring(
-                  0,
-                  8
-                )} creado (detectado en tiempo real).`
-              );
-            }
-          }
-        )
-        .on<Partial<PlaySession>>(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: "plays",
-            filter: `admin_id=eq.${adminData.id}`,
-          },
-          (payload: PayloadUpdate) => {
-            fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
-            loadParticipantsStats();
-
-            if (
-              adminState.currentSession &&
-              payload.new &&
-              payload.new.session_id &&
-              payload.new.session_id === adminState.currentSession.session_id
-            ) {
-              const updatedSession = {
-                ...adminState.currentSession,
-                ...payload.new,
-              };
-              setAdminCurrentSession(updatedSession as PlaySession);
-            }
-
-            if (
-              payload.old?.status !== payload.new?.status &&
-              payload.new?.session_id
-            ) {
-              setAdminNotification(
-                "success",
-                `Juego ${String(payload.new.session_id).substring(
-                  0,
-                  8
-                )} actualizado a ${
-                  payload.new.status
-                } (detectado en tiempo real).`
-              );
-            }
-          }
-        )
-        .on<Partial<PlaySession>>(
-          "postgres_changes",
-          {
-            event: "DELETE",
-            schema: "public",
-            table: "plays",
-            filter: `admin_id=eq.${adminData.id}`,
-          },
-          (payload: PayloadUpdate) => {
-            fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
-            loadParticipantsStats();
-
-            if (payload.old && payload.old.session_id) {
-              setAdminNotification(
-                "success",
-                `Juego ${String(payload.old.session_id).substring(
-                  0,
-                  8
-                )} eliminado (detectado en tiempo real).`
-              );
-            }
-          }
-        )
-        .subscribe((status, err) => {
-          if (err) {
-            console.error(
-              "AdminPanel: Error en la suscripción a Supabase:",
-              err
-            );
-            setAdminNotification(
-              "error",
-              "Error de conexión en tiempo real. Los datos podrían no estar actualizados consistentemente."
-            );
-          } else {
-          }
-        });
-
-      return () => {
-        supabaseAdminClient.removeChannel(playsChannel);
+    if (adminData?.id && !isInitializedRef.current) {
+      isInitializedRef.current = true;
+      
+      // Cargar datos iniciales de forma simple
+      const loadInitialData = async () => {
+        await fetchActiveSession();
+        await fetchGameSessions();
+        await fetchParticipantsStats();
       };
+      
+      loadInitialData();
     }
-  }, [
-    adminData?.id,
-    fetchActiveSessions,
-    // [modificación] Agregar loadParticipantsStats a las dependencias
-    loadParticipantsStats,
-    adminState.currentSession,
-    setAdminCurrentSession,
-    setAdminNotification,
-  ]);
+
+    // Reset cuando cambie el adminId
+    return () => {
+      if (adminData?.id) {
+        isInitializedRef.current = false;
+      }
+    };
+  }, [adminData?.id, fetchActiveSession, fetchGameSessions, fetchParticipantsStats]); // Agregar dependencias faltantes
+
+  // [modificación] Suscripción a realtime por separado
+  useEffect(() => {
+    if (!adminData?.id) return;
+
+    const playsChannel = supabaseAdminClient
+      .channel(`admin_plays_changes_${adminData.id}`)
+      .on<Partial<PlaySession>>(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "plays",
+          filter: `admin_id=eq.${adminData.id}`,
+        },
+        (payload: PayloadUpdate) => {
+          fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
+
+          if (payload.new && payload.new.session_id) {
+            setAdminNotification(
+              "success",
+              `Nuevo juego ${String(payload.new.session_id).substring(
+                0,
+                8
+              )} creado (detectado en tiempo real).`
+            );
+          }
+        }
+      )
+      .on<Partial<PlaySession>>(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "plays",
+          filter: `admin_id=eq.${adminData.id}`,
+        },
+        (payload: PayloadUpdate) => {
+          fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
+
+          if (
+            adminState.currentSession &&
+            payload.new &&
+            payload.new.session_id &&
+            payload.new.session_id === adminState.currentSession.session_id
+          ) {
+            const updatedSession = {
+              ...adminState.currentSession,
+              ...payload.new,
+            };
+            setAdminCurrentSession(updatedSession as PlaySession);
+          }
+
+          if (
+            payload.old?.status !== payload.new?.status &&
+            payload.new?.session_id
+          ) {
+            setAdminNotification(
+              "success",
+              `Juego ${String(payload.new.session_id).substring(
+                0,
+                8
+              )} actualizado a ${
+                payload.new.status
+              } (detectado en tiempo real).`
+            );
+          }
+        }
+      )
+      .on<Partial<PlaySession>>(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "plays",
+          filter: `admin_id=eq.${adminData.id}`,
+        },
+        (payload: PayloadUpdate) => {
+          fetchActiveSessions(); // Vuelve a cargar la lista completa desde la API al detectar un cambio
+
+          if (payload.old && payload.old.session_id) {
+            setAdminNotification(
+              "success",
+              `Juego ${String(payload.old.session_id).substring(
+                0,
+                8
+              )} eliminado (detectado en tiempo real).`
+            );
+          }
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error(
+            "AdminPanel: Error en la suscripción a Supabase:",
+            err
+          );
+          setAdminNotification(
+            "error",
+            "Error de conexión en tiempo real. Los datos podrían no estar actualizados consistentemente."
+          );
+        }
+      });
+
+    return () => {
+      supabaseAdminClient.removeChannel(playsChannel);
+    };
+  }, [adminData?.id, adminState.currentSession, fetchActiveSessions, setAdminCurrentSession, setAdminNotification]); // Agregar dependencias faltantes
 
   // [modificación] Usar createNewSession del store global
   const handleCreateNewSession = async () => {
@@ -239,8 +245,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
       "success",
       "Jugador registrado exitosamente. La lista de sesiones y detalles se actualizarán."
     );
-    // [modificación] Recargar estadísticas de participantes cuando se registra un nuevo jugador
-    loadParticipantsStats();
   };
 
   const handleLogoutCallback =
@@ -358,6 +362,10 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
                 isLoadingCreation={adminState.isLoading.sessionAction}
                 isLoadingList={adminState.isLoading.sessionsList}
                 onRefreshSessions={fetchActiveSessions}
+                onSelectSession={(session) => {
+                  setAdminCurrentSession(session);
+                  setActiveTab("new-session");
+                }}
               />
             )}
             {activeTab === "new-session" && adminState.currentSession && (

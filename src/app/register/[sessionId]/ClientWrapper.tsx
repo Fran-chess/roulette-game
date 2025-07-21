@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import RegistrationForm from '@/components/game/RegistrationForm'; 
 import { motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
-import { isPlayerRegistered, isSessionInProgress, isSessionPendingRegistration } from '@/utils/session';
 import { useNavigationStore } from '@/store/navigationStore';
 import Logo from '@/components/ui/Logo';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
@@ -66,17 +65,11 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
 
           setGameSession(data.data);
 
-          if (isPlayerRegistered(data.data)) {
-// //             console.log("Sesión ya tiene un jugador registrado, redirigiendo al juego:", data.data);
-            handleRedirect(`/game/${sessionId}`, 'Preparando la ruleta...');
-            return;
-          } else if (isSessionInProgress(data.data)) {
-// //             console.log("Juego en progreso, redirigiendo:", data.data);
-            handleRedirect(`/game/${sessionId}`, 'Cargando juego en progreso...');
-            return;
-          } else if (!isSessionPendingRegistration(data.data)) {
+          // Para single session, permitir registro en todos los estados activos
+          if (data.data.status === 'closed' || data.data.status === 'completed' || data.data.status === 'archived') {
             setError(`Esta sesión no está disponible para registro (estado: ${data.data.status})`);
           }
+          // Para cualquier otro estado, permitir registro
         } catch (error: Error | unknown) {
           // Error al verificar sesión - removido log ya que se maneja en UI
           setError(error instanceof Error ? error.message : 'Error al conectar con el servidor');
@@ -97,6 +90,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
     setRegisteredPlayerName(playerName);
     setPlayerRegisteredSuccess(true);
     
+    // Auto-hide después de 10 segundos y volver al formulario
     setTimeout(() => {
       setPlayerRegisteredSuccess(false);
       setRegisteredPlayerName('');
@@ -245,13 +239,13 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
               </p>
               
               <p className="text-base text-green-100 text-center mb-6">
-                ha sido registrado exitosamente. La TV mostrará la ruleta automáticamente.
+                ha sido registrado exitosamente. El participante podrá ver la ruleta en la TV.
               </p>
               
-              <div className="flex flex-col gap-3 w-full">
+              <div className="flex flex-col items-center gap-3 w-full">
                 <button
                   onClick={handlePrepareNextRegistration}
-                  className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg border border-blue-400/50 transition-all duration-300"
+                  className="w-full max-w-none py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg border border-blue-400/50 transition-all duration-300"
                 >
                   Registrar Otro Participante
                 </button>

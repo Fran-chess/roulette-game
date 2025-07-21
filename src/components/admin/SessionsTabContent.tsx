@@ -15,6 +15,8 @@ import { useNavigationStore } from '@/store/navigationStore';
 import { PlaySession, Participant } from '@/types';
 // [modificación] Importar SnackbarNotification para mostrar mensajes de estado
 import SnackbarNotification from '@/components/ui/SnackbarNotification';
+// [modificación] Importar el store del juego para acceder a la sesión activa
+import { useGameStore } from '@/store/gameStore';
 
 interface SessionsTabContentProps {
   activeSessions: PlaySession[];
@@ -23,6 +25,8 @@ interface SessionsTabContentProps {
   isLoadingList: boolean;
   // [modificación] Agregar función para actualizar la lista de sesiones
   onRefreshSessions?: () => void;
+  // [modificación] Agregar función para seleccionar sesión y ver detalles
+  onSelectSession?: (session: PlaySession) => void;
 }
 
 const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
@@ -31,7 +35,12 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   isLoadingCreation,
   isLoadingList,
   onRefreshSessions,
+  onSelectSession,
 }) => {
+  // [modificación] Obtener la sesión activa del store
+  const { adminState } = useGameStore();
+  const activeSession = adminState.currentSession;
+  
   // [modificación] Ref para evitar múltiples navegaciones
   const navigationInProgress = useRef(false);
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
@@ -297,21 +306,9 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     navigationInProgress.current = true;
     
     // [modificación] Determinar la ruta según el estado de la sesión
-    let targetPath: string;
-    let loadingMessage: string;
-    
-    switch (session.status) {
-      case 'player_registered':
-      case 'playing':
-        targetPath = `/game/${session.session_id}`;
-        loadingMessage = 'Accediendo al juego...';
-        break;
-      case 'pending_player_registration':
-      default:
-        targetPath = `/register/${session.session_id}`;
-        loadingMessage = 'Activando sesión de juego...';
-        break;
-    }
+    // Para single session en tablet admin, siempre ir a registro
+    const targetPath = `/register/${session.session_id}`;
+    const loadingMessage = 'Activando sesión de registro...';
 
 // //     console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
 
@@ -448,15 +445,28 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
           <h3 className="text-xl md:text-2xl font-marineBold text-white mb-3 sm:mb-0 admin-dashboard-title">
             Gestión de Juegos
           </h3>
-          <Button
-            onClick={onCreateNewSession}
-            variant="custom"
-            className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
-            disabled={isLoadingCreation}
-          >
-            <FiPlusCircle className="mr-2" size={16} />
-            {isLoadingCreation ? 'Creando...' : 'Nuevo Juego'}
-          </Button>
+          {activeSession ? (
+            <div className="text-center">
+              <div className="bg-yellow-500/20 border border-yellow-400/50 rounded-lg px-4 py-2 mb-2">
+                <p className="text-yellow-200 text-sm font-marineBold">
+                  Ya tienes una partida activa
+                </p>
+              </div>
+              <p className="text-yellow-300 text-xs">
+                Debes cerrar la partida actual para crear una nueva
+              </p>
+            </div>
+          ) : (
+            <Button
+              onClick={onCreateNewSession}
+              variant="custom"
+              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
+              disabled={isLoadingCreation}
+            >
+              <FiPlusCircle className="mr-2" size={16} />
+              {isLoadingCreation ? 'Creando...' : 'Nuevo Juego'}
+            </Button>
+          )}
         </motion.div>
 
         {isLoadingList ? (
@@ -471,15 +481,26 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
             <FiCalendar className="mx-auto h-12 w-12 text-slate-400 mb-4" />
             <h4 className="text-lg font-marineBold text-slate-300 mb-2">No hay juegos creados</h4>
             <p className="text-slate-400 mb-4 font-sans">Crea tu primer juego para comenzar</p>
-            <Button
-              onClick={onCreateNewSession}
-              variant="custom"
-              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 mx-auto admin-dashboard-button"
-              disabled={isLoadingCreation}
-            >
-              <FiPlusCircle className="mr-2" size={16} />
-              {isLoadingCreation ? 'Creando...' : 'Crear Primer Juego'}
-            </Button>
+            {activeSession ? (
+              <div className="bg-yellow-500/20 border border-yellow-400/50 rounded-lg px-6 py-4 mx-auto max-w-md">
+                <p className="text-yellow-200 text-sm font-marineBold mb-2">
+                  Ya tienes una partida activa
+                </p>
+                <p className="text-yellow-300 text-xs">
+                  Debes cerrar la partida actual desde el Panel Principal para crear una nueva
+                </p>
+              </div>
+            ) : (
+              <Button
+                onClick={onCreateNewSession}
+                variant="custom"
+                className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 mx-auto admin-dashboard-button"
+                disabled={isLoadingCreation}
+              >
+                <FiPlusCircle className="mr-2" size={16} />
+                {isLoadingCreation ? 'Creando...' : 'Crear Primer Juego'}
+              </Button>
+            )}
           </motion.div>
         ) : (
           <motion.div variants={fadeInUp} className="grid gap-3 admin-sessions-list">
@@ -537,6 +558,20 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
                             className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
                           >
                             {closingSessionId === session.session_id ? 'Cancelando...' : 'Cancelar'}
+                          </Button>
+                        )}
+                        
+                        {/* Botón Ver Detalles */}
+                        {onSelectSession && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectSession(session);
+                            }}
+                            variant="custom"
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
+                          >
+                            Ver Detalles
                           </Button>
                         )}
                         

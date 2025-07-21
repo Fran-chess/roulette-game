@@ -28,7 +28,6 @@ export default function GamePage() {
   // Zustand (GameStore)
   const gameState = useGameStore((state) => state.gameState);
   const setGameState = useGameStore((state) => state.setGameState);
-  const currentParticipant = useGameStore((state) => state.currentParticipant);
   const lastSpinResultIndex = useGameStore(
     (state) => state.lastSpinResultIndex
   );
@@ -38,6 +37,7 @@ export default function GamePage() {
   const setQuestions = useGameStore((state) => state.setQuestions);
   const gameSession = useGameStore((state) => state.gameSession);
   const currentQuestion = useGameStore((state) => state.currentQuestion);
+  const moveToNext = useGameStore((state) => state.moveToNext);
   
   // Refs para funciones para evitar dependencias en useEffect (después de declarar las funciones)
   const setGameSessionRef = useRef(setGameSession);
@@ -85,7 +85,21 @@ export default function GamePage() {
         const session = sessionData.data;
         setGameSessionRef.current(session);
 
-        if (!session.nombre || !session.email) {
+        // Para single session, siempre verificar que hay participantes antes de mostrar el juego
+        let hasParticipants = false;
+        try {
+          const participantResponse = await fetch(`/api/admin/sessions/participants?sessionId=${sessionId}`);
+          const participantData = await participantResponse.json();
+          
+          if (participantResponse.ok && participantData.participants && participantData.participants.length > 0) {
+            hasParticipants = true;
+          }
+        } catch (error) {
+          console.warn('Error al verificar participantes:', error);
+        }
+
+        // Si no hay participantes, siempre redirigir a registro
+        if (!hasParticipants) {
           handleRedirect(`/register/${sessionId}`);
           return;
         }
@@ -273,21 +287,21 @@ export default function GamePage() {
     );
   }
 
-  if (!currentParticipant || !gameSession) {
+  if (!gameSession) {
     return (
       <GameLayout>
         <div className="backdrop-blur-md p-8 rounded-xl shadow-lg border border-white/20 max-w-md z-10">
           <h2 className="text-2xl font-bold text-white mb-4">
-            Datos de juego no disponibles
+            Sesión no disponible
           </h2>
           <p className="text-white/90 mb-4">
-            No se pudo cargar la información del jugador o la sesión.
+            No se pudo cargar la información de la sesión. Regresa al admin para gestionar la partida.
           </p>
           <button
-            onClick={() => router.push(`/register/${sessionId}`)}
-            className="mt-4 text-white py-2 px-4 rounded transition-colors"
+            onClick={() => router.push(`/admin`)}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-colors"
           >
-            Ir al registro
+            Volver al Admin
           </button>
         </div>
       </GameLayout>
@@ -318,9 +332,9 @@ export default function GamePage() {
             </div>
           </div>
           
-          {/* Botón de girar - siempre visible debajo */}
+          {/* Botones de acción - siempre visibles debajo */}
           <div className={`
-            flex justify-center items-center shrink-0
+            flex justify-center items-center gap-4 shrink-0
             ${deviceType === 'mobile' ? 'pb-4 pt-2' : 
               deviceType === 'tablet' ? 'pb-6 pt-4' : 
               deviceType === 'tv' ? 'pb-12 pt-8' : 'pb-8 pt-6'}
@@ -371,6 +385,47 @@ export default function GamePage() {
                 `} />
                 <span className="font-black tracking-wide letter-spacing-wide">
                   {rouletteButtonState.buttonText}
+                </span>
+              </span>
+            </motion.button>
+
+            {/* Botón para volver al inicio */}
+            <motion.button
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              className={`
+                relative overflow-hidden font-black text-white
+                focus:outline-none focus:ring-4 focus:ring-green-300/50
+                ${deviceType === 'mobile' ? 'px-8 py-5 text-lg rounded-xl' : 
+                  deviceType === 'tablet' ? 'px-10 py-6 text-xl rounded-2xl' : 
+                  deviceType === 'tv' ? 'px-20 py-10 text-4xl rounded-3xl' : 'px-12 py-7 text-2xl rounded-2xl'}
+                bg-gradient-to-b from-green-500 via-green-600 to-green-700
+                hover:from-green-400 hover:via-green-500 hover:to-green-600
+                border-2 border-green-300/60
+                shadow-2xl hover:shadow-green-500/25
+                transition-all duration-300 ease-out
+                backdrop-blur-sm
+                transform-gpu
+              `}
+              style={{
+                textShadow: '0 3px 6px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.9)',
+                boxShadow: `
+                  0 12px 40px rgba(0,0,0,0.25),
+                  0 6px 20px rgba(34, 197, 94, 0.2),
+                  inset 0 2px 0 rgba(255,255,255,0.25),
+                  inset 0 -2px 0 rgba(0,0,0,0.2),
+                  inset 0 0 40px rgba(255,255,255,0.05)
+                `,
+              }}
+              onClick={() => moveToNext()}
+              aria-label="Volver al Inicio"
+            >
+              <span className={`
+                inline-flex items-center justify-center gap-3
+                ${deviceType === 'tv' ? 'gap-6' : ''}
+              `}>
+                <span className="font-black tracking-wide letter-spacing-wide">
+                  Volver al Inicio
                 </span>
               </span>
             </motion.button>

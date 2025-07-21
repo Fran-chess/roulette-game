@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 // Eliminado: import de lógica de premios - no la necesitamos
 import WaitingScreen from '@/components/tv/screens/WaitingScreen';
 import RouletteWheel from '@/components/game/RouletteWheel';
@@ -8,9 +8,10 @@ import QuestionDisplay from '@/components/game/QuestionDisplay';
 import PrizeModal from '@/components/game/PrizeModal';
 import RouletteWheelIcon from '@/components/ui/RouletteWheelIcon';
 import Logo from '@/components/ui/Logo'; // [AGREGADO] Importar el logo
-import { Question } from '@/types';
+import { Question, Participant } from '@/types';
 import { MotionDiv } from '@/components/tv/shared/MotionComponents';
 import { useGameStore } from '@/store/gameStore';
+import { supabaseClient } from '@/lib/supabase';
 
 type TVScreen = 'waiting' | 'roulette' | 'question' | 'prize';
 
@@ -28,6 +29,8 @@ export default function TVPage() {
   // Estados del store global que necesitamos observar
   const currentQuestion = useGameStore((state) => state.currentQuestion);
   const lastSpinResultIndex = useGameStore((state) => state.lastSpinResultIndex);
+  const currentParticipant = useGameStore((state) => state.currentParticipant);
+  const gameState = useGameStore((state) => state.gameState);
   
   // Acciones del store
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
@@ -35,22 +38,96 @@ export default function TVPage() {
   const setLastSpinResultIndex = useGameStore((state) => state.setLastSpinResultIndex);
   const setStoreQuestions = useGameStore((state) => state.setQuestions);
   const setGameState = useGameStore((state) => state.setGameState);
+  const setCurrentParticipant = useGameStore((state) => state.setCurrentParticipant);
 
   // --- FUNCIÓN CENTRALIZADA PARA CAMBIO DE PANTALLA ---
-  function goToScreen(next: TVScreen) {
+  const goToScreen = useCallback((next: TVScreen) => {
+    console.log('🔄 TV-SCREEN: Cambiando de pantalla a:', next);
     setScreen(next);
     // Actualizar gameState apropiadamente para cada pantalla
     if (next === 'roulette') {
+      console.log('🔄 TV-SCREEN: Estableciendo gameState a "roulette"');
       setGameState('roulette');
     } else if (next === 'waiting') {
-      setGameState('screensaver');
+      console.log('🔄 TV-SCREEN: Estableciendo gameState a "waiting"');
+      setGameState('waiting');
     } else if (next === 'prize') {
+      console.log('🔄 TV-SCREEN: Estableciendo gameState a "prize"');
       setGameState('prize');
     } else if (next === 'question') {
+      console.log('🔄 TV-SCREEN: Estableciendo gameState a "question"');
       setGameState('question');
     }
-  }
+  }, [setGameState]);
 
+  // --- CONEXIÓN CON PANEL ADMIN (SOLO ESTO ES NUEVO) ---
+  useEffect(() => {
+    if (!supabaseClient) return;
+
+
+    // Polling para detectar participantes
+    let lastDetectedParticipant: string | null = null;
+
+    const checkForParticipants = async () => {
+      try {
+        // [FIX] También detectar participantes cuando currentParticipant es null (no solo en waiting)
+        const currentParticipant = useGameStore.getState().currentParticipant;
+        if (screen === 'waiting' || !currentParticipant) {
+          console.log('🔄 TV-POLLING: Verificando participantes... screen:', screen, 'currentParticipant:', currentParticipant?.nombre || 'null');
+          const { data: allParticipants, error: allError } = await supabaseClient
+            .from('participants')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(5);
+            
+          if (allError) {
+            console.error('🔄 ADMIN-CONNECTION: Error al consultar participantes:', allError);
+            return;
+          }
+          
+          // Buscar participantes que estén listos para jugar (registered o playing sin completed_at)
+          const readyParticipants = allParticipants?.filter(p => 
+            (p.status === 'registered' || p.status === 'playing') && 
+            !p.completed_at // No incluir participantes que ya terminaron
+          ) || [];
+          if (readyParticipants.length > 0) {
+            const participant = readyParticipants[0];
+            
+            // Solo procesar si es un participante diferente al último detectado Y no ha terminado
+            const typedParticipant = participant as unknown as Participant;
+            if (typedParticipant.id !== lastDetectedParticipant && !typedParticipant.completed_at) {
+              lastDetectedParticipant = typedParticipant.id;
+              
+              // Establecer el participante como currentParticipant en el store
+              console.log('🔄 TV-PARTICIPANT-DETECTED: Nuevo participante detectado:', typedParticipant.nombre);
+              console.log('🔄 TV-PARTICIPANT-DETECTED: Estableciendo como currentParticipant y yendo a ruleta');
+              setCurrentParticipant(typedParticipant);
+              
+              goToScreen('roulette');
+            }
+          } else {
+            // [FIX] Si no hay participantes y no hay currentParticipant, reiniciar detección
+            if (!currentParticipant && lastDetectedParticipant) {
+              console.log('🔄 TV-POLLING: No hay participantes, reiniciando detección');
+              lastDetectedParticipant = null;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('🔄 ADMIN-CONNECTION: Error en polling:', error);
+      }
+    };
+
+    // Ejecutar inmediatamente y luego cada 2 segundos (más rápido)
+    checkForParticipants();
+    const pollingIntervalRef = setInterval(checkForParticipants, 2000);
+
+    return () => {
+      if (pollingIntervalRef) {
+        clearInterval(pollingIntervalRef);
+      }
+    };
+  }, [screen, goToScreen, setCurrentParticipant]);
 
   // Detectar tablets en orientación vertical
   useEffect(() => {
@@ -101,6 +178,17 @@ export default function TVPage() {
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
   }, [resetPrizeFeedback, setCurrentQuestion, setLastSpinResultIndex]);
+
+  // NUEVO: Detectar cuando no hay participante activo y gameState es screensaver para volver a waiting
+  useEffect(() => {
+    if (!currentParticipant && gameState === 'screensaver' && screen !== 'waiting') {
+      console.log('🔄 TV-TRANSITION: No hay participante activo y gameState es screensaver, volviendo a waiting');
+      console.log('   - currentParticipant:', currentParticipant);
+      console.log('   - gameState:', gameState);
+      console.log('   - screen actual:', screen);
+      goToScreen('waiting');
+    }
+  }, [currentParticipant, gameState, screen, goToScreen]);
 
   // Gestionar transiciones entre pantallas basadas en el lastSpinResultIndex
   useEffect(() => {
@@ -314,4 +402,4 @@ export default function TVPage() {
   }
 
   return null;
-} 
+}
