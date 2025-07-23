@@ -24,14 +24,7 @@ export async function POST(request: Request) {
       admin_id
     } = await request.json();
 
-    // [soporte] Logs de auditoría para seguimiento de jugadas
-    console.log('🎮 SUBMIT-PLAY: Iniciando procesamiento de jugada');
-    console.log('   - Participante:', participant_id);
-    console.log('   - Sesión:', session_id);
-    console.log('   - Pregunta:', question_id);
-    console.log('   - Respuesta correcta:', answered_correctly);
-    console.log('   - Premio potencial:', prize_name);
-    console.log('   - Admin ID válido:', admin_id && admin_id.length === 36 ? 'Sí' : 'No (usará null)');
+    // [PROD] Logs de debug removidos para producción
 
     // Validar campos obligatorios
     if (!participant_id || !session_id || !question_id || typeof answered_correctly !== 'boolean') {
@@ -68,8 +61,6 @@ export async function POST(request: Request) {
     // 🏆 LÓGICA PRINCIPAL: Verificar si el participante ya ganó un premio en esta sesión
     let yaGano = false;
     if (answered_correctly && prize_name) {
-      console.log('🔍 SUBMIT-PLAY: Verificando si el participante ya ganó un premio...');
-      
       const { data: previousWins, error: winCheckError } = await supabaseAdmin
         .from('plays')
         .select('id, premio_ganado, created_at')
@@ -79,7 +70,7 @@ export async function POST(request: Request) {
         .limit(1);
 
       if (winCheckError) {
-        console.error('❌ SUBMIT-PLAY: Error verificando premios anteriores:', winCheckError);
+        console.error('SUBMIT-PLAY: Error verificando premios anteriores:', winCheckError);
         return NextResponse.json(
           { message: 'Error verificando premios anteriores' },
           { status: 500 }
@@ -87,25 +78,12 @@ export async function POST(request: Request) {
       }
 
       yaGano = previousWins && previousWins.length > 0;
-      
-      if (yaGano) {
-        // [soporte] Tracking de premios múltiples
-        console.log('🚫 SUBMIT-PLAY: El participante ya ganó un premio anteriormente');
-        console.log('   - Premio anterior:', previousWins[0].premio_ganado);
-        console.log('   - Fecha:', previousWins[0].created_at);
-      } else {
-        // [soporte] Participante elegible para premio
-        console.log('✅ SUBMIT-PLAY: Participante elegible para recibir premio');
-      }
     }
 
     // No asignamos premios específicos - se entregan presencialmente
     const premioFinal = null;
 
-    // [soporte] Resultado final del procesamiento
-    console.log('🎯 SUBMIT-PLAY: Resultado del procesamiento:');
-    console.log('   - Respuesta correcta:', answered_correctly);
-    console.log('   - Premios se entregan presencialmente');
+    // [PROD] Logs de resultado removidos
 
     // Crear la jugada en la base de datos
     const playData = {
@@ -145,7 +123,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // [soporte] Confirmación de jugada guardada\n    console.log('✅ SUBMIT-PLAY: Jugada guardada exitosamente:', savedPlay.id);
+    // [PROD] Log de confirmación removido
 
     // Respuesta con información completa para el frontend
     return NextResponse.json({

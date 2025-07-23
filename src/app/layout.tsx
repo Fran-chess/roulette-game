@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./tablet-responsive.css";
 import ShellRootClient from "@/components/layout/ShellRootClient";
+import ReactQueryProvider from "@/lib/providers/ReactQueryProvider";
 
 // [modificación] Configuración de viewport separada según Next.js 15
 export const viewport: Viewport = {
@@ -57,7 +58,9 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="bg-main-gradient min-h-screen flex flex-col font-sans text-white">
-        <ShellRootClient>{children}</ShellRootClient>
+        <ReactQueryProvider>
+          <ShellRootClient>{children}</ShellRootClient>
+        </ReactQueryProvider>
       </body>
     </html>
   );

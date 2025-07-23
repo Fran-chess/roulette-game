@@ -20,30 +20,28 @@ const LiveQueueDisplay: React.FC<LiveQueueDisplayProps> = ({ sessionId }) => {
   
   const [isLoading, setIsLoading] = useState(false);
 
-  // Cargar cola inicial SIN auto-refresh
+  // Cargar cola inicial y configurar actualización periódica
   useEffect(() => {
     const loadQueue = async () => {
       if (sessionId) {
-        console.log('🔄 LIVE-QUEUE: Carga inicial para sesión:', sessionId);
         await loadQueueFromDB(sessionId);
       }
     };
     
-    // Solo cargar una vez al montar el componente
+    // Cargar inicialmente
     loadQueue();
+    
+    // Configurar actualización periódica para mantener el estado sincronizado
+    const refreshInterval = setInterval(() => {
+      if (sessionId) {
+        loadQueueFromDB(sessionId);
+      }
+    }, 10000); // Cada 10 segundos para mantener el estado actualizado
+    
+    return () => clearInterval(refreshInterval);
   }, [sessionId, loadQueueFromDB]);
 
-  // Debug logs para ver estado actual (solo cuando cambia realmente)
-  useEffect(() => {
-    if (currentParticipant || waitingQueue.length > 0) {
-      console.log('🔄 LIVE-QUEUE: Estado actualizado para sesión:', sessionId);
-      console.log('   - Participante activo:', currentParticipant?.nombre || 'None');
-      console.log('   - Cola:', waitingQueue.length, 'participantes');
-      if (waitingQueue.length > 0) {
-        console.log('   - Participantes en cola:', waitingQueue.map(p => p.nombre));
-      }
-    }
-  }, [currentParticipant, waitingQueue, sessionId]);
+  // Estado actualizado (logs removidos para producción)
 
   // Cleanup periódico de participantes completados
   useEffect(() => {

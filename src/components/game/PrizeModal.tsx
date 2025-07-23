@@ -362,25 +362,20 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     tvLogger.debug(`handleGoHome iniciado - preparando para siguiente participante`);
     tvLogger.info("Preparando para siguiente participante en la misma sesión...");
     
-    console.log("🏠 PRIZE-HOME: Moviendo al siguiente participante usando moveToNext()");
-    console.log("🏠 PRIZE-HOME: Participante actual antes de moveToNext():", currentParticipant?.nombre);
+    // [PROD] Logs de movimiento removidos
     
     // Usar moveToNext() que maneja correctamente la transición de participantes
     await moveToNext();
     
     // Limpiar estados relacionados con el premio y la pregunta
-    console.log("🏠 PRIZE-HOME: Limpiando estados del juego...");
+    // [PROD] Log de limpieza removido
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
     
     // Verificar que la transición fue exitosa
     setTimeout(() => {
-      const store = useGameStore.getState();
-      console.log("🏠 PRIZE-HOME: Verificación después de moveToNext():");
-      console.log("🏠 PRIZE-HOME: currentParticipant:", store.currentParticipant?.nombre || 'null');
-      console.log("🏠 PRIZE-HOME: waitingQueue length:", store.waitingQueue?.length || 0);
-      console.log("🏠 PRIZE-HOME: gameState:", store.gameState);
+      // [PROD] Logs de verificación removidos
     }, 200);
     
     tvLogger.debug(`Confetti se mantendrá por 3 segundos más antes de ir al inicio`);

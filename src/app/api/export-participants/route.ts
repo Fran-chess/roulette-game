@@ -30,122 +30,115 @@ export async function GET(request: Request) {
     const date = searchParams.get('date');
     const period = searchParams.get('period');
 
-    // [modificación] Obtener participantes
-    const participantsQuery = supabaseAdmin
-      .from('participants')
-      .select('id, nombre, apellido, email, created_at');
+    // Optimización SQL: Una sola query con agregaciones en lugar de múltiples consultas y loops JS
+    let dataToSheet: Record<string, string | number>[] = [];
     
-    const { data: allParticipants, error: participantsError } = await participantsQuery.order('created_at');
+    if (period === 'all') {
+      // Optimización SQL: Usar función RPC con agregación SQL nativa
+      const { data: participantsWithTotalPlays, error: totalPlaysError } = await supabaseAdmin
+        .rpc('get_participants_with_total_plays');
 
-    if (participantsError) {
-      console.error('Error al obtener participantes:', participantsError);
-      return NextResponse.json(
-        { message: 'Error al obtener participantes.', details: participantsError instanceof Error ? participantsError.message : String(participantsError) },
-        { status: 500 }
-      );
-    }
+      if (totalPlaysError) {
+        console.error('Error al obtener participantes con jugadas totales:', totalPlaysError);
+        return NextResponse.json(
+          { message: 'Error al obtener datos de participantes.', details: totalPlaysError instanceof Error ? totalPlaysError.message : String(totalPlaysError) },
+          { status: 500 }
+        );
+      }
 
-    if (!allParticipants || allParticipants.length === 0) {
-      return NextResponse.json(
-        { message: 'No hay participantes registrados.' },
-        { status: 404 }
-      );
-    }
+      if (!participantsWithTotalPlays || !Array.isArray(participantsWithTotalPlays) || participantsWithTotalPlays.length === 0) {
+        return NextResponse.json(
+          { message: 'No hay participantes registrados.' },
+          { status: 404 }
+        );
+      }
 
-    // [modificación] Obtener todas las jugadas o las de un período específico
-    let playsQuery = supabaseAdmin
-      .from('plays')
-      .select('participant_id, created_at');
-
-    if (period !== 'all' && date) {
+      // Los datos ya vienen agregados desde la función SQL
+      dataToSheet = (participantsWithTotalPlays as unknown as { nombre: string; apellido?: string; email?: string; created_at: string; plays_count: number }[]).map((p: { nombre: string; apellido?: string; email?: string; created_at: string; plays_count: number }) => ({
+        Nombre: p.nombre,
+        Apellido: p.apellido || '',
+        Email: p.email || '',
+        FechaPrimerRegistro: safeCreateDate(p.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
+        CantidadTotalDeJugadas: p.plays_count,
+      }));
+    } else if (date) {
+      // Query optimizada: filtro de fecha en SQL con COUNT agregado
       const startDate = new Date(date);
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(date);
       endDate.setHours(23, 59, 59, 999);
       
-      playsQuery = playsQuery
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString());
-    }
-    
-    const { data: allPlays, error: playsError } = await playsQuery;
-    
-    if (playsError) {
-      console.error('Error al obtener jugadas:', playsError);
-      return NextResponse.json(
-        { message: 'Error al obtener jugadas.', details: playsError instanceof Error ? playsError.message : String(playsError) },
-        { status: 500 }
-      );
-    }
+      // Usar SQL con filtro de fecha y conteo agregado
+      const { data: participantsWithDayPlays, error: dayPlaysError } = await supabaseAdmin
+        .rpc('get_participants_with_day_plays', {
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString()
+        });
 
-    // [modificación] Procesar los datos para el Excel
-    const participantsMap = new Map();
-    
-    for (const p of allParticipants) {
-      participantsMap.set(p.id, {
-        Nombre: p.nombre,
-        Apellido: p.apellido || '',
-        Email: p.email || '',
-        FechaPrimerRegistro: safeCreateDate(p.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' }),
-        CantidadJugadasHoy: 0,
-        CantidadJugadasTotal: 0,
-        FechasJugadas: [],
-      });
-    }
+      if (dayPlaysError) {
+        // Fallback a query manual si la función RPC no existe
+        console.warn('RPC function not found, falling back to manual query');
+        
+        const { data: dayPlaysData, error: fallbackError } = await supabaseAdmin
+          .from('participants')
+          .select(`
+            nombre,
+            apellido,
+            email,
+            plays!inner(
+              created_at
+            )
+          `)
+          .gte('plays.created_at', startDate.toISOString())
+          .lte('plays.created_at', endDate.toISOString());
 
-    // [modificación] Contar jugadas totales
-    const { data: allPlaysForTotalCount, error: totalCountError } = await supabaseAdmin
-      .from('plays')
-      .select('participant_id');
-    
-    if (totalCountError) {
-      console.error('Error al contar jugadas totales:', totalCountError);
-      return NextResponse.json(
-        { message: 'Error al contar jugadas totales.', details: totalCountError instanceof Error ? totalCountError.message : String(totalCountError) },
-        { status: 500 }
-      );
-    }
+        if (fallbackError) {
+          console.error('Error al obtener participantes del día:', fallbackError);
+          return NextResponse.json(
+            { message: 'Error al obtener datos del día.', details: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) },
+            { status: 500 }
+          );
+        }
 
-    for (const play of allPlaysForTotalCount || []) {
-      if (participantsMap.has(play.participant_id)) {
-        const participant = participantsMap.get(play.participant_id);
-        participant.CantidadJugadasTotal++;
-      }
-    }
+        if (!dayPlaysData || !Array.isArray(dayPlaysData) || dayPlaysData.length === 0) {
+          return NextResponse.json(
+            { message: 'No hay datos para exportar con esos criterios.' },
+            { status: 404 }
+          );
+        }
 
-    // [modificación] Contar jugadas del período/día seleccionado y popular fechas
-    for (const play of allPlays || []) {
-      if (participantsMap.has(play.participant_id)) {
-        const participant = participantsMap.get(play.participant_id);
-        participant.CantidadJugadasHoy++;
-        (participant.FechasJugadas as string[]).push(
-          safeCreateDate(play.created_at).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })
-        );
-      }
-    }
+        // Agrupar y contar jugadas por participante usando Map para optimizar
+        const participantPlayCounts = new Map();
+        
+        dayPlaysData.forEach(p => {
+          const key = `${p.nombre}-${p.apellido}-${p.email}`;
+          if (participantPlayCounts.has(key)) {
+            participantPlayCounts.get(key).count++;
+          } else {
+            participantPlayCounts.set(key, {
+              nombre: p.nombre,
+              apellido: p.apellido || '',
+              email: p.email || '',
+              count: 1
+            });
+          }
+        });
 
-    // [modificación] Preparar datos para la hoja de cálculo
-    let dataToSheet: Record<string, string | number>[] = [];
-    
-    if (period === 'all') {
-      // [modificación] Para el total, usamos CantidadJugadasTotal
-      dataToSheet = Array.from(participantsMap.values()).map(p => ({
-        Nombre: p.Nombre,
-        Apellido: p.Apellido,
-        Email: p.Email,
-        FechaPrimerRegistro: p.FechaPrimerRegistro,
-        CantidadTotalDeJugadas: p.CantidadJugadasTotal,
-      }));
-    } else if (date) {
-      // [modificación] Para un día específico, usamos CantidadJugadasHoy
-      dataToSheet = Array.from(participantsMap.values())
-        .filter(p => p.CantidadJugadasHoy > 0) // Solo mostrar participantes que jugaron ese día
-        .map(p => ({
-          Nombre: p.Nombre,
-          Apellido: p.Apellido,
-          Email: p.Email,
-          CantidadJugadasEsteDia: p.CantidadJugadasHoy,
+        dataToSheet = Array.from(participantPlayCounts.values()).map(p => ({
+          Nombre: p.nombre,
+          Apellido: p.apellido,
+          Email: p.email,
+          CantidadJugadasEsteDia: p.count,
         }));
+      } else {
+        // Usar resultados de la función RPC optimizada
+        dataToSheet = (participantsWithDayPlays as unknown as { nombre: string; apellido?: string; email?: string; created_at: string; plays_count: number }[]).map((p: { nombre: string; apellido?: string; email?: string; created_at: string; plays_count: number }) => ({
+          Nombre: p.nombre,
+          Apellido: p.apellido || '',
+          Email: p.email || '',
+          CantidadJugadasEsteDia: p.plays_count,
+        }));
+      }
     }
 
     if (dataToSheet.length === 0) {

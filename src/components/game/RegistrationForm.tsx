@@ -4,6 +4,8 @@ import { useGameStore } from "@/store/gameStore";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import { UserPlusIcon } from "@heroicons/react/24/solid";
+// [React Query] Importar hooks optimizados
+import { useRegisterParticipant } from "@/hooks/api";
 
 interface RegistrationFormProps {
   sessionId?: string;
@@ -20,14 +22,15 @@ export default function RegistrationForm({
   const addToQueue = useGameStore((state) => state.addToQueue);
   const loadQueueFromDB = useGameStore((state) => state.loadQueueFromDB);
 
+  // [React Query] Hook para registro optimizado
+  const registerParticipantMutation = useRegisterParticipant();
+
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
     email: "",
     especialidad: "",
   });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{
     nombre?: string;
     apellido?: string;
@@ -139,7 +142,6 @@ export default function RegistrationForm({
     e.preventDefault();
     setErrors({});
     if (!validateForm()) return;
-    setIsSubmitting(true);
 
     try {
       if (sessionId) {
@@ -170,55 +172,32 @@ export default function RegistrationForm({
               verifyError instanceof Error ? verifyError.message : "Error desconocido"
             }`,
           });
-          setIsSubmitting(false);
           return;
         }
-        const response = await fetch("/api/admin/sessions/register-player", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sessionId,
-            ...formData,
-          }),
+        
+        // [React Query] Usar la mutación optimizada para registro
+        const data = await registerParticipantMutation.mutateAsync({
+          sessionId,
+          nombre: formData.nombre,
+          apellido: formData.apellido,
+          email: formData.email,
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || data.error || "Error al registrar jugador"
-          );
-        }
-
-        // **NUEVO: Usar sistema de cola automáticamente**
-        console.log('🔄 REGISTRO: Verificando datos de respuesta:', data);
-        
+        // Usar sistema de cola automáticamente
         if (data.participant) {
-          console.log('🔄 REGISTRO: Agregando participante a cola automáticamente');
-          console.log('🔄 REGISTRO: Participante recibido:', data.participant);
-          
           // [FIX] Verificar estado del currentParticipant y limpiar si es necesario
           const currentStore = useGameStore.getState();
-          console.log('🔄 REGISTRO: Estado actual antes de registrar:');
-          console.log('🔄 REGISTRO: currentParticipant actual:', currentStore.currentParticipant?.nombre || 'null');
-          console.log('🔄 REGISTRO: gameState actual:', currentStore.gameState);
           
           // Si hay un participante activo pero está en estado "completed" o es diferente al que se registra
           if (currentStore.currentParticipant) {
-            console.log('🔄 REGISTRO: Hay participante activo, verificando si debe limpiarse...');
-            
             // Si es el mismo participante, limpiar para re-registro
             if (currentStore.currentParticipant.email === data.participant.email) {
-              console.log('🔄 REGISTRO: Mismo participante detectado, limpiando estado anterior');
               setCurrentParticipant(null);
               setGameState('waiting');
               await new Promise(resolve => setTimeout(resolve, 100));
             }
             // Si es diferente participante pero parece estar "atorado", también limpiar
             else if (currentStore.gameState === 'waiting') {
-              console.log('🔄 REGISTRO: Estado inconsistente detectado (participante activo pero gameState waiting), limpiando...');
               setCurrentParticipant(null);
               await new Promise(resolve => setTimeout(resolve, 100));
             }
@@ -226,22 +205,11 @@ export default function RegistrationForm({
           
           // Cargar cola actual desde BD
           if (sessionId) {
-            console.log('🔄 REGISTRO: Cargando cola desde BD para sesión:', sessionId);
             await loadQueueFromDB(sessionId);
           }
           
           // Agregar participante a cola (esto activará automáticamente si no hay participante activo)
-          console.log('🔄 REGISTRO: Llamando addToQueue...');
           await addToQueue(data.participant);
-          
-          console.log('✅ REGISTRO: Participante agregado a cola exitosamente');
-          
-          // Usar getState() para obtener el estado más actualizado
-          const gameStore = useGameStore.getState();
-          console.log('📊 REGISTRO: Estado actual - Participante activo:', gameStore.currentParticipant ? 'Sí' : 'No');
-          console.log('📊 REGISTRO: Cola actual:', gameStore.waitingQueue.length, 'participantes');
-        } else {
-          console.log('❌ REGISTRO: No se encontraron datos de participante en la respuesta');
         }
 
         await new Promise((resolve) => setTimeout(resolve, 500));
@@ -264,7 +232,6 @@ export default function RegistrationForm({
               general:
                 error instanceof Error ? error.message : "Error al registrar. Inténtalo de nuevo.",
             });
-            setIsSubmitting(false);
           }
         );
       }
@@ -273,7 +240,6 @@ export default function RegistrationForm({
         general:
           error instanceof Error ? error.message : "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.",
       });
-      setIsSubmitting(false);
     }
   };
 
@@ -433,7 +399,7 @@ export default function RegistrationForm({
             type="submit"
             variant="gradient"
             className={`w-full max-w-none ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-4 px-6 text-xl' : 'py-3.5 px-6 text-xl'} font-bold rounded-2xl flex items-center justify-center gap-2`}
-            loading={isSubmitting}
+            loading={registerParticipantMutation.isPending}
             loadingText="Registrando..."
           >
             <UserPlusIcon className={isTabletVertical800x1340 ? "w-8 h-8" : isTabletLarge ? "w-7 h-7" : "w-6 h-6"} />

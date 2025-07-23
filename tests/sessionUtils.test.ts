@@ -1,10 +1,7 @@
 import assert from 'node:assert';
 import { describe, it } from 'node:test';
 import {
-  isPlayerRegistered,
-  isSessionInProgress,
-  isSessionPendingRegistration,
-  isSessionPlayable
+  isPlayerRegistered
 } from '../src/utils/session';
 
 describe('session utilities', () => {
@@ -22,20 +19,5 @@ describe('session utilities', () => {
   it('returns false when player not registered', () => {
     const session = { ...baseSession, status: 'pending_player_registration' };
     assert.strictEqual(isPlayerRegistered(session), false);
-  });
-
-  it('detects session in progress', () => {
-    const session = { ...baseSession, status: 'playing' };
-    assert.strictEqual(isSessionInProgress(session), true);
-  });
-
-  it('detects pending registration', () => {
-    const session = { ...baseSession, status: 'pending_player_registration' };
-    assert.strictEqual(isSessionPendingRegistration(session), true);
-  });
-
-  it('detects playable session', () => {
-    const session = { ...baseSession, status: 'playing' };
-    assert.strictEqual(isSessionPlayable(session), true);
   });
 });

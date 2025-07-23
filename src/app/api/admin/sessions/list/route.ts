@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase'; // Usamos supabaseAdmin para bypass RLS
 import { getAuthenticatedAdminId } from '@/lib/adminAuth';
+// [OPTIMIZADO] Importar logger de producción
+import { tvProdLogger } from '@/utils/tvLogger';
 
 /**
  * Endpoint para listar las sesiones de juego del administrador actual
@@ -11,7 +13,7 @@ export async function GET() {
   try {
     // Paso 1: Verificar que supabaseAdmin esté disponible
     if (!supabaseAdmin) {
-      console.error('API /admin/sessions/list: supabaseAdmin no está disponible');
+      tvProdLogger.error('API /admin/sessions/list: supabaseAdmin no está disponible');
       return NextResponse.json(
         { error: 'Error de configuración del servidor' },
         { status: 500 }
@@ -27,8 +29,10 @@ export async function GET() {
       );
     }
 
-    // Paso 3: Log de depuración (opcional)
-    console.log(`API /admin/sessions/list: Obteniendo sesiones para adminId: ${adminId}`);
+    // Paso 3: Log de depuración (solo en desarrollo)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`API /admin/sessions/list: Obteniendo sesiones para adminId: ${adminId}`);
+    }
 
     // CORREGIDO: Consultar game_sessions en lugar de plays
     const { data, error } = await supabaseAdmin
@@ -39,7 +43,7 @@ export async function GET() {
 
     // Paso 5: Manejar errores de la consulta a la base de datos
     if (error) {
-      console.error(
+      tvProdLogger.error(
         'API /admin/sessions/list: Error al obtener las sesiones de juego:',
         error
       );
@@ -52,11 +56,11 @@ export async function GET() {
       );
     }
 
-    // Paso 6: Devolver los datos encontrados
-    return NextResponse.json(data || []);
+    // Paso 6: Devolver los datos encontrados con el formato esperado
+    return NextResponse.json({ sessions: data || [] });
   } catch (err: unknown) {
     // Paso 7: Manejar cualquier otra excepción inesperada
-    console.error(
+    tvProdLogger.error(
       'API /admin/sessions/list: Excepción general en el endpoint:',
       err
     );

@@ -12,6 +12,8 @@ import { Question, Participant } from '@/types';
 import { MotionDiv } from '@/components/tv/shared/MotionComponents';
 import { useGameStore } from '@/store/gameStore';
 import { supabaseClient } from '@/lib/supabase';
+// [OPTIMIZADO] Importar loggers optimizados para producción
+import { tvLogger, tvProdLogger } from '@/utils/tvLogger';
 
 type TVScreen = 'waiting' | 'roulette' | 'question' | 'prize';
 
@@ -42,20 +44,20 @@ export default function TVPage() {
 
   // --- FUNCIÓN CENTRALIZADA PARA CAMBIO DE PANTALLA ---
   const goToScreen = useCallback((next: TVScreen) => {
-    console.log('🔄 TV-SCREEN: Cambiando de pantalla a:', next);
+    tvLogger.session(`TV-SCREEN: Cambiando de pantalla a: ${next}`);
     setScreen(next);
     // Actualizar gameState apropiadamente para cada pantalla
     if (next === 'roulette') {
-      console.log('🔄 TV-SCREEN: Estableciendo gameState a "roulette"');
+      tvLogger.session('TV-SCREEN: Estableciendo gameState a "roulette"');
       setGameState('roulette');
     } else if (next === 'waiting') {
-      console.log('🔄 TV-SCREEN: Estableciendo gameState a "waiting"');
+      tvLogger.session('TV-SCREEN: Estableciendo gameState a "waiting"');
       setGameState('waiting');
     } else if (next === 'prize') {
-      console.log('🔄 TV-SCREEN: Estableciendo gameState a "prize"');
+      tvLogger.session('TV-SCREEN: Estableciendo gameState a "prize"');
       setGameState('prize');
     } else if (next === 'question') {
-      console.log('🔄 TV-SCREEN: Estableciendo gameState a "question"');
+      tvLogger.session('TV-SCREEN: Estableciendo gameState a "question"');
       setGameState('question');
     }
   }, [setGameState]);
@@ -73,7 +75,7 @@ export default function TVPage() {
         // [FIX] También detectar participantes cuando currentParticipant es null (no solo en waiting)
         const currentParticipant = useGameStore.getState().currentParticipant;
         if (screen === 'waiting' || !currentParticipant) {
-          console.log('🔄 TV-POLLING: Verificando participantes... screen:', screen, 'currentParticipant:', currentParticipant?.nombre || 'null');
+          tvLogger.participant(`TV-POLLING: Verificando participantes... screen: ${screen}, currentParticipant: ${currentParticipant?.nombre || 'null'}`);
           const { data: allParticipants, error: allError } = await supabaseClient
             .from('participants')
             .select('*')
@@ -81,7 +83,7 @@ export default function TVPage() {
             .limit(5);
             
           if (allError) {
-            console.error('🔄 ADMIN-CONNECTION: Error al consultar participantes:', allError);
+            tvProdLogger.error('ADMIN-CONNECTION: Error al consultar participantes:', allError);
             return;
           }
           
@@ -99,8 +101,8 @@ export default function TVPage() {
               lastDetectedParticipant = typedParticipant.id;
               
               // Establecer el participante como currentParticipant en el store
-              console.log('🔄 TV-PARTICIPANT-DETECTED: Nuevo participante detectado:', typedParticipant.nombre);
-              console.log('🔄 TV-PARTICIPANT-DETECTED: Estableciendo como currentParticipant y yendo a ruleta');
+              tvLogger.participant(`TV-PARTICIPANT-DETECTED: Nuevo participante detectado: ${typedParticipant.nombre}`);
+              tvLogger.participant('TV-PARTICIPANT-DETECTED: Estableciendo como currentParticipant y yendo a ruleta');
               setCurrentParticipant(typedParticipant);
               
               goToScreen('roulette');
@@ -108,13 +110,13 @@ export default function TVPage() {
           } else {
             // [FIX] Si no hay participantes y no hay currentParticipant, reiniciar detección
             if (!currentParticipant && lastDetectedParticipant) {
-              console.log('🔄 TV-POLLING: No hay participantes, reiniciando detección');
+              tvLogger.participant('TV-POLLING: No hay participantes, reiniciando detección');
               lastDetectedParticipant = null;
             }
           }
         }
       } catch (error) {
-        console.error('🔄 ADMIN-CONNECTION: Error en polling:', error);
+        tvProdLogger.error('ADMIN-CONNECTION: Error en polling:', error);
       }
     };
 
@@ -162,10 +164,10 @@ export default function TVPage() {
           setLocalQuestions(data.questions);
           setStoreQuestions(data.questions);
         } else {
-          console.error('[TVPage] Formato de preguntas inválido:', data);
+          tvProdLogger.error('TVPage: Formato de preguntas inválido:', data);
         }
       } catch (error) {
-        console.error('[TVPage] Error cargando preguntas:', error);
+        tvProdLogger.error('TVPage: Error cargando preguntas:', error);
       }
     };
 
@@ -182,10 +184,10 @@ export default function TVPage() {
   // NUEVO: Detectar cuando no hay participante activo y gameState es screensaver para volver a waiting
   useEffect(() => {
     if (!currentParticipant && gameState === 'screensaver' && screen !== 'waiting') {
-      console.log('🔄 TV-TRANSITION: No hay participante activo y gameState es screensaver, volviendo a waiting');
-      console.log('   - currentParticipant:', currentParticipant);
-      console.log('   - gameState:', gameState);
-      console.log('   - screen actual:', screen);
+      tvLogger.session('TV-TRANSITION: No hay participante activo y gameState es screensaver, volviendo a waiting');
+      tvLogger.session('   - currentParticipant: null');
+      tvLogger.session(`   - gameState: ${gameState}`);
+      tvLogger.session(`   - screen actual: ${screen}`);
       goToScreen('waiting');
     }
   }, [currentParticipant, gameState, screen, goToScreen]);
@@ -193,15 +195,15 @@ export default function TVPage() {
   // Gestionar transiciones entre pantallas basadas en el lastSpinResultIndex
   useEffect(() => {
     if (lastSpinResultIndex !== null && questions.length > 0 && screen === 'roulette') {
-      console.log('[TVPage] Giro completado, mostrando pregunta. Índice:', lastSpinResultIndex);
+      tvLogger.game(`TVPage: Giro completado, mostrando pregunta. Índice: ${lastSpinResultIndex}`);
       
       if (lastSpinResultIndex >= 0 && lastSpinResultIndex < questions.length) {
         const selectedQuestion = questions[lastSpinResultIndex];
-        console.log('[TVPage] Pregunta seleccionada:', selectedQuestion);
+        tvLogger.game('TVPage: Pregunta seleccionada:', selectedQuestion);
         setCurrentQuestion(selectedQuestion);
         setScreen('question');
       } else {
-        console.warn('[TVPage] Índice de pregunta fuera de rango:', lastSpinResultIndex);
+        tvProdLogger.error(`TVPage: Índice de pregunta fuera de rango: ${lastSpinResultIndex}`);
       }
     }
   }, [lastSpinResultIndex, questions, screen, setCurrentQuestion]);
@@ -232,7 +234,7 @@ export default function TVPage() {
   // Manejar giro de la ruleta
   const handleSpin = () => {
     if (rouletteRef.current && !isSpinning) {
-      console.log('[TVPage] Iniciando giro de ruleta');
+      tvLogger.game('TVPage: Iniciando giro de ruleta');
       rouletteRef.current.spin();
     }
   };
@@ -248,7 +250,7 @@ export default function TVPage() {
         });
       }
     } catch (e) {
-      console.log('[TVPage] Error en fullscreen:', e);
+      tvProdLogger.error('TVPage: Error en fullscreen:', e);
     }
     
     if (screen === 'waiting') {

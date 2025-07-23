@@ -1,6 +1,6 @@
 // src/components/admin/AdminPanel.tsx
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { supabaseAdminClient } from "@/lib/supabase-admin"; // Cliente de Supabase específico para admin
 import { useGameStore } from "@/store/gameStore";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,8 @@ import SessionDetailView from "./SessionDetailView";
 import { fadeInUp } from "@/utils/animations";
 import { PlaySession } from "@/types";
 import SnackbarNotification from "../ui/SnackbarNotification";
+// [OPTIMIZADO] Importar logger de producción
+import { tvProdLogger } from '@/utils/tvLogger';
 
 
 interface AdminData {
@@ -30,7 +32,7 @@ interface AdminPanelProps {
   onLogout?: () => void;
 }
 
-const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
+const AdminPanel: React.FC<AdminPanelProps> = memo(({ adminData, onLogout }) => {
   type ActiveTabType = "dashboard" | "sessions" | "new-session";
   const [activeTab, setActiveTab] = useState<ActiveTabType>("dashboard");
   const isInitializedRef = useRef(false);
@@ -53,7 +55,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     clearAdminNotifications();
   };
 
-  // [modificación] Usar fetchGameSessions del store global
+  // [OPTIMIZADO] Usar fetchGameSessions del store global (memoizado)
   const fetchActiveSessions = useCallback(async () => {
     if (!adminData?.id) {
       return;
@@ -202,7 +204,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
       )
       .subscribe((status, err) => {
         if (err) {
-          console.error(
+          tvProdLogger.error(
             "AdminPanel: Error en la suscripción a Supabase:",
             err
           );
@@ -218,8 +220,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
     };
   }, [adminData?.id, adminState.currentSession, fetchActiveSessions, setAdminCurrentSession, setAdminNotification]); // Agregar dependencias faltantes
 
-  // [modificación] Usar createNewSession del store global
-  const handleCreateNewSession = async () => {
+  // [OPTIMIZADO] Usar createNewSession del store global (memoizado)
+  const handleCreateNewSession = useCallback(async () => {
     const sessionId = await createNewSession();
 
     if (sessionId) {
@@ -228,24 +230,24 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
         setActiveTab("sessions");
       }, 100);
     }
-  };
+  }, [createNewSession]);
 
 
-  // [modificación] Usar updateSessionStatus del store global
-  const handleUpdateSessionStatus = async (
+  // [OPTIMIZADO] Usar updateSessionStatus del store global (memoizado)
+  const handleUpdateSessionStatus = useCallback(async (
     sessionId: string,
     status: string
   ) => {
     await updateSessionStatus(sessionId, status);
-  };
+  }, [updateSessionStatus]);
 
-  // [modificación] Usar setAdminNotification del store global
-  const handlePlayerRegistered = () => {
+  // [OPTIMIZADO] Usar setAdminNotification del store global (memoizado)
+  const handlePlayerRegistered = useCallback(() => {
     setAdminNotification(
       "success",
       "Jugador registrado exitosamente. La lista de sesiones y detalles se actualizarán."
     );
-  };
+  }, [setAdminNotification]);
 
   const handleLogoutCallback =
     onLogout ||
@@ -357,11 +359,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
             {activeTab === "sessions" && (
               <SessionsTabContent
                 key="sessions"
-                activeSessions={adminState.activeSessions}
-                onCreateNewSession={handleCreateNewSession}
-                isLoadingCreation={adminState.isLoading.sessionAction}
-                isLoadingList={adminState.isLoading.sessionsList}
-                onRefreshSessions={fetchActiveSessions}
                 onSelectSession={(session) => {
                   setAdminCurrentSession(session);
                   setActiveTab("new-session");
@@ -399,6 +396,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ adminData, onLogout }) => {
       </motion.div>
     </div>
   );
-};
+});
 
+AdminPanel.displayName = 'AdminPanel';
 export default AdminPanel;

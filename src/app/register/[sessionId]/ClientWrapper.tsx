@@ -31,7 +31,6 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   const startNavigation = useNavigationStore(state => state.startNavigation);
 
   const handleRedirect = useCallback((path: string, message?: string) => {
-// //     console.log(`Iniciando navegación global a: ${path}`);
     setRedirectTarget(path);
     startNavigation(path, message);
   }, [startNavigation]);
@@ -51,7 +50,6 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
       const verifySession = async () => {
         try {
           verificationInProgress.current = true;
-// //           console.log("Verificando sesión para registro:", sessionId);
           const response = await fetch(`/api/session/verify?sessionId=${sessionId}`);
           const data = await response.json();
 
@@ -86,7 +84,6 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
   }, [sessionId, router, setGameSession, startNavigation, handleRedirect]);
 
   const handlePlayerRegistered = (playerName: string = 'Participante') => {
-// //     console.log('Tablet: Participante registrado exitosamente, mostrando mensaje de confirmación sin navegación');
     setRegisteredPlayerName(playerName);
     setPlayerRegisteredSuccess(true);
     

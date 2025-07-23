@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getAuthenticatedAdminId } from '@/lib/adminAuth';
+// [OPTIMIZADO] Importar logger de producción
+import { tvProdLogger } from '@/utils/tvLogger';
 
 /**
  * Endpoint para obtener la sesión activa del administrador
@@ -35,7 +37,7 @@ export async function GET() {
       .maybeSingle();
 
     if (error) {
-      console.error('Error al obtener sesión activa:', error);
+      tvProdLogger.error('Error al obtener sesión activa:', error);
       return NextResponse.json(
         { message: 'Error al obtener sesión activa' },
         { status: 500 }
@@ -43,11 +45,11 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      activeSession,
+      session: activeSession,
       hasActiveSession: !!activeSession
     });
   } catch (err: unknown) {
-    console.error('❌ Error al obtener sesión activa:', err);
+    tvProdLogger.error('❌ Error al obtener sesión activa:', err);
     return NextResponse.json(
       { message: 'Error interno del servidor' },
       { status: 500 }

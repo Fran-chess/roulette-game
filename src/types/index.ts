@@ -46,6 +46,11 @@ export interface PlaySession {
   game_data?: Record<string, unknown>;
 }
 
+// Interfaz extendida para incluir participantes cuando se obtienen desde el endpoint optimizado
+export interface PlaySessionWithParticipants extends PlaySession {
+  participants: Participant[];
+}
+
 export interface ParticipantWithPlay {
   participant: Participant;
   play?: Play;

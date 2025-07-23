@@ -199,13 +199,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     set(state => ({ adminState: { ...state.adminState, isLoading: { ...state.adminState.isLoading, sessionsList: true }, error: null } }));
     try {
-      const response = await fetch(`/api/admin/sessions/list?adminId=${adminId}`);
+      // Usar el nuevo endpoint optimizado que trae todas las sesiones con sus participantes
+      const response = await fetch('/api/admin/sessions/with-participants');
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || `Error ${response.status} al cargar sesiones`);
       }
-      const sessionsData: PlaySession[] = await response.json();
-      set(state => ({ adminState: { ...state.adminState, activeSessions: sessionsData || [], isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
+      const data = await response.json();
+      const sessionsData: PlaySession[] = data.sessions || [];
+      
+      // El endpoint ya incluye los participantes, así que solo guardamos las sesiones
+      // Los participantes están disponibles en cada session.participants si se necesitan
+      set(state => ({ adminState: { ...state.adminState, activeSessions: sessionsData, isLoading: { ...state.adminState.isLoading, sessionsList: false } } }));
       return sessionsData;
     } catch (error: Error | unknown) {
       tvProdLogger.error("Store: fetchGameSessions error:", error);
@@ -521,16 +526,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // --- HANDLERS DE COLA ---
   addToQueue: async (participant: Participant) => {
-    console.log('🔄 QUEUE: Agregando participante a cola:', participant.nombre);
-    console.log('🔄 QUEUE: Cola actual antes:', get().waitingQueue.length);
-    console.log('🔄 QUEUE: Participante activo antes:', get().currentParticipant?.nombre || 'No');
-    console.log('🔄 QUEUE: GameState antes:', get().gameState);
+    tvLogger.participant(`QUEUE: Agregando participante a cola: ${participant.nombre}`);
+    tvLogger.participant(`QUEUE: Cola actual antes: ${get().waitingQueue.length}`);
+    tvLogger.participant(`QUEUE: Participante activo antes: ${get().currentParticipant?.nombre || 'No'}`);
+    tvLogger.participant(`QUEUE: GameState antes: ${get().gameState}`);
     
     const currentParticipant = get().currentParticipant;
     
     if (!currentParticipant) {
       // Si no hay participante activo, activar directamente
-      console.log('🔄 QUEUE: No hay participante activo, activando directamente');
+      tvLogger.participant('QUEUE: No hay participante activo, activando directamente');
       set({ currentParticipant: participant, gameState: 'inGame' });
       
       // Actualizar estado del participante a playing
@@ -548,7 +553,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     } else {
       // Si hay participante activo, agregar a la cola
-      console.log('🔄 QUEUE: Hay participante activo, agregando a cola');
+      tvLogger.participant('QUEUE: Hay participante activo, agregando a cola');
       set((state) => {
         const newQueue = [...state.waitingQueue, participant];
         return { waitingQueue: newQueue };
@@ -573,8 +578,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }));
     }
     
-    console.log('✅ QUEUE: Participante procesado - Cola final:', get().waitingQueue.length);
-    console.log('✅ QUEUE: Participante activo final:', get().currentParticipant ? 'Sí' : 'No');
+    tvLogger.participant(`QUEUE: Participante procesado - Cola final: ${get().waitingQueue.length}`);
+    tvLogger.participant(`QUEUE: Participante activo final: ${get().currentParticipant ? 'Sí' : 'No'}`);
   },
 
   removeFromQueue: async (participantId: string) => {
@@ -593,16 +598,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
   moveToNext: async () => {
     const { waitingQueue, currentParticipant } = get();
     
-    console.log('🔄 MOVE-TO-NEXT: Iniciando transición de participante');
-    console.log('🔄 MOVE-TO-NEXT: Participante actual:', currentParticipant?.nombre || 'null');
-    console.log('🔄 MOVE-TO-NEXT: Cola actual:', waitingQueue.length, 'participantes');
-    if (waitingQueue.length > 0) {
-      console.log('🔄 MOVE-TO-NEXT: Participantes en cola:', waitingQueue.map(p => p.nombre));
-    }
+    // [PROD] Logs de transición removidos para producción
     
     // 1. Mover participante actual a completed si existe
     if (currentParticipant) {
-      console.log('🔄 MOVE-TO-NEXT: Marcando participante actual como completed:', currentParticipant.nombre);
+      // [PROD] Log de marcado removido
       
       try {
         await fetch('/api/admin/sessions/update-participant-status', {
@@ -613,7 +613,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             status: 'completed'
           }),
         });
-        console.log('✅ MOVE-TO-NEXT: Participante marcado como completed exitosamente');
+        // [PROD] Log de éxito removido
       } catch (error) {
         console.error('❌ MOVE-TO-NEXT: Error al actualizar estado de participante:', error);
         tvProdLogger.error('Error al actualizar estado de participante:', error);
@@ -623,7 +623,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 2. Tomar siguiente de la cola
     if (waitingQueue.length > 0) {
       const nextParticipant = waitingQueue[0];
-      console.log('🔄 MOVE-TO-NEXT: Activando siguiente participante:', nextParticipant.nombre);
+      // [PROD] Log de activación removido
       
       // Crear una copia del participante con status actualizado
       const updatedNextParticipant = {
@@ -638,7 +638,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gameState: 'inGame' as GameState
       }));
       
-      console.log('✅ MOVE-TO-NEXT: Estado actualizado - nuevo participante activo');
+      // [PROD] Log de estado removido
       
       // Actualizar estado del participante a playing en la base de datos
       try {
@@ -650,27 +650,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
             status: 'playing'
           }),
         });
-        console.log('✅ MOVE-TO-NEXT: Nuevo participante marcado como playing exitosamente');
+        // [PROD] Log de marcado removido
       } catch (error) {
         console.error('❌ MOVE-TO-NEXT: Error al activar participante:', error);
         tvProdLogger.error('Error al activar participante:', error);
       }
     } else {
       // Cola vacía, volver a waiting
-      console.log('🔄 MOVE-TO-NEXT: Cola vacía, estableciendo currentParticipant a null');
+      // [PROD] Log de cola vacía removido
       set({
         currentParticipant: null,
         gameState: 'screensaver' as GameState
       });
-      console.log('✅ MOVE-TO-NEXT: Estado actualizado - sin participante activo');
+      // [PROD] Log de estado removido
     }
     
-    // Verificar estado final
-    const finalState = get();
-    console.log('🔄 MOVE-TO-NEXT: Estado final:');
-    console.log('   - Participante activo:', finalState.currentParticipant?.nombre || 'null');
-    console.log('   - Cola restante:', finalState.waitingQueue.length, 'participantes');
-    console.log('   - GameState:', finalState.gameState);
+    // [PROD] Logs de estado final removidos
     
     // Sync a BD
     const currentSession = get().gameSession;
@@ -691,60 +686,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // --- SINCRONIZACIÓN BD ---
   loadQueueFromDB: async (sessionId: string) => {
-    console.log('📥 LOAD-QUEUE: Iniciando carga desde BD para sesión:', sessionId);
+    tvLogger.session(`LOAD-QUEUE: Iniciando carga desde BD para sesión: ${sessionId}`);
     try {
-      const response = await fetch(`/api/admin/sessions/queue?sessionId=${sessionId}`);
-      if (!response.ok) {
+      // Hacer ambas llamadas en paralelo para mejor rendimiento
+      const [queueResponse, participantsResponse] = await Promise.all([
+        fetch(`/api/admin/sessions/queue?sessionId=${sessionId}`),
+        fetch(`/api/admin/sessions/participants?sessionId=${sessionId}`)
+      ]);
+
+      if (!queueResponse.ok) {
         throw new Error('Error al cargar cola desde BD');
       }
-      
-      const data = await response.json();
-      const queueIds = data.waitingQueue || [];
-      console.log('📥 LOAD-QUEUE: IDs de cola desde BD:', queueIds);
-      
-      // También cargar el participante activo de la sesión
-      try {
-        const participantResponse = await fetch(`/api/admin/sessions/participants?sessionId=${sessionId}`);
-        const participantData = await participantResponse.json();
-        
-        if (participantResponse.ok && participantData.participants) {
-          const activeParticipant = participantData.participants.find((p: Participant) => p.status === 'playing');
-          if (activeParticipant) {
-            console.log('📥 LOAD-QUEUE: Participante activo encontrado:', activeParticipant.nombre);
-            set({ currentParticipant: activeParticipant });
-          } else {
-            console.log('📥 LOAD-QUEUE: No hay participante con status playing');
-          }
-        }
-      } catch (error) {
-        console.error('📥 LOAD-QUEUE: Error cargando participante activo:', error);
+
+      if (!participantsResponse.ok) {
+        throw new Error('Error al cargar participantes desde BD');
       }
       
-      // Reconstruir cola desde IDs
-      if (queueIds.length > 0) {
-        console.log('📥 LOAD-QUEUE: Reconstruyendo cola desde IDs...');
-        const participantsResponse = await fetch('/api/participants?detail=true');
-        const participantsData = await participantsResponse.json();
-        const allParticipants = participantsData.participants || [];
-        
-        // Reconstruir cola en orden y eliminar duplicados, filtrando participantes completados
-        const reconstructedQueue = queueIds
-          .map((id: string) => allParticipants.find((p: Participant) => p.id === id))
-          .filter((p: Participant | undefined) => p !== undefined && p.status !== 'completed' && p.status !== 'disqualified');
-        
-        console.log('📥 LOAD-QUEUE: Cola reconstruida (antes de duplicados):', reconstructedQueue.map((p: Participant) => `${p.nombre}(${p.status})`));
-        
-        // Eliminar duplicados basándose en el ID
-        const uniqueQueue = reconstructedQueue.filter((participant: Participant, index: number, self: Participant[]) => 
-          index === self.findIndex((p: Participant) => p.id === participant.id)
-        );
-        
-        console.log('📥 LOAD-QUEUE: Cola final (después de limpiar duplicados):', uniqueQueue.map((p: Participant) => `${p.nombre}(${p.status})`));
-        set({ waitingQueue: uniqueQueue });
+      const queueData = await queueResponse.json();
+      const participantsData = await participantsResponse.json();
+      
+      const queueIds = queueData.waitingQueue || [];
+      const queueParticipants = queueData.participants || [];
+      const allParticipants = participantsData.participants || [];
+      
+      tvLogger.session('LOAD-QUEUE: IDs de cola desde BD:', queueIds);
+      tvLogger.session('LOAD-QUEUE: Participantes en cola:', queueParticipants.map((p: Participant) => `${p.nombre}(${p.status})`));
+      tvLogger.session('LOAD-QUEUE: Todos los participantes:', allParticipants.map((p: Participant) => `${p.nombre}(${p.status})`));
+      
+      // Buscar el participante activo (con status 'playing')
+      const activeParticipant = allParticipants.find((p: Participant) => p.status === 'playing');
+      
+      if (activeParticipant) {
+        tvLogger.participant(`LOAD-QUEUE: Participante activo encontrado: ${activeParticipant.nombre}`);
+        set({ currentParticipant: activeParticipant });
       } else {
-        console.log('📥 LOAD-QUEUE: No hay IDs en cola, estableciendo cola vacía');
+        tvLogger.participant('LOAD-QUEUE: No hay participante con status playing - limpiando currentParticipant');
+        // IMPORTANTE: Limpiar currentParticipant si no hay nadie jugando actualmente
+        set({ currentParticipant: null });
+      }
+      
+      // Usar participantes ya filtrados desde la API
+      if (queueParticipants.length > 0) {
+        tvLogger.session('LOAD-QUEUE: Cola final obtenida desde API:', queueParticipants.map((p: Participant) => `${p.nombre}(${p.status})`));
+        set({ waitingQueue: queueParticipants });
+      } else {
+        tvLogger.session('LOAD-QUEUE: No hay cola guardada en BD');
         set({ waitingQueue: [] });
       }
+      
+      tvLogger.session(`LOAD-QUEUE: Estado actualizado - Participante activo: ${activeParticipant ? activeParticipant.nombre : 'ninguno'}, Cola: ${queueParticipants.length} participantes`);
     } catch (error) {
       console.error('📥 LOAD-QUEUE: Error al cargar cola desde BD:', error);
       tvProdLogger.error('Error al cargar cola desde BD:', error);
@@ -780,8 +770,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   cleanupCompletedFromQueue: async () => {
     const { waitingQueue, gameSession } = get();
     
-    console.log('🧹 QUEUE-CLEANUP: Iniciando limpieza automática');
-    console.log('🧹 QUEUE-CLEANUP: Cola actual:', waitingQueue.map((p: Participant) => `${p.nombre}(${p.status || 'sin-status'})`));
+    tvLogger.session('QUEUE-CLEANUP: Iniciando limpieza automática');
+    tvLogger.session('QUEUE-CLEANUP: Cola actual:', waitingQueue.map((p: Participant) => `${p.nombre}(${p.status || 'sin-status'})`));
     
     // Filtrar solo participantes activos (no completados ni descalificados)
     const activeQueue = waitingQueue.filter(p => 
@@ -790,9 +780,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     // Solo actualizar si hay cambios
     if (activeQueue.length !== waitingQueue.length) {
-      console.log('🧹 QUEUE-CLEANUP: Removiendo participantes completados de la cola');
-      console.log(`   - Cola antes: ${waitingQueue.length}, Cola después: ${activeQueue.length}`);
-      console.log('   - Participantes removidos:', waitingQueue.filter((p: Participant) => p.status === 'completed' || p.status === 'disqualified').map((p: Participant) => p.nombre));
+      tvLogger.session('QUEUE-CLEANUP: Removiendo participantes completados de la cola');
+      tvLogger.session(`   - Cola antes: ${waitingQueue.length}, Cola después: ${activeQueue.length}`);
+      // [PROD] Log de participantes removidos
       
       set({ waitingQueue: activeQueue });
       
@@ -801,7 +791,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         await get().saveQueueToDB(gameSession.session_id);
       }
     } else {
-      console.log('🧹 QUEUE-CLEANUP: No hay participantes completados para limpiar');
+      tvLogger.session('QUEUE-CLEANUP: No hay participantes completados para limpiar');
     }
   },
 }));

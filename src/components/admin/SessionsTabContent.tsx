@@ -1,5 +1,5 @@
 // src/components/admin/SessionsTabContent.tsx
-import React from 'react';
+import React, { memo } from 'react';
 import { motion} from 'framer-motion';
 import { FiCalendar, FiPlusCircle, FiClock, FiUser } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
@@ -7,39 +7,76 @@ import Button from '@/components/ui/Button';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 // [modificación] Importar animaciones desde el archivo centralizado
 import { fadeInUp, staggerContainer } from '@/utils/animations';
-// [modificación] Importar useRef y useState para controlar navegaciones
-import { useRef, useState, useEffect } from 'react';
+// [modificación] Importar useRef, useState y useMemo para controlar navegaciones
+import { useRef, useState, useMemo } from 'react';
 // [modificación] Importar el store global de navegación
 import { useNavigationStore } from '@/store/navigationStore';
 // [modificación] Importar PlaySession para usar la interfaz directamente
-import { PlaySession, Participant } from '@/types';
+import { PlaySession, PlaySessionWithParticipants, Participant } from '@/types';
 // [modificación] Importar SnackbarNotification para mostrar mensajes de estado
 import SnackbarNotification from '@/components/ui/SnackbarNotification';
-// [modificación] Importar el store del juego para acceder a la sesión activa
-import { useGameStore } from '@/store/gameStore';
+// [OPTIMIZADO] Importar logger optimizado para producción
+import { tvProdLogger } from '@/utils/tvLogger';
+// [React Query] Importar hooks optimizados
+import { useGameSessions, useActiveGameSession, useCloseGameSession, useCreateGameSession } from '@/hooks/api';
+// [React Query] Componentes de carga y error
+import { SessionListSkeleton } from '@/components/ui/LoadingSkeleton';
+import QueryErrorBoundary from '@/components/ui/QueryErrorBoundary';
 
 interface SessionsTabContentProps {
-  activeSessions: PlaySession[];
-  onCreateNewSession: () => void;
-  isLoadingCreation: boolean;
-  isLoadingList: boolean;
-  // [modificación] Agregar función para actualizar la lista de sesiones
-  onRefreshSessions?: () => void;
-  // [modificación] Agregar función para seleccionar sesión y ver detalles
+  // [modificación] Simplificar props usando React Query
   onSelectSession?: (session: PlaySession) => void;
 }
 
-const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
-  activeSessions,
-  onCreateNewSession,
-  isLoadingCreation,
-  isLoadingList,
-  onRefreshSessions,
+const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
   onSelectSession,
 }) => {
-  // [modificación] Obtener la sesión activa del store
-  const { adminState } = useGameStore();
-  const activeSession = adminState.currentSession;
+  // [React Query] Hooks para manejo de datos
+  const { data: sessionsData, isLoading: isLoadingList, refetch: refetchSessions } = useGameSessions();
+  const { data: activeSessionData } = useActiveGameSession();
+  const closeSessionMutation = useCloseGameSession();
+  const createSessionMutation = useCreateGameSession();
+  
+  // [OPTIMIZADO] Memoizar activeSessions para evitar re-renders
+  const activeSessions = useMemo(() => {
+    const sessions = sessionsData?.sessions || [];
+    return sessions;
+  }, [sessionsData?.sessions]);
+  // [OPTIMIZADO] Obtener la sesión activa usando React Query
+  const activeSession = activeSessionData?.session;
+  
+  // [React Query] Handler para crear nueva sesión
+  const handleCreateNewSession = async () => {
+    try {
+      // Por ahora, crear una sesión con nombre automático
+      // En el futuro se puede agregar un modal para capturar el nombre
+      const sessionName = `Sesión ${new Date().toLocaleDateString()} - ${new Date().toLocaleTimeString()}`;
+      await createSessionMutation.mutateAsync({
+        name: sessionName,
+        description: 'Sesión creada desde el panel de administración'
+      });
+      
+      setNotification({
+        type: 'success',
+        message: 'Sesión creada exitosamente'
+      });
+      
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      tvProdLogger.error('Error al crear sesión:', errorMessage);
+      setNotification({
+        type: 'error',
+        message: errorMessage
+      });
+      
+      setTimeout(() => {
+        setNotification(null);
+      }, 5000);
+    }
+  };
   
   // [modificación] Ref para evitar múltiples navegaciones
   const navigationInProgress = useRef(false);
@@ -55,8 +92,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   // Estados para el modal de finalización
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [sessionToFinish, setSessionToFinish] = useState<string | null>(null);
-  // [modificación] Estado para almacenar los participantes de cada sesión
-  const [sessionParticipants, setSessionParticipants] = useState<Map<string, Participant[]>>(new Map());
   // [modificación] Acceder al store global de navegación
   const startNavigation = useNavigationStore(state => state.startNavigation);
   
@@ -66,53 +101,12 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     message: string;
   } | null>(null);
 
-  // [modificación] Función para obtener TODOS los participantes de una sesión
-  const fetchSessionParticipants = async (session: PlaySession) => {
-    if (!session.session_id) {
-      return [];
-    }
-
-    try {
-      const response = await fetch(`/api/admin/sessions/participants?sessionId=${session.session_id}`);
-      const data = await response.json();
-      
-      if (response.ok && data.participants && data.participants.length > 0) {
-        return data.participants;
-      }
-    } catch (error) {
-      console.error(`Error al obtener participantes para sesión ${session.session_id}:`, error);
-    }
-    
-    return [];
-  };
-
-  // [modificación] Effect para cargar los participantes de todas las sesiones activas
-  useEffect(() => {
-    const loadParticipants = async () => {
-      const newParticipantsMap = new Map<string, Participant[]>();
-      
-      // Cargar participantes para cada sesión
-      for (const session of activeSessions) {
-        if (session.session_id) {
-          const participants = await fetchSessionParticipants(session);
-          newParticipantsMap.set(session.session_id, participants);
-        } else {
-          newParticipantsMap.set(session.session_id, []);
-        }
-      }
-      
-      setSessionParticipants(newParticipantsMap);
-    };
-
-    if (activeSessions.length > 0) {
-      loadParticipants();
-    }
+  // [OPTIMIZADO] Función helper memoizada para obtener los participantes de una sesión
+  const getSessionParticipants = React.useCallback((sessionId: string): Participant[] => {
+    // Buscar por session_id string primero, luego por UUID si no se encuentra
+    const session = activeSessions.find(s => s.session_id === sessionId || s.id === sessionId) as PlaySessionWithParticipants;
+    return session?.participants || [];
   }, [activeSessions]);
-
-  // [modificación] Función helper para obtener los participantes de una sesión
-  const getSessionParticipants = (sessionId: string): Participant[] => {
-    return sessionParticipants.get(sessionId) || [];
-  };
 
   // [modificación] Función para mostrar el modal de confirmación antes de cerrar la sesión
   const handleCloseSession = (session: PlaySession, e: React.MouseEvent) => {
@@ -125,82 +119,59 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
 
 
 
-  // [modificación] Función para contar participantes de una sesión
-  const getParticipantCount = (sessionId: string): number => {
-    // Contar basándose en los participantes cargados
-    const participants = sessionParticipants.get(sessionId) || [];
+  // [OPTIMIZADO] Función memoizada para contar participantes de una sesión
+  const getParticipantCount = React.useCallback((sessionId: string): number => {
+    const participants = getSessionParticipants(sessionId);
     return participants.length;
-  };
+  }, [getSessionParticipants]);
 
-  // [modificación] Función para formatear fechas
-  const formatDate = (dateString: string): string => {
+  // [OPTIMIZADO] Función memoizada para formatear fechas
+  const formatDate = React.useCallback((dateString: string): string => {
     const date = new Date(dateString);
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-  };
+  }, []);
 
-  // [modificación] Función para confirmar cancelación de sesión
+  // [React Query] Función optimizada para confirmar cancelación de sesión
   const confirmCancelSession = async () => {
     if (!sessionToCancel) return;
 
     setClosingSessionId(sessionToCancel);
     
-    // [modificación] Mostrar notificación de progreso
+    // [React Query] Mostrar notificación de progreso
     setNotification({
       type: 'success',
       message: 'Cancelando sesión...'
     });
 
     try {
-      const response = await fetch('/api/admin/sessions/close', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ sessionId: sessionToCancel }),
-      });
-
-      if (response.ok) {
-        // [modificación] Mostrar notificación de éxito inmediato
-        setNotification({
-          type: 'success',
-          message: 'Sesión cancelada exitosamente'
-        });
-        
-        // [modificación] Actualizar la lista inmediatamente
-        if (onRefreshSessions) {
-          await onRefreshSessions();
-        }
-        
-        // [modificación] Limpiar la notificación después de 3 segundos
-        setTimeout(() => {
-          setNotification(null);
-        }, 3000);
-      } else {
-        const errorData = await response.json();
-        const errorMessage = errorData.message || 'Error al cancelar la sesión';
-        
-        // [modificación] Mostrar notificación de error específico
-        setNotification({
-          type: 'error',
-          message: errorMessage
-        });
-        
-        console.error('Error al cancelar la sesión:', errorMessage);
-        
-        // [modificación] Limpiar la notificación de error después de 5 segundos
-        setTimeout(() => {
-          setNotification(null);
-        }, 5000);
-      }
-    } catch (error) {
-      console.error('Error de red al cancelar la sesión:', error);
+      // [React Query] Usar la mutación optimizada con invalidación automática
+      await closeSessionMutation.mutateAsync(sessionToCancel);
       
-      // [modificación] Mostrar notificación de error de conexión
+      // [React Query] Mostrar notificación de éxito
+      setNotification({
+        type: 'success',
+        message: 'Sesión cancelada exitosamente'
+      });
+      
+      // [React Query] La invalidación de queries se maneja automáticamente en el hook
+      // No necesitamos llamar manualmente a onRefreshSessions
+      
+      // [modificación] Limpiar la notificación después de 3 segundos
+      setTimeout(() => {
+        setNotification(null);
+      }, 3000);
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      tvProdLogger.error('Error al cancelar sesión:', errorMessage);
+      
+      // [React Query] Mostrar notificación de error específico
       setNotification({
         type: 'error',
-        message: 'Error de conexión. Inténtalo nuevamente.'
+        message: errorMessage
       });
       
+      // [modificación] Limpiar la notificación de error después de 5 segundos
       setTimeout(() => {
         setNotification(null);
       }, 5000);
@@ -246,10 +217,8 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
           message: 'Sesión finalizada exitosamente'
         });
         
-        // [modificación] Actualizar la lista inmediatamente
-        if (onRefreshSessions) {
-          await onRefreshSessions();
-        }
+        // [React Query] La refetch se maneja automáticamente via query invalidation
+        await refetchSessions();
         
         // [modificación] Limpiar la notificación después de 3 segundos
         setTimeout(() => {
@@ -265,7 +234,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
           message: errorMessage
         });
         
-        console.error('Error al finalizar la sesión:', errorMessage);
+        tvProdLogger.error('Error al finalizar la sesión:', errorMessage);
         
         // [modificación] Limpiar la notificación de error después de 5 segundos
         setTimeout(() => {
@@ -273,7 +242,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         }, 5000);
       }
     } catch (error) {
-      console.error('Error de red al finalizar la sesión:', error);
+      tvProdLogger.error('Error de red al finalizar la sesión:', error);
       
       // [modificación] Mostrar notificación de error de conexión
       setNotification({
@@ -297,7 +266,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     
     // [modificación] Guard para evitar navegaciones múltiples
     if (navigationInProgress.current) {
-// //       console.log("Navegación en progreso, evitando redirección duplicada");
+      // Debug: Navegación en progreso, evitando redirección duplicada (solo dev)
       return;
     }
     
@@ -310,7 +279,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
     const targetPath = `/register/${session.session_id}`;
     const loadingMessage = 'Activando sesión de registro...';
 
-// //     console.log(`Iniciando navegación con overlay global a: ${targetPath}`);
+    // Debug: Iniciando navegación con overlay global (solo dev)
 
     startNavigation(targetPath, loadingMessage);
     
@@ -430,53 +399,51 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
   // Ya no se utiliza modal para mostrar opciones
 
   return (
-    <motion.div 
-      role="tabpanel" 
-      id="panel-sessions" 
-      aria-labelledby="tab-sessions" 
-      tabIndex={0}
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      variants={staggerContainer}
-    >
-      <div className="p-4 md:p-6 admin-content-spacing">
-        <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6">
-          <h3 className="text-xl md:text-2xl font-marineBold text-white mb-3 sm:mb-0 admin-dashboard-title">
-            Gestión de Juegos
-          </h3>
-          {activeSession ? (
-            <div className="text-center">
-              <div className="bg-yellow-500/20 border border-yellow-400/50 rounded-lg px-4 py-2 mb-2">
-                <p className="text-yellow-200 text-sm font-marineBold">
-                  Ya tienes una partida activa
+    <QueryErrorBoundary>
+      <motion.div 
+        role="tabpanel" 
+        id="panel-sessions" 
+        aria-labelledby="tab-sessions" 
+        tabIndex={0}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={staggerContainer}
+      >
+        <div className="p-4 md:p-6 admin-content-spacing">
+          <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6">
+            <h3 className="text-xl md:text-2xl font-marineBold text-white mb-3 sm:mb-0 admin-dashboard-title">
+              Gestión de Juegos
+            </h3>
+            {activeSession ? (
+              <div className="text-center">
+                <div className="bg-yellow-500/20 border border-yellow-400/50 rounded-lg px-4 py-2 mb-2">
+                  <p className="text-yellow-200 text-sm font-marineBold">
+                    Ya tienes una partida activa
+                  </p>
+                </div>
+                <p className="text-yellow-300 text-xs">
+                  Debes cerrar la partida actual para crear una nueva
                 </p>
               </div>
-              <p className="text-yellow-300 text-xs">
-                Debes cerrar la partida actual para crear una nueva
-              </p>
-            </div>
-          ) : (
-            <Button
-              onClick={onCreateNewSession}
-              variant="custom"
-              className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
-              disabled={isLoadingCreation}
-            >
-              <FiPlusCircle className="mr-2" size={16} />
-              {isLoadingCreation ? 'Creando...' : 'Nuevo Juego'}
-            </Button>
-          )}
-        </motion.div>
-
-        {isLoadingList ? (
-          <motion.div variants={fadeInUp} className="flex items-center justify-center py-8">
-            <div className="flex items-center space-x-3 text-slate-300">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-400"></div>
-              <span className="font-marineBold">Cargando juegos...</span>
-            </div>
+            ) : (
+              <Button
+                onClick={handleCreateNewSession}
+                variant="custom"
+                className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
+                disabled={createSessionMutation.isPending}
+              >
+                <FiPlusCircle className="mr-2" size={16} />
+                {createSessionMutation.isPending ? 'Creando...' : 'Nuevo Juego'}
+              </Button>
+            )}
           </motion.div>
-        ) : activeSessions.length === 0 ? (
+
+          {isLoadingList ? (
+            <motion.div variants={fadeInUp}>
+              <SessionListSkeleton count={3} />
+            </motion.div>
+          ) : activeSessions.length === 0 ? (
           <motion.div variants={fadeInUp} className="text-center py-8">
             <FiCalendar className="mx-auto h-12 w-12 text-slate-400 mb-4" />
             <h4 className="text-lg font-marineBold text-slate-300 mb-2">No hay juegos creados</h4>
@@ -492,13 +459,13 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
               </div>
             ) : (
               <Button
-                onClick={onCreateNewSession}
+                onClick={handleCreateNewSession}
                 variant="custom"
                 className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 mx-auto admin-dashboard-button"
-                disabled={isLoadingCreation}
+                disabled={createSessionMutation.isPending}
               >
                 <FiPlusCircle className="mr-2" size={16} />
-                {isLoadingCreation ? 'Creando...' : 'Crear Primer Juego'}
+                {createSessionMutation.isPending ? 'Creando...' : 'Crear Primer Juego'}
               </Button>
             )}
           </motion.div>
@@ -601,9 +568,9 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
             ))}
           </motion.div>
         )}
-      </div>
-      
-      {/* [modificación] Modal de confirmación para cancelar sesión */}
+        </div>
+        
+        {/* [modificación] Modal de confirmación para cancelar sesión */}
       <ConfirmModal
         isOpen={showCancelModal}
         onClose={() => setShowCancelModal(false)}
@@ -627,16 +594,18 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = ({
         type="confirm"
       />
       
-      {/* [modificación] Notificación de estado mejorada */}
-      {notification && (
-        <SnackbarNotification
-          type={notification.type}
-          message={notification.message}
-          onClose={() => setNotification(null)}
-        />
-      )}
-    </motion.div>
+        {/* [modificación] Notificación de estado mejorada */}
+        {notification && (
+          <SnackbarNotification
+            type={notification.type}
+            message={notification.message}
+            onClose={() => setNotification(null)}
+          />
+        )}
+      </motion.div>
+    </QueryErrorBoundary>
   );
-};
+});
 
+SessionsTabContent.displayName = 'SessionsTabContent';
 export default SessionsTabContent;

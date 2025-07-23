@@ -8,6 +8,7 @@ import {
   useMemo,
   forwardRef,
   useImperativeHandle,
+  memo,
 } from "react";
 import { useGameStore } from "@/store/gameStore";
 import type { RouletteWheelProps, Question } from "@/types";
@@ -185,8 +186,8 @@ function createRouletteSegments(questions: Question[]): WheelSegment[] {
   return assignColorsToSegments(segmentsWithoutColors);
 }
 
-// --- Componente principal ---
-const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
+// --- Componente principal (con React.memo) ---
+const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
   ({ questions, onSpinStateChange }, ref) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -228,9 +229,15 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       const segments = createRouletteSegments(questions);
       return segments;
     }, [questions]);
+
+    // Memoizar valores derivados pesados
+    const memoizedValues = useMemo(() => ({
+      numSegments: wheelSegments.length,
+      anglePerSegment: wheelSegments.length > 0 ? (2 * Math.PI) / wheelSegments.length : 0
+    }), [wheelSegments.length]);
     
-    const numSegments = wheelSegments.length;
-    const anglePerSegment = numSegments > 0 ? (2 * Math.PI) / numSegments : 0;
+    const { numSegments, anglePerSegment } = memoizedValues;
+    
 
     // [OPTIMIZADO] Detectar dispositivo con soporte mejorado para tablets
     useEffect(() => {
@@ -269,23 +276,31 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
     useEffect(() => {
       if (!canUseDOM) return;
       
+      let audio: HTMLAudioElement | null = null;
+      const handleAudioError = () => {
+        const mediaError = audio?.error;
+        tvLogger.warn(
+          "AUDIO: No se pudo cargar el audio de giro:",
+          mediaError
+            ? `${mediaError.code} - ${mediaError.message}`
+            : "Unknown error"
+        );
+      };
+      
       try {
-        const audio = new Audio("/sounds/wheel-spin.mp3");
+        audio = new Audio("/sounds/wheel-spin.mp3");
         audio.preload = "auto";
-        audio.addEventListener("error", () => {
-          const mediaError = audio.error;
-          tvLogger.warn(
-            "AUDIO: No se pudo cargar el audio de giro:",
-            mediaError
-              ? `${mediaError.code} - ${mediaError.message}`
-              : "Unknown error"
-          );
-        });
+        audio.addEventListener("error", handleAudioError);
         audioRef.current = audio;
       } catch (error) {
         tvLogger.warn("AUDIO: Error al inicializar el objeto Audio:", error);
       }
-      return () => {};
+      
+      return () => {
+        if (audio) {
+          audio.removeEventListener("error", handleAudioError);
+        }
+      };
     }, [canUseDOM]);
 
     // Dibujo de ruleta con borde casino y LEDs animados
@@ -669,7 +684,7 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
 
 
       },
-      [wheelSegments, anglePerSegment, highlightedSegment, isMobile, isDOMReady, isSpinning, winnerGlowIntensity, isTabletPortrait, isTablet]
+      [wheelSegments, anglePerSegment, highlightedSegment, isDOMReady, isSpinning, winnerGlowIntensity, isTabletPortrait, isMobile, isTablet]
     );
 
     // Ajuste de tamaño del canvas optimizado para diferentes dispositivos
@@ -912,6 +927,6 @@ const RouletteWheel = forwardRef<{ spin: () => void }, RouletteWheelProps>(
       </motion.div>
     );
   }
-);
+));
 RouletteWheel.displayName = "RouletteWheel";
 export default RouletteWheel;

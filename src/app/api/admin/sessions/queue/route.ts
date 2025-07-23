@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import { tvProdLogger } from '@/utils/tvLogger';
 
-// GET: Obtener cola de participantes
+// GET: Obtener cola de participantes con datos completos
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -37,10 +37,44 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const waitingQueue = session?.waiting_queue || [];
+    const queueIds: string[] = Array.isArray(session?.waiting_queue) ? session.waiting_queue : [];
+
+    // Si no hay cola, devolver vacío
+    if (queueIds.length === 0) {
+      return NextResponse.json({
+        waitingQueue: [],
+        participants: []
+      });
+    }
+
+    // Obtener solo los participantes que están en la cola actual
+    const { data: participants, error: participantsError } = await supabaseAdmin
+      .from('participants')
+      .select('*')
+      .in('id', queueIds)
+      .not('status', 'in', '(completed,disqualified)');
+
+    if (participantsError) {
+      tvProdLogger.error('Error al obtener participantes de cola:', participantsError);
+      return NextResponse.json(
+        { error: 'Error al obtener participantes' },
+        { status: 500 }
+      );
+    }
+
+    // Reconstruir cola en el orden correcto según los IDs
+    const orderedParticipants = queueIds
+      .map(id => participants?.find(p => p.id === id))
+      .filter(p => p !== undefined);
+
+    // Eliminar duplicados basándose en el ID
+    const uniqueParticipants = orderedParticipants.filter((participant, index, self) => 
+      index === self.findIndex(p => p.id === participant.id)
+    );
 
     return NextResponse.json({
-      waitingQueue: waitingQueue
+      waitingQueue: queueIds,
+      participants: uniqueParticipants
     });
 
   } catch (error) {

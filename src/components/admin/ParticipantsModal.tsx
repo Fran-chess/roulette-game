@@ -4,7 +4,7 @@ import Button from '@/components/ui/Button';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 import type { Participant } from '@/types';
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 
 interface ParticipantsModalProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ interface ParticipantsByDate {
 const INITIAL_PARTICIPANTS_PER_DATE = 6; // Mostrar inicialmente 6 por fecha
 const LOAD_MORE_INCREMENT = 12; // Cargar 12 más cada vez
 
-const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
+const ParticipantsModal: React.FC<ParticipantsModalProps> = memo(({
   isOpen,
   onClose,
   participants,
@@ -44,9 +44,9 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
     return () => setMounted(false);
   }, []);
 
-  // Log de debugging para ver los datos que llegan
+  // [OPTIMIZADO] Log de debugging solo en desarrollo
   useEffect(() => {
-    if (isOpen) {
+    if (process.env.NODE_ENV === 'development' && isOpen) {
       console.log('🎭 ParticipantsModal: Abierto con datos:', {
         isLoading,
         totalCount,
@@ -56,18 +56,8 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
     }
   }, [isOpen, isLoading, totalCount, participants]);
 
-  // Reset estados cuando se abre/cierra el modal
-  useEffect(() => {
-    if (isOpen) {
-      setCollapsedDates(new Set());
-      setParticipantsLimits(new Map());
-    }
-  }, [isOpen]);
-
-  if (!isOpen || !mounted) return null;
-
-  // Función para formatear la fecha solo con día, mes, año
-  const formatDateKey = (dateString: string) => {
+  // [OPTIMIZADO] Todas las funciones memoizadas ANTES del early return
+  const formatDateKey = useCallback((dateString: string) => {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('es-ES', {
@@ -78,10 +68,9 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
     } catch {
       return 'Fecha no disponible';
     }
-  };
+  }, []);
 
-  // Función para formatear la fecha completa con hora
-  const formatDateTime = (dateString: string) => {
+  const formatDateTime = useCallback((dateString: string) => {
     try {
       const date = new Date(dateString);
       return date.toLocaleDateString('es-ES', {
@@ -94,11 +83,10 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
     } catch {
       return 'Fecha no disponible';
     }
-  };
+  }, []);
 
-  // Agrupar participantes filtrados por fecha de registro
-  const groupParticipantsByDate = (participants: Participant[]): ParticipantsByDate => {
-    return participants.reduce((groups, participant) => {
+  const participantsByDate = useMemo((): ParticipantsByDate => {
+    return filteredParticipants.reduce((groups, participant) => {
       const dateKey = participant.created_at ? formatDateKey(participant.created_at) : 'Sin fecha';
       if (!groups[dateKey]) {
         groups[dateKey] = [];
@@ -106,20 +94,20 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
       groups[dateKey].push(participant);
       return groups;
     }, {} as ParticipantsByDate);
-  };
+  }, [filteredParticipants, formatDateKey]);
 
-  const participantsByDate = groupParticipantsByDate(filteredParticipants);
-  const sortedDates = Object.keys(participantsByDate).sort((a, b) => {
-    // Ordenar fechas de más reciente a más antigua
-    if (a === 'Sin fecha') return 1;
-    if (b === 'Sin fecha') return -1;
-    const dateA = new Date(a.split('/').reverse().join('-')); // Convertir dd/mm/yyyy a yyyy-mm-dd
-    const dateB = new Date(b.split('/').reverse().join('-'));
-    return dateB.getTime() - dateA.getTime();
-  });
+  const sortedDates = useMemo(() => {
+    return Object.keys(participantsByDate).sort((a, b) => {
+      // Ordenar fechas de más reciente a más antigua
+      if (a === 'Sin fecha') return 1;
+      if (b === 'Sin fecha') return -1;
+      const dateA = new Date(a.split('/').reverse().join('-')); // Convertir dd/mm/yyyy a yyyy-mm-dd
+      const dateB = new Date(b.split('/').reverse().join('-'));
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [participantsByDate]);
 
-  // Funciones para manejar colapso/expansión
-  const toggleDateCollapse = (date: string) => {
+  const toggleDateCollapse = useCallback((date: string) => {
     setCollapsedDates(prev => {
       const newSet = new Set(prev);
       if (newSet.has(date)) {
@@ -129,22 +117,30 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
       }
       return newSet;
     });
-  };
+  }, []);
 
-  // Función para cargar más participantes de una fecha
-  const loadMoreParticipants = (date: string) => {
+  const loadMoreParticipants = useCallback((date: string) => {
     setParticipantsLimits(prev => {
       const newMap = new Map(prev);
       const currentLimit = newMap.get(date) || INITIAL_PARTICIPANTS_PER_DATE;
       newMap.set(date, currentLimit + LOAD_MORE_INCREMENT);
       return newMap;
     });
-  };
+  }, []);
 
-  // Función para obtener el límite actual de una fecha
-  const getParticipantLimit = (date: string) => {
+  const getParticipantLimit = useCallback((date: string) => {
     return participantsLimits.get(date) || INITIAL_PARTICIPANTS_PER_DATE;
-  };
+  }, [participantsLimits]);
+
+  // Reset estados cuando se abre/cierra el modal
+  useEffect(() => {
+    if (isOpen) {
+      setCollapsedDates(new Set());
+      setParticipantsLimits(new Map());
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !mounted) return null;
 
   const modalContent = (
     <motion.div 
@@ -391,6 +387,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = ({
 
   // Usar portal para renderizar el modal fuera del contenedor padre
   return createPortal(modalContent, document.body);
-};
+});
 
+ParticipantsModal.displayName = 'ParticipantsModal';
 export default ParticipantsModal; 

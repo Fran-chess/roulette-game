@@ -13,90 +13,22 @@ export async function hasParticipantWonPrize(participantId: string): Promise<boo
       return false;
     }
 
-    const { data: previousWins, error } = await supabaseAdmin
-      .from('plays')
-      .select('id, premio_ganado, created_at')
-      .eq('participant_id', participantId)
-      .not('premio_ganado', 'is', null)
-      .neq('premio_ganado', '')
-      .limit(1);
+    // Optimización SQL: usar función RPC con EXISTS para mejor performance
+    const { data: hasWon, error } = await supabaseAdmin
+      .rpc('has_participant_won_prize', { participant_id_param: participantId });
 
     if (error) {
       tvProdLogger.error('hasParticipantWonPrize: Error consultando premios:', error);
       return false;
     }
 
-    return previousWins && previousWins.length > 0;
+    return Boolean(hasWon);
   } catch (error) {
     tvProdLogger.error('hasParticipantWonPrize: Error:', error);
     return false;
   }
 }
 
-/**
- * Obtiene el primer premio ganado por un participante
- * @param participantId - ID del participante
- * @returns Promise<{ prize: string; date: string } | null>
- */
-export async function getParticipantFirstPrize(participantId: string): Promise<{ prize: string; date: string } | null> {
-  try {
-    if (!supabaseAdmin) {
-      tvProdLogger.error('getParticipantFirstPrize: supabaseAdmin no disponible');
-      return null;
-    }
-
-    const { data: firstWin, error } = await supabaseAdmin
-      .from('plays')
-      .select('premio_ganado, created_at')
-      .eq('participant_id', participantId)
-      .not('premio_ganado', 'is', null)
-      .neq('premio_ganado', '')
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .single();
-
-    if (error || !firstWin) {
-      return null;
-    }
-
-    return {
-      prize: firstWin.premio_ganado as string,
-      date: firstWin.created_at as string
-    };
-  } catch (error) {
-    tvProdLogger.error('getParticipantFirstPrize: Error:', error);
-    return null;
-  }
-}
-
-/**
- * Cuenta el total de jugadas de un participante
- * @param participantId - ID del participante
- * @returns Promise<number>
- */
-export async function getParticipantPlaysCount(participantId: string): Promise<number> {
-  try {
-    if (!supabaseAdmin) {
-      tvProdLogger.error('getParticipantPlaysCount: supabaseAdmin no disponible');
-      return 0;
-    }
-
-    const { count, error } = await supabaseAdmin
-      .from('plays')
-      .select('id', { count: 'exact' })
-      .eq('participant_id', participantId);
-
-    if (error) {
-      tvProdLogger.error('getParticipantPlaysCount: Error:', error);
-      return 0;
-    }
-
-    return count || 0;
-  } catch (error) {
-    tvProdLogger.error('getParticipantPlaysCount: Error:', error);
-    return 0;
-  }
-}
 
 /**
  * Obtiene estadísticas completas de un participante
@@ -125,15 +57,12 @@ export async function getParticipantStats(participantId: string): Promise<Partic
       };
     }
 
-    // Obtener todas las jugadas del participante
-    const { data: plays, error: playsError } = await supabaseAdmin
-      .from('plays')
-      .select('answeredcorrectly, premio_ganado, created_at')
-      .eq('participant_id', participantId)
-      .order('created_at', { ascending: true });
+    // Optimización SQL: usar función RPC que calcula todo en la base de datos
+    const { data: stats, error: statsError } = await supabaseAdmin
+      .rpc('get_participant_stats', { participant_id_param: participantId });
 
-    if (playsError) {
-      tvProdLogger.error('getParticipantStats: Error obteniendo jugadas:', playsError);
+    if (statsError) {
+      tvProdLogger.error('getParticipantStats: Error obteniendo estadísticas:', statsError);
       return {
         totalPlays: 0,
         correctAnswers: 0,
@@ -143,30 +72,31 @@ export async function getParticipantStats(participantId: string): Promise<Partic
       };
     }
 
-    const totalPlays = plays?.length || 0;
-    const correctAnswers = plays?.filter(play => play.answeredcorrectly === true).length || 0;
-    const incorrectAnswers = totalPlays - correctAnswers;
-    const successRate = totalPlays > 0 ? (correctAnswers / totalPlays) * 100 : 0;
+    // Los datos ya vienen calculados desde SQL
+    const statsArray = Array.isArray(stats) ? stats : [];
+    const result = statsArray[0];
+    if (!result) {
+      return {
+        totalPlays: 0,
+        correctAnswers: 0,
+        incorrectAnswers: 0,
+        hasPrize: false,
+        successRate: 0
+      };
+    }
 
-    // Buscar el primer premio
-    const firstPrizePlay = plays?.find(play => 
-      play.premio_ganado && 
-      typeof play.premio_ganado === 'string' && 
-      play.premio_ganado.trim() !== ''
-    );
-    const hasPrize = !!firstPrizePlay;
-    const firstPrize = firstPrizePlay ? {
-      prize: firstPrizePlay.premio_ganado as string,
-      date: firstPrizePlay.created_at as string
+    const firstPrize = result.has_prize && result.first_prize_name ? {
+      prize: result.first_prize_name,
+      date: result.first_prize_date
     } : undefined;
 
     return {
-      totalPlays,
-      correctAnswers,
-      incorrectAnswers,
-      hasPrize,
+      totalPlays: Number(result.total_plays) || 0,
+      correctAnswers: Number(result.correct_answers) || 0,
+      incorrectAnswers: Number(result.incorrect_answers) || 0,
+      hasPrize: result.has_prize || false,
       firstPrize,
-      successRate: Math.round(successRate * 100) / 100 // Redondear a 2 decimales
+      successRate: Number(result.success_rate) || 0
     };
   } catch (error) {
     tvProdLogger.error('getParticipantStats: Error:', error);
