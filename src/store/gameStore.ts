@@ -19,6 +19,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   currentParticipant: null,
   currentQuestion: null,
   lastSpinResultIndex: null,
+  // [NUEVO] Historial de segmentos para evitar repetición
+  recentSpinSegments: [], // Array de últimos segmentos donde cayó la ruleta
   currentPlay: null,
   questions: [], // [modificación] Lista de preguntas para la ruleta
   gameSession: null, // [modificación] Guarda la PlaySession activa para el juego actual
@@ -63,6 +65,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // [modificación] No establecer gameState automáticamente - dejar que los componentes manejen el estado
         currentQuestion: null,
         lastSpinResultIndex: null,
+        recentSpinSegments: [],
       });
       return;
     }
@@ -104,6 +107,19 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   setLastSpinResultIndex: (index) => set({ lastSpinResultIndex: index }),
 
+  // [NUEVO] Función para actualizar historial de segmentos
+  addRecentSpinSegment: (segmentIndex: number) => set((state) => {
+    const maxHistoryLength = 3; // Recordar últimos 3 giros
+    const newHistory = [...state.recentSpinSegments, segmentIndex];
+    
+    // Mantener solo los últimos N giros
+    if (newHistory.length > maxHistoryLength) {
+      newHistory.shift(); // Remover el más antiguo
+    }
+    
+    return { recentSpinSegments: newHistory };
+  }),
+
   updateCurrentParticipantScore: ({ questionId, answeredCorrectly, prizeWon }) => {
     set((state) => {
       if (!state.currentParticipant) return state;
@@ -132,6 +148,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resetCurrentGameData: () => set({
     currentQuestion: null,
     lastSpinResultIndex: null,
+    recentSpinSegments: [],
     gameState: 'inGame' as GameState,
   }),
 
@@ -155,6 +172,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     currentParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
+    recentSpinSegments: [],
     gameSession: null,
     showConfetti: false,
     prizeFeedback: {
@@ -173,6 +191,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     currentParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
+    recentSpinSegments: [],
     currentPlay: null,
     gameSession: null,
     questions: [],

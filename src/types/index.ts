@@ -115,6 +115,8 @@ export interface GameStore {
   currentParticipant: Participant | null;
   currentQuestion: Question | null;
   lastSpinResultIndex: number | null;
+  // [NUEVO] Historial de segmentos para evitar repetición
+  recentSpinSegments: number[];
   currentPlay: Play | null;
   questions: Question[];
   gameSession: PlaySession | null;
@@ -134,6 +136,8 @@ export interface GameStore {
   setCurrentParticipant: (participant: Participant | null) => void;
   setCurrentQuestion: (question: Question | null) => void;
   setLastSpinResultIndex: (index: number | null) => void;
+  // [NUEVO] Función para actualizar historial de segmentos
+  addRecentSpinSegment: (segmentIndex: number) => void;
   updateCurrentParticipantScore: (data: { questionId: string; answeredCorrectly: boolean; prizeWon?: string }) => void;
   resetCurrentGame: () => void;
   resetAllData: () => void;

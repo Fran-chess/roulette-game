@@ -196,6 +196,13 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
     const setLastSpinResultIndex = useGameStore(
       (state) => state.setLastSpinResultIndex
     );
+    // [NUEVO] Hooks para sistema de memoria de giros
+    const addRecentSpinSegment = useGameStore(
+      (state) => state.addRecentSpinSegment
+    );
+    const recentSpinSegments = useGameStore(
+      (state) => state.recentSpinSegments
+    );
 
     // Estados responsive
     const [isLandscape, setIsLandscape] = useState(false);
@@ -812,8 +819,36 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
       }
       
       const randomSpins = Math.floor(Math.random() * 5) + 8;
-      const randomStopSegment = Math.floor(Math.random() * numSegments);
+      
+      // [NUEVO] Sistema de memoria: evitar últimos segmentos
+      const getRandomSegmentWithMemory = (totalSegments: number, recentSegments: number[]): number => {
+        const maxAttempts = 50; // Evitar bucle infinito
+        let attempts = 0;
+        
+        // Si hay muy pocos segmentos o demasiados segmentos recientes, permitir cualquiera
+        if (totalSegments <= 3 || recentSegments.length >= totalSegments - 1) {
+          return Math.floor(Math.random() * totalSegments);
+        }
+        
+        let randomSegment;
+        do {
+          randomSegment = Math.floor(Math.random() * totalSegments);
+          attempts++;
+          
+          // Si no encontramos un segmento nuevo después de muchos intentos, permitir cualquiera
+          if (attempts >= maxAttempts) {
+            break;
+          }
+        } while (recentSegments.includes(randomSegment));
+        
+        return randomSegment;
+      };
+      
+      const randomStopSegment = getRandomSegmentWithMemory(numSegments, recentSpinSegments);
       const stopAngleOnWheel = randomStopSegment * anglePerSegment;
+      
+      // [DEBUG] Log del sistema de memoria
+      tvLogger.debug(`Ruleta - Segmentos recientes: [${recentSpinSegments.join(', ')}], Seleccionado: ${randomStopSegment}`);
       
       // Duración optimizada para mayor fluidez y realismo - ligera variabilidad para naturalidad
       // Aumentada ligeramente para permitir una desaceleración más suave y realista
@@ -861,6 +896,9 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
               tvLogger.game("[RouletteWheel] Índice de pregunta en array original:", questionIndex);
               
               setLastSpinResultIndex(questionIndex);
+              
+              // [NUEVO] Agregar segmento al historial de memoria
+              addRecentSpinSegment(randomStopSegment);
             }
           }, 600); // Reducido de 800ms a 600ms para mayor fluidez en la transición
           setIsSpinning(false);
@@ -875,7 +913,7 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
       };
       animationConfigRef.current.animationFrameId =
         requestAnimationFrame(spinAnimation);
-    }, [isSpinning, numSegments, isDOMReady, canUseDOM, anglePerSegment, setLastSpinResultIndex, drawRoulette, wheelSegments, questions]);
+    }, [isSpinning, numSegments, isDOMReady, canUseDOM, anglePerSegment, setLastSpinResultIndex, addRecentSpinSegment, recentSpinSegments, drawRoulette, wheelSegments, questions]);
 
     // Exponer método spin al padre
     useImperativeHandle(ref, () => ({

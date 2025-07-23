@@ -342,14 +342,23 @@ export default function RegistrationForm({
               <option value="" className="bg-slate-800 text-gray-300 py-2 px-3 text-base">
                 Selecciona tu especialidad
               </option>
-              <option value="Médico/a" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
-                Médico/a
+              <option value="Médico" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
+                Médico
               </option>
-              <option value="Enfermero/a" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
-                Enfermero/a
+              <option value="Médico especialista" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
+                Médico especialista
               </option>
-              <option value="Otros" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
-                Otros
+              <option value="Enfermero" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
+                Enfermero
+              </option>
+              <option value="Psicólogo" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
+                Psicólogo
+              </option>
+              <option value="Terapista ocupacional" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
+                Terapista ocupacional
+              </option>
+              <option value="Fonoaudiólogo" className="bg-slate-800 text-gray-100 py-2 px-3 text-base">
+                Fonoaudiólogo
               </option>
             </select>
           </div>

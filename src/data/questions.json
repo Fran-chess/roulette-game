@@ -427,7 +427,7 @@
   },
   {
     "id": "dar3",
-    "category": "Dar Salud II",
+    "category": "Dar Salud",
     "text": "¿Qué caracteriza al equipo de Dar Salud?",
     "options": [
       { "text": "Está conformado solo por enfermeros y técnicos", "correct": false },
@@ -439,7 +439,7 @@
   },
   {
     "id": "dar4",
-    "category": "Dar Salud II",
+    "category": "Dar Salud",
     "text": "Además de la atención profesional, ¿qué otro aspecto incluye el servicio de Dar Salud según su propuesta institucional?",
     "options": [
       { "text": "Traslados en ambulancia aérea", "correct": false },
@@ -448,5 +448,65 @@
       { "text": "Internación domiciliaria sin supervisión médica", "correct": false }
     ],
     "explanation": "Dar Salud provee equipamiento y elementos necesarios para garantizar una atención completa en domicilio."
+  },
+  {
+    "id": "dar5",
+    "category": "Dar Salud",
+    "text": "¿En qué año se fundó Dar Salud?",
+    "options": [
+      { "text": "2000", "correct": false },
+      { "text": "2004", "correct": true },
+      { "text": "2010", "correct": false },
+      { "text": "2015", "correct": false }
+    ],
+    "explanation": "Dar Salud fue fundada en el año 2004."
+  },
+  {
+    "id": "dar6",
+    "category": "Dar Salud II",
+    "text": "¿Qué profesionales trabajan en Dar Salud?",
+    "options": [
+      { "text": "Enfermeros, médicos, kinesiólogos y cuidadores", "correct": true },
+      { "text": "Abogados y contadores", "correct": false },
+      { "text": "Bomberos y policías", "correct": false },
+      { "text": "Cocineros y choferes", "correct": false }
+    ],
+    "explanation": "En Dar Salud trabajan enfermeros, médicos, kinesiólogos y cuidadores especializados en atención domiciliaria."
+  },
+  {
+    "id": "dar7",
+    "category": "Dar Salud II",
+    "text": "¿Cuál de estos valores representa Dar Salud?",
+    "options": [
+      { "text": "Competitividad", "correct": false },
+      { "text": "Rentabilidad ante todo", "correct": false },
+      { "text": "Frialdad y eficiencia", "correct": false },
+      { "text": "Cuidado con calidez y dignidad", "correct": true }
+    ],
+    "explanation": "Dar Salud se caracteriza por brindar cuidado con calidez y dignidad hacia sus pacientes."
+  },
+  {
+    "id": "dar8",
+    "category": "Dar Salud II",
+    "text": "¿Con qué tipo de instituciones trabaja Dar Salud?",
+    "options": [
+      { "text": "Solo privadas", "correct": false },
+      { "text": "Solo públicas", "correct": false },
+      { "text": "Con ambas, públicas y privadas", "correct": true },
+      { "text": "Ninguna", "correct": false }
+    ],
+    "explanation": "Dar Salud trabaja tanto con instituciones públicas como privadas para brindar sus servicios."
+  },
+  {
+    "id": "dar9",
+    "category": "Dar Salud II",
+    "text": "¿Cuál es la visión a futuro de Dar Salud?",
+    "options": [
+      { "text": "Disminuir su tamaño", "correct": false },
+      { "text": "Dejar de trabajar en salud", "correct": false },
+      { "text": "Crecer profesional y humanamente en toda la región", "correct": true },
+      { "text": "Mudarse al exterior", "correct": false }
+    ],
+    "explanation": "La visión de Dar Salud es crecer profesional y humanamente en toda la región."
   }
 ]
