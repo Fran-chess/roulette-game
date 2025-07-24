@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import "./tablet-responsive.css";
+// Temporarily disabled to fix roulette size issue
+// import "./tablet-responsive.css";
+// import "./tablet-fix.css";
 import ShellRootClient from "@/components/layout/ShellRootClient";
 import ReactQueryProvider from "@/lib/providers/ReactQueryProvider";
 
@@ -45,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className="overflow-hidden">
+    <html lang="es" className="h-full overflow-hidden">
       <head>
         <meta charSet="utf-8" />
         {/* [modificación] Metadatos PWA adicionales */}
@@ -57,7 +59,7 @@ export default function RootLayout({
         {/* [modificación] Link al manifest para PWA */}
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="bg-main-gradient min-h-screen flex flex-col font-sans text-white">
+      <body className="bg-main-gradient h-screen font-sans text-white">
         <ReactQueryProvider>
           <ShellRootClient>{children}</ShellRootClient>
         </ReactQueryProvider>

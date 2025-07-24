@@ -288,24 +288,19 @@ export default function TVPage() {
           />
         </header>
 
-        {/* Contenedor principal centrado con espaciado reducido */}
-        <main className="flex-1 flex flex-col items-center justify-start w-full px-4 py-1 gap-6">
+        {/* Contenedor principal con máximo espacio para la ruleta */}
+        <main className="flex-1 flex flex-col items-center justify-between w-full px-2 py-2">
           
-          {/* Contenedor de la ruleta con animación */}
+          {/* Contenedor de la ruleta MUY grande */}
           <MotionDiv
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="w-full flex justify-center items-center"
+            className="flex-1 w-full flex justify-center items-center min-h-[500px]"
           >
             <div 
-              className="aspect-square max-w-full"
-              style={{
-                width: isTabletPortrait 
-                  ? 'min(480px, 75vw)' 
-                  : 'min(65vmin, 85vw)',
-                maxWidth: isTabletPortrait ? '480px' : '65vmin'
-              }}
+              className="w-full h-full flex items-center justify-center"
+              style={{ minWidth: '500px', minHeight: '500px' }}
             >
               {questions.length > 0 ? (
                 <RouletteWheel 
@@ -323,12 +318,12 @@ export default function TVPage() {
             </div>
           </MotionDiv>
 
-          {/* Botón "¡Girar la Ruleta!" con animación */}
+          {/* Botón "¡Girar la Ruleta!" con animación y separación del borde */}
           <MotionDiv
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="w-full flex justify-center"
+            className="w-full flex justify-center pb-6"
           >
             <button
               className={`
@@ -365,17 +360,6 @@ export default function TVPage() {
           </MotionDiv>
 
         </main>
-
-        {/* Footer minimalista centrado */}
-        <footer className="w-full flex-shrink-0 py-3 text-center">
-          <div className={`
-            text-white/50 font-light tracking-wide
-            ${isTabletPortrait ? 'text-sm' : 'text-xs'}
-          `}>
-            Modo de prueba local
-          </div>
-        </footer>
-
       </div>
     );
   }

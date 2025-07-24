@@ -8,9 +8,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/solid";
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
-import { tvLogger } from "@/utils/tvLogger";
 
 
 interface PrizeModalProps {
@@ -26,10 +25,6 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   const [isTabletPortrait, setIsTabletPortrait] = useState(false); // [NUEVO] Universal para tablets verticales
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
-  // [modificación] ID único para tracking de logs
-  const componentId = useRef(
-    `PrizeModal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-  );
 
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
@@ -40,7 +35,6 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     (state) => state.setLastSpinResultIndex
   );
   const setShowConfetti = useGameStore((state) => state.setShowConfetti);
-  const gameSession = useGameStore((state) => state.gameSession);
   const gameState = useGameStore((state) => state.gameState);
   const showConfetti = useGameStore((state) => state.showConfetti);
   const moveToNext = useGameStore((state) => state.moveToNext);
@@ -85,17 +79,17 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   // [OPTIMIZADO] Estilos responsivos mejorados para tablets modernos
   const modalContainerClasses = useMemo(() => {
     if (isTV65) {
-      return "w-full max-w-7xl mx-auto p-20 rounded-4xl shadow-3xl text-center bg-black/15 backdrop-blur-xl border-4 border-white/60";
+      return "w-full max-w-7xl mx-auto p-24 rounded-4xl shadow-3xl text-center bg-black/15 backdrop-blur-xl border-4 border-white/60";
     } else if (isTabletPortrait) {
-      // [OPTIMIZADO] Estilos responsive para tablets verticales (600px-1279px)
-      return `w-full max-w-2xl mx-auto rounded-2xl shadow-2xl text-center bg-black/15 backdrop-blur-xl border-2 border-white/40 prize-modal-tablet-modern`;
+      // [OPTIMIZADO] Más padding para tablets verticales para evitar que el contenido toque los bordes
+      return `w-full max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center bg-black/15 backdrop-blur-xl border-2 border-white/40 prize-modal-tablet-modern`;
     } else if (isTVTouch) {
-      return "w-full max-w-3xl mx-auto p-12 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
+      return "w-full max-w-3xl mx-auto p-16 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
     } else if (isTablet) {
-      // [OPTIMIZADO] Estilos para tablets horizontales (600px-1279px)
-      return "w-full max-w-3xl mx-auto p-10 rounded-2xl shadow-2xl text-center bg-black/12 backdrop-blur-lg border-2 border-white/35 prize-modal-tablet-landscape";
+      // [OPTIMIZADO] Más padding para tablets horizontales para evitar que el contenido toque los bordes
+      return "w-full max-w-3xl mx-auto p-12 rounded-2xl shadow-2xl text-center bg-black/12 backdrop-blur-lg border-2 border-white/35 prize-modal-tablet-landscape";
     }
-    return "w-full max-w-md mx-auto p-6 md:p-10 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
+    return "w-full max-w-md mx-auto p-8 md:p-12 rounded-2xl shadow-2xl text-center bg-black/10 backdrop-blur-sm border border-white/30";
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const iconClasses = useMemo(() => {
@@ -169,19 +163,19 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const explanationContainerClasses = useMemo(() => {
-    const baseClasses = "bg-black/10 p-4 rounded-lg border text-white";
+    const baseClasses = "bg-black/10 rounded-lg border text-white mx-4";
 
     if (isTV65) {
-      return `${baseClasses} p-16 rounded-2xl border-4 border-red-400/40 my-12`;
+      return `${baseClasses} p-16 rounded-2xl border-4 border-red-400/40 my-12 mx-8`;
     } else if (isTabletPortrait) {
-      // [NUEVO] Estilos específicos para tablet 800x1340
-      return `${baseClasses} p-6 rounded-xl border-2 border-red-400/35 my-6`;
+      // [OPTIMIZADO] Más padding y márgenes para tablets verticales
+      return `${baseClasses} p-8 rounded-xl border-2 border-red-400/35 my-6 mx-4`;
     } else if (isTVTouch) {
-      return `${baseClasses} p-10 rounded-xl border-2 border-red-400/35 my-8`;
+      return `${baseClasses} p-12 rounded-xl border-2 border-red-400/35 my-8 mx-6`;
     } else if (isTablet) {
-      return `${baseClasses} p-6 rounded-lg border-2 border-red-400/30 my-6`;
+      return `${baseClasses} p-8 rounded-lg border-2 border-red-400/30 my-6 mx-4`;
     }
-    return `${baseClasses} border-red-400/30 my-4`;
+    return `${baseClasses} p-6 border-red-400/30 my-4`;
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const explanationTextClasses = useMemo(() => {
@@ -264,16 +258,16 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
 
   const buttonContainerClasses = useMemo(() => {
     if (isTV65) {
-      return "flex flex-col gap-8 w-full max-w-4xl mx-auto";
+      return "flex flex-col gap-8 w-full max-w-4xl mx-auto px-4";
     } else if (isTabletPortrait) {
-      // [NUEVO] Contenedor específico para tablet 800x1340
-      return "flex flex-col gap-4 w-full max-w-lg mx-auto";
+      // [OPTIMIZADO] Más margen lateral para tablets verticales
+      return "flex flex-col gap-4 w-full max-w-lg mx-auto px-4";
     } else if (isTVTouch) {
-      return "flex flex-col gap-6 w-full max-w-2xl mx-auto";
+      return "flex flex-col gap-6 w-full max-w-2xl mx-auto px-6";
     } else if (isTablet) {
-      return "flex flex-col gap-4 w-full max-w-xl mx-auto";
+      return "flex flex-col gap-4 w-full max-w-xl mx-auto px-4";
     }
-    return "flex flex-col gap-3 w-full max-w-xs mx-auto";
+    return "flex flex-col gap-3 w-full max-w-xs mx-auto px-2";
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
   const buttonClasses = useMemo(() => {
@@ -311,80 +305,34 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     return `${baseClasses} text-xl py-3`;
   }, [isTV65, isTabletPortrait, isTVTouch, isTablet]);
 
-  // useEffect para tracking de montaje/desmontaje - usando tvLogger
-  useEffect(() => {
-    const componentIdValue = componentId.current;
-    void componentIdValue;
-    tvLogger.debug(`PrizeModal [${componentIdValue}]: Componente montado`);
-    tvLogger.debug(`Estado inicial - gameState: ${gameState}, answeredCorrectly: ${answeredCorrectly}`);
-    tvLogger.debug(`gameSession disponible: ${!!gameSession}, ID: ${gameSession?.session_id}`);
-
-    return () => {
-      tvLogger.debug(`PrizeModal [${componentIdValue}]: Componente DESMONTADO`);
-    };
-  }, [answeredCorrectly, gameState, gameSession]);
-
-  // Logging adicional para debug de cambios de estado
-  useEffect(() => {
-    if (gameState === "prize") {
-      tvLogger.debug(`Estado 'prize' detectado, answeredCorrectly: ${answeredCorrectly}`);
-      tvLogger.debug(`gameSession en estado prize: ${gameSession?.session_id}`);
-    }
-  }, [gameState, answeredCorrectly, gameSession]);
+  // Component lifecycle tracking removed for production
 
   const handlePlayAgain = async () => {
-    tvLogger.debug(`handlePlayAgain iniciado`);
-    tvLogger.info("Preparando para volver a jugar con el mismo participante...");
-    tvLogger.debug(`Limpiando currentQuestion`);
     setCurrentQuestion(null);
-    tvLogger.debug(`Limpiando lastSpinResultIndex`);
     setLastSpinResultIndex(null);
-    tvLogger.debug(`Confetti se mantendrá por 5 segundos más para celebración completa`);
     setTimeout(() => {
-      tvLogger.debug(`Limpiando showConfetti después de celebración extendida`);
       setShowConfetti(false);
     }, 5000);
     setTimeout(() => {
-      tvLogger.debug(`Estableciendo gameState a 'inGame'`);
       if (onGoToScreen) {
         onGoToScreen('roulette');
       } else {
         setGameState("inGame");
       }
-      tvLogger.debug(`Reseteando prizeFeedback`);
       resetPrizeFeedback();
-      tvLogger.debug(`handlePlayAgain completado`);
     }, 50);
-    tvLogger.info("Volviendo a la ruleta con el mismo participante");
   };
 
   const handleGoHome = async () => {
-    tvLogger.debug(`handleGoHome iniciado - preparando para siguiente participante`);
-    tvLogger.info("Preparando para siguiente participante en la misma sesión...");
-    
-    // [PROD] Logs de movimiento removidos
-    
-    // Usar moveToNext() que maneja correctamente la transición de participantes
     await moveToNext();
     
-    // Limpiar estados relacionados con el premio y la pregunta
-    // [PROD] Log de limpieza removido
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
     
-    // Verificar que la transición fue exitosa
     setTimeout(() => {
-      // [PROD] Logs de verificación removidos
-    }, 200);
-    
-    tvLogger.debug(`Confetti se mantendrá por 3 segundos más antes de ir al inicio`);
-    setTimeout(() => {
-      tvLogger.debug(`Limpiando showConfetti antes de ir al inicio`);
       setShowConfetti(false);
     }, 3000);
-    
-    tvLogger.debug(`handleGoHome completado - moveToNext() ejecutado`);
   };
 
   // [modificación] Verificación más estricta para evitar renders innecesarios
@@ -398,7 +346,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
       gameState === "prize" &&
       (answeredCorrectly === null || typeof answeredCorrectly === "undefined")
     ) {
-      tvLogger.warn(`Estado inconsistente detectado (gameState: prize, answeredCorrectly: ${answeredCorrectly}) - reseteando a inGame`);
+      // Estado inconsistente detectado - reseteando
       // Reset automático para evitar loops
       setTimeout(() => {
         setGameState("inGame");

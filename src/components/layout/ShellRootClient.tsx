@@ -140,7 +140,7 @@ export default function ShellRootClient({ children }: { children: React.ReactNod
       
       {/* Contenido dinámico de la página actual con transición suave */}
       <div 
-        className="flex-grow w-full h-full relative z-10" 
+        className="w-full h-screen relative z-10" 
         style={{ 
           opacity: isChangingRoute ? 0.7 : 1, // [modificación] Cambio más sutil de opacidad
           transition: 'opacity 150ms ease-in-out' // [modificación] Transición más rápida

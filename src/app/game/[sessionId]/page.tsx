@@ -8,8 +8,10 @@ import RouletteWheel from "@/components/game/RouletteWheel";
 import QuestionDisplay from "@/components/game/QuestionDisplay";
 import PrizeModal from "@/components/game/PrizeModal";
 import GameLayout from "./GameLayout";
+import RouletteLayout from "@/components/game/RouletteLayout";
 import RouletteWheelIcon from "@/components/ui/RouletteWheelIcon";
 import { useRouletteButton } from "@/hooks/useRouletteButton";
+import { useDeviceDetection } from "@/hooks/useDeviceDetection";
 
 export default function GamePage() {
   // Params y router
@@ -194,38 +196,11 @@ export default function GamePage() {
   // [NUEVO] Estado para controlar cuando la ruleta está girando
   const [isSpinning, setIsSpinning] = useState(false);
   
-  // [NUEVO] Estados de dispositivo consistentes con GameLayout
-  const [deviceType, setDeviceType] = useState<'mobile' | 'tablet' | 'tv' | 'desktop'>('desktop');
+  // Device detection centralizado
+  const device = useDeviceDetection();
   
-  // [NUEVO] Hook neumórfico para el botón
-  const rouletteButtonState = useRouletteButton(isSpinning, deviceType);
-
-  // [NUEVO] Detectar tipo de dispositivo - consistente con GameLayout
-  useEffect(() => {
-    const detectDevice = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      
-      // Detectar TV65 igual que en GameLayout
-      const isTV65Resolution = (width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160);
-      
-      
-      // Asignar deviceType
-      if (isTV65Resolution) {
-        setDeviceType('tv');
-      } else if (width < 768) {
-        setDeviceType('mobile');
-      } else if (width >= 768 && width <= 1280) {
-        setDeviceType('tablet');
-      } else {
-        setDeviceType('desktop');
-      }
-    };
-    
-    detectDevice();
-    window.addEventListener('resize', detectDevice);
-    return () => window.removeEventListener('resize', detectDevice);
-  }, []);
+  // Hook neumórfico para el botón
+  const rouletteButtonState = useRouletteButton(isSpinning, device.type);
 
   const handleSpin = () => {
     if (rouletteRef.current && !rouletteButtonState.isDisabled) {
@@ -238,10 +213,10 @@ export default function GamePage() {
     setIsSpinning(spinning);
   };
 
-  // Loading
+  // Loading - USA ROULETTE LAYOUT
   if (isLoading) {
     return (
-      <GameLayout>
+      <RouletteLayout>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -250,200 +225,142 @@ export default function GamePage() {
         >
           Preparando el juego...
         </motion.div>
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.2 }}
-          className="mt-6 w-24 h-1 rounded-full overflow-hidden"
-        >
-          <motion.div
-            className="h-full"
-            initial={{ width: 0 }}
-            animate={{
-              width: "100%",
-              transition: { repeat: Infinity, duration: 1.5, ease: "linear" },
-            }}
-          />
-        </motion.div>
-      </GameLayout>
+      </RouletteLayout>
     );
   }
 
-  // Error
+  // Error - USA ROULETTE LAYOUT  
   if (error) {
     return (
-      <GameLayout>
+      <RouletteLayout>
         <div className="backdrop-blur-md p-8 rounded-xl shadow-lg max-w-lg z-10 border border-white/20">
           <h2 className="text-2xl font-bold text-white mb-4">Error</h2>
           <p className="text-white/90 mb-4">{error}</p>
-          <button
-            onClick={() => router.push("/")}
-            className="mt-4 text-white py-2 px-4 rounded transition-colors"
-          >
-            Volver al inicio
-          </button>
         </div>
-      </GameLayout>
+      </RouletteLayout>
     );
   }
 
   if (!gameSession) {
     return (
-      <GameLayout>
+      <RouletteLayout>
         <div className="backdrop-blur-md p-8 rounded-xl shadow-lg border border-white/20 max-w-md z-10">
           <h2 className="text-2xl font-bold text-white mb-4">
             Sesión no disponible
           </h2>
           <p className="text-white/90 mb-4">
-            No se pudo cargar la información de la sesión. Regresa al admin para gestionar la partida.
+            No se pudo cargar la información de la sesión.
           </p>
-          <button
-            onClick={() => router.push(`/admin`)}
-            className="mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-colors"
-          >
-            Volver al Admin
-          </button>
         </div>
+      </RouletteLayout>
+    );
+  }
+
+  // Vista principal: usar diferentes layouts según el estado
+  
+  // Vista de la ruleta - usa RouletteLayout
+  if (gameState === "roulette" || 
+      ((gameState === "screensaver" || gameState === "register") && questions && questions.length > 0)) {
+    
+    // [GAMING PRO] Botones como componente separado
+    const gameButtons = (
+      <>
+        <motion.button
+          whileHover={{ scale: 1.05, y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          className={`
+            relative overflow-hidden font-black text-white focus:outline-none focus:ring-4
+            bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 hover:from-blue-400 hover:via-blue-500 hover:to-blue-600
+            border-2 border-blue-300/60 focus:ring-blue-300/50 hover:shadow-blue-500/25 shadow-2xl
+            transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm transform-gpu
+            ${device.type === 'mobile' ? 'px-6 py-4 text-base rounded-xl' : 
+              device.type === 'tablet' ? 'px-12 py-5 text-xl rounded-2xl' : 
+              device.type === 'tv' ? 'px-16 py-8 text-3xl rounded-3xl' : 'px-10 py-4 text-lg rounded-xl'}
+          `}
+          onClick={handleSpin}
+          onTouchStart={rouletteButtonState.handleRippleEffect}
+          onMouseDown={rouletteButtonState.handleRippleEffect}
+          disabled={rouletteButtonState.isDisabled}
+          aria-label={rouletteButtonState.buttonText}
+        >
+          <span className={`
+            inline-flex items-center justify-center
+            ${device.type === 'tv' ? 'gap-6' : 'gap-3'}
+          `}>
+            <RouletteWheelIcon className={`
+              ${device.type === 'mobile' ? 'w-7 h-7' : 
+                device.type === 'tablet' ? 'w-9 h-9' : 
+                device.type === 'tv' ? 'w-16 h-16' : 'w-11 h-11'}
+              filter drop-shadow(0 3px 6px rgba(0,0,0,0.6))
+            `} />
+            <span className="font-black tracking-wide">
+              {rouletteButtonState.buttonText}
+            </span>
+          </span>
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.05, y: -2 }}
+          whileTap={{ scale: 0.95 }}
+          className={`
+            relative overflow-hidden font-black text-white focus:outline-none focus:ring-4
+            bg-gradient-to-b from-green-500 via-green-600 to-green-700 hover:from-green-400 hover:via-green-500 hover:to-green-600
+            border-2 border-green-300/60 focus:ring-green-300/50 hover:shadow-green-500/25 shadow-2xl
+            transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm transform-gpu
+            ${device.type === 'mobile' ? 'px-6 py-4 text-base rounded-xl' : 
+              device.type === 'tablet' ? 'px-8 py-5 text-lg rounded-2xl' : 
+              device.type === 'tv' ? 'px-12 py-8 text-2xl rounded-3xl' : 'px-8 py-4 text-base rounded-xl'}
+          `}
+          onClick={() => moveToNext()}
+          aria-label="Volver al Inicio"
+        >
+          <span className={`
+            inline-flex items-center justify-center
+            ${device.type === 'tv' ? 'gap-6' : 'gap-3'}
+          `}>
+            <span className="font-black tracking-wide">
+              Volver al Inicio
+            </span>
+          </span>
+        </motion.button>
+      </>
+    );
+
+    return (
+      <RouletteLayout buttons={gameButtons}>
+        <RouletteWheel 
+          questions={questions} 
+          ref={rouletteRef}
+          onSpinStateChange={handleSpinStateChange}
+        />
+      </RouletteLayout>
+    );
+  }
+
+  // Vista de pregunta - usa GameLayout
+  if (gameState === "question" && currentQuestion) {
+    return (
+      <GameLayout>
+        <QuestionDisplay question={currentQuestion} />
       </GameLayout>
     );
   }
 
-  // Vista principal: ruleta/pregunta según el estado
+  // Vista de premio - usa GameLayout con modal
+  if (gameState === "prize") {
+    return (
+      <GameLayout>
+        <PrizeModal />
+      </GameLayout>
+    );
+  }
+
+  // Estado por defecto - usa GameLayout
   return (
     <GameLayout>
-      {/* Layout centrado perfecto para la ruleta */}
-      {(gameState === "roulette" || 
-        ((gameState === "screensaver" || gameState === "register") && questions && questions.length > 0)) && (
-        <div className="h-full w-full flex flex-col items-center justify-between">
-          {/* Contenedor de la ruleta - ocupa el espacio principal */}
-          <div className="flex-1 flex items-center justify-center w-full min-h-0">
-            <div className={`
-              w-full h-full flex items-center justify-center
-              ${deviceType === 'mobile' ? 'max-w-[400px] max-h-[400px]' : 
-                deviceType === 'tablet' ? 'max-w-[500px] max-h-[500px]' : 
-                deviceType === 'tv' ? 'max-w-[800px] max-h-[800px]' : 'max-w-[600px] max-h-[600px]'}
-              p-4
-            `}>
-              <RouletteWheel 
-                questions={questions} 
-                ref={rouletteRef}
-                onSpinStateChange={handleSpinStateChange}
-              />
-            </div>
-          </div>
-          
-          {/* Botones de acción - siempre visibles debajo */}
-          <div className={`
-            flex justify-center items-center gap-4 shrink-0
-            ${deviceType === 'mobile' ? 'pb-4 pt-2' : 
-              deviceType === 'tablet' ? 'pb-6 pt-4' : 
-              deviceType === 'tv' ? 'pb-12 pt-8' : 'pb-8 pt-6'}
-          `}>
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className={`
-                relative overflow-hidden font-black text-white
-                focus:outline-none focus:ring-4 focus:ring-blue-300/50
-                ${deviceType === 'mobile' ? 'px-10 py-5 text-lg rounded-xl' : 
-                  deviceType === 'tablet' ? 'px-14 py-6 text-xl rounded-2xl' : 
-                  deviceType === 'tv' ? 'px-24 py-10 text-4xl rounded-3xl' : 'px-16 py-7 text-2xl rounded-2xl'}
-                bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700
-                hover:from-blue-400 hover:via-blue-500 hover:to-blue-600
-                border-2 border-blue-300/60
-                shadow-2xl hover:shadow-blue-500/25
-                transition-all duration-300 ease-out
-                disabled:opacity-50 disabled:cursor-not-allowed
-                backdrop-blur-sm
-                transform-gpu
-              `}
-              style={{
-                textShadow: '0 3px 6px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.9)',
-                boxShadow: `
-                  0 12px 40px rgba(0,0,0,0.25),
-                  0 6px 20px rgba(59, 130, 246, 0.2),
-                  inset 0 2px 0 rgba(255,255,255,0.25),
-                  inset 0 -2px 0 rgba(0,0,0,0.2),
-                  inset 0 0 40px rgba(255,255,255,0.05)
-                `,
-              }}
-              onClick={handleSpin}
-              onTouchStart={rouletteButtonState.handleRippleEffect}
-              onMouseDown={rouletteButtonState.handleRippleEffect}
-              disabled={rouletteButtonState.isDisabled}
-              aria-label={rouletteButtonState.buttonText}
-            >
-              <span className={`
-                inline-flex items-center justify-center gap-3
-                ${deviceType === 'tv' ? 'gap-6' : ''}
-              `}>
-                <RouletteWheelIcon className={`
-                  ${deviceType === 'mobile' ? 'w-7 h-7' : 
-                    deviceType === 'tablet' ? 'w-9 h-9' : 
-                    deviceType === 'tv' ? 'w-16 h-16' : 'w-11 h-11'}
-                  filter drop-shadow(0 3px 6px rgba(0,0,0,0.6))
-                `} />
-                <span className="font-black tracking-wide letter-spacing-wide">
-                  {rouletteButtonState.buttonText}
-                </span>
-              </span>
-            </motion.button>
-
-            {/* Botón para volver al inicio */}
-            <motion.button
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
-              className={`
-                relative overflow-hidden font-black text-white
-                focus:outline-none focus:ring-4 focus:ring-green-300/50
-                ${deviceType === 'mobile' ? 'px-8 py-5 text-lg rounded-xl' : 
-                  deviceType === 'tablet' ? 'px-10 py-6 text-xl rounded-2xl' : 
-                  deviceType === 'tv' ? 'px-20 py-10 text-4xl rounded-3xl' : 'px-12 py-7 text-2xl rounded-2xl'}
-                bg-gradient-to-b from-green-500 via-green-600 to-green-700
-                hover:from-green-400 hover:via-green-500 hover:to-green-600
-                border-2 border-green-300/60
-                shadow-2xl hover:shadow-green-500/25
-                transition-all duration-300 ease-out
-                backdrop-blur-sm
-                transform-gpu
-              `}
-              style={{
-                textShadow: '0 3px 6px rgba(0,0,0,0.8), 0 1px 3px rgba(0,0,0,0.9)',
-                boxShadow: `
-                  0 12px 40px rgba(0,0,0,0.25),
-                  0 6px 20px rgba(34, 197, 94, 0.2),
-                  inset 0 2px 0 rgba(255,255,255,0.25),
-                  inset 0 -2px 0 rgba(0,0,0,0.2),
-                  inset 0 0 40px rgba(255,255,255,0.05)
-                `,
-              }}
-              onClick={() => moveToNext()}
-              aria-label="Volver al Inicio"
-            >
-              <span className={`
-                inline-flex items-center justify-center gap-3
-                ${deviceType === 'tv' ? 'gap-6' : ''}
-              `}>
-                <span className="font-black tracking-wide letter-spacing-wide">
-                  Volver al Inicio
-                </span>
-              </span>
-            </motion.button>
-          </div>
-        </div>
-      )}
-
-      {/* Muestra la pregunta si el estado es "question" */}
-      {gameState === "question" && currentQuestion && (
-        <div className="w-full h-full flex items-center justify-center">
-          <QuestionDisplay question={currentQuestion} />
-        </div>
-      )}
-
-      {/* Muestra el modal de premio cuando el estado es "prize" */}
-      {gameState === "prize" && (
-        <PrizeModal />
-      )}
+      <div className="text-white text-center">
+        <p>Estado del juego no reconocido: {gameState}</p>
+      </div>
     </GameLayout>
   );
 }
