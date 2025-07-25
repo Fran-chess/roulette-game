@@ -27,6 +27,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   // NUEVA: Cola de participantes
   waitingQueue: [],
+  nextParticipant: null,
 
   // [modificación] Estado para feedback del premio
   prizeFeedback: {
@@ -100,6 +101,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   setCurrentParticipant: (participant) => set({ currentParticipant: participant }),
   
+  setNextParticipant: (participant) => set({ nextParticipant: participant }),
+  
   // [modificación] Añadir función para establecer preguntas
   setQuestions: (questionsArray: Question[]) => set({ questions: questionsArray }),
 
@@ -170,6 +173,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   resetCurrentGame: () => set({
     gameState: 'inGame' as GameState,
     currentParticipant: null,
+    nextParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
     recentSpinSegments: [],
@@ -189,6 +193,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     gameState: 'waiting' as GameState,
     participants: [],
     currentParticipant: null,
+    nextParticipant: null,
     currentQuestion: null,
     lastSpinResultIndex: null,
     recentSpinSegments: [],
@@ -545,6 +550,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // --- HANDLERS DE COLA ---
   addToQueue: async (participant: Participant) => {
+    console.log(`🔗 QUEUE: Agregando participante a cola: ${participant.nombre}`);
     tvLogger.participant(`QUEUE: Agregando participante a cola: ${participant.nombre}`);
     tvLogger.participant(`QUEUE: Cola actual antes: ${get().waitingQueue.length}`);
     tvLogger.participant(`QUEUE: Participante activo antes: ${get().currentParticipant?.nombre || 'No'}`);
@@ -559,7 +565,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       
       // Actualizar estado del participante a playing
       try {
-        await fetch('/api/admin/sessions/update-participant-status', {
+        await fetch('/api/participants/update-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -572,9 +578,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       }
     } else {
       // Si hay participante activo, agregar a la cola
+      console.log(`🔗 QUEUE: Hay participante activo (${currentParticipant.nombre}), agregando ${participant.nombre} a cola`);
       tvLogger.participant('QUEUE: Hay participante activo, agregando a cola');
       set((state) => {
         const newQueue = [...state.waitingQueue, participant];
+        console.log(`🔗 QUEUE: Nueva cola:`, newQueue.map(p => p.nombre));
         return { waitingQueue: newQueue };
       });
     }
@@ -615,7 +623,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   moveToNext: async () => {
-    const { waitingQueue, currentParticipant } = get();
+    const { waitingQueue, currentParticipant, gameState } = get();
     
     // [PROD] Logs de transición removidos para producción
     
@@ -624,7 +632,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // [PROD] Log de marcado removido
       
       try {
-        await fetch('/api/admin/sessions/update-participant-status', {
+        await fetch('/api/participants/update-status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -642,46 +650,53 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // 2. Tomar siguiente de la cola
     if (waitingQueue.length > 0) {
       const nextParticipant = waitingQueue[0];
-      // [PROD] Log de activación removido
       
-      // Crear una copia del participante con status actualizado
-      const updatedNextParticipant = {
-        ...nextParticipant,
-        status: 'playing' as const
-      };
-      
-      // Remover de la cola y activar participante
-      set((state) => ({
-        waitingQueue: state.waitingQueue.slice(1),
-        currentParticipant: updatedNextParticipant,
-        gameState: 'inGame' as GameState
-      }));
-      
-      // [PROD] Log de estado removido
-      
-      // Actualizar estado del participante a playing en la base de datos
-      try {
-        await fetch('/api/admin/sessions/update-participant-status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            participantId: nextParticipant.id,
-            status: 'playing'
-          }),
+      // If we're in transition state, activate the nextParticipant
+      if (gameState === 'transition') {
+        // Crear una copia del participante con status actualizado
+        const updatedNextParticipant = {
+          ...nextParticipant,
+          status: 'playing' as const
+        };
+        
+        // Remover de la cola y activar participante
+        set((state) => ({
+          waitingQueue: state.waitingQueue.slice(1),
+          currentParticipant: updatedNextParticipant,
+          nextParticipant: null,
+          gameState: 'inGame' as GameState
+        }));
+        
+        // Actualizar estado del participante a playing en la base de datos
+        try {
+          await fetch('/api/participants/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              participantId: nextParticipant.id,
+              status: 'playing'
+            }),
+          });
+        } catch (error) {
+          console.error('❌ MOVE-TO-NEXT: Error al activar participante:', error);
+          tvProdLogger.error('Error al activar participante:', error);
+        }
+      } else {
+        // Normal transition - set nextParticipant for transition screen
+        set({
+          nextParticipant: nextParticipant,
+          gameState: 'transition' as GameState
         });
-        // [PROD] Log de marcado removido
-      } catch (error) {
-        console.error('❌ MOVE-TO-NEXT: Error al activar participante:', error);
-        tvProdLogger.error('Error al activar participante:', error);
       }
     } else {
       // Cola vacía, volver a waiting
-      // [PROD] Log de cola vacía removido
+      console.log('🔄 MOVE-TO-NEXT: Cola vacía, estableciendo screensaver state');
       set({
         currentParticipant: null,
+        nextParticipant: null,
         gameState: 'screensaver' as GameState
       });
-      // [PROD] Log de estado removido
+      console.log('🔄 MOVE-TO-NEXT: Estado establecido a screensaver');
     }
     
     // [PROD] Logs de estado final removidos

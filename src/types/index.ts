@@ -107,7 +107,7 @@ export interface Question {
   explanation?: string;
 }
 
-export type GameState = 'waiting' | 'inGame' | 'ended' | 'screensaver' | 'register' | 'roulette' | 'question' | 'prize';
+export type GameState = 'waiting' | 'inGame' | 'ended' | 'screensaver' | 'register' | 'roulette' | 'question' | 'prize' | 'transition';
 
 export interface GameStore {
   gameState: GameState;
@@ -126,6 +126,7 @@ export interface GameStore {
   
   // NUEVA: Cola de participantes
   waitingQueue: Participant[];
+  nextParticipant: Participant | null;
   setGameState: (state: GameState) => void;
   addParticipant: (participantData: Omit<Participant, 'id' | 'created_at'>) => void;
   startPlaySession: (
@@ -134,6 +135,7 @@ export interface GameStore {
     onError?: (error: Error | unknown) => void
   ) => Promise<void>;
   setCurrentParticipant: (participant: Participant | null) => void;
+  setNextParticipant: (participant: Participant | null) => void;
   setCurrentQuestion: (question: Question | null) => void;
   setLastSpinResultIndex: (index: number | null) => void;
   // [NUEVO] Función para actualizar historial de segmentos

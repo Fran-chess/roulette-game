@@ -38,6 +38,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   const gameState = useGameStore((state) => state.gameState);
   const showConfetti = useGameStore((state) => state.showConfetti);
   const moveToNext = useGameStore((state) => state.moveToNext);
+  const setNextParticipant = useGameStore((state) => state.setNextParticipant);
 
   const { answeredCorrectly, explanation, correctOption } =
     prizeFeedback;
@@ -324,8 +325,15 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   };
 
   const handleGoHome = async () => {
-    await moveToNext();
+    const { waitingQueue, currentParticipant } = useGameStore.getState();
     
+    console.log('🏠 HANDLE-GO-HOME: Iniciando', {
+      waitingQueue: waitingQueue.length,
+      waitingQueueNames: waitingQueue.map(p => p.nombre),
+      currentParticipant: currentParticipant?.nombre || 'null'
+    });
+    
+    // Finalize current participant
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
@@ -333,6 +341,27 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     setTimeout(() => {
       setShowConfetti(false);
     }, 3000);
+    
+    // Check if there are participants in queue
+    if (waitingQueue.length > 0) {
+      console.log('🏠 HANDLE-GO-HOME: Hay cola, mostrando transición');
+      // Set the next participant for the transition screen
+      const nextParticipant = waitingQueue[0];
+      console.log('🏠 HANDLE-GO-HOME: Estableciendo nextParticipant:', nextParticipant.nombre);
+      setNextParticipant(nextParticipant);
+      
+      // There are participants waiting - show transition and then start next participant
+      console.log('🏠 HANDLE-GO-HOME: Estableciendo gameState a transition');
+      setGameState('transition');
+      // moveToNext will handle the actual transition to the next participant
+      setTimeout(async () => {
+        await moveToNext();
+      }, 2000); // Show transition for 2 seconds
+    } else {
+      console.log('🏠 HANDLE-GO-HOME: No hay cola, llamando moveToNext para ir a screensaver');
+      // No participants in queue - go to screensaver/waiting
+      await moveToNext(); // This will set gameState to 'screensaver' when queue is empty
+    }
   };
 
   // [modificación] Verificación más estricta para evitar renders innecesarios
