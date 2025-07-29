@@ -155,6 +155,7 @@ export interface GameStore {
   setAdminNotification: (type: 'error' | 'success', message: string | null) => void;
   clearAdminNotifications: () => void;
   fetchActiveSession: () => Promise<PlaySession | null>;
+  fetchActiveSessionPublic: () => Promise<PlaySession | null>;
   createNewSession: () => Promise<string | null>;
   closeActiveSession: (sessionId: string) => Promise<boolean>;
   updateSessionStatus: (sessionId: string, status: string) => Promise<boolean>;

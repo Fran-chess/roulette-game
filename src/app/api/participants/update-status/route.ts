@@ -14,8 +14,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar estado - solo permitir transiciones de juego
-    const validStatuses = ['playing', 'completed'];
+    // Validar estado - permitir transiciones de juego y gestión de cola
+    const validStatuses = ['playing', 'completed', 'disqualified'];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { error: 'Estado no válido para endpoint público' },

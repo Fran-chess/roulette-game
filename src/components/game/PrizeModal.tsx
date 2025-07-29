@@ -9,6 +9,7 @@ import {
   XCircleIcon,
 } from "@heroicons/react/24/solid";
 import { useEffect, useState, useMemo } from "react";
+import { useParams } from "next/navigation";
 import MassiveConfetti from "@/components/ui/MassiveConfetti";
 
 
@@ -17,6 +18,8 @@ interface PrizeModalProps {
 }
 
 export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
+  const params = useParams();
+  const sessionIdFromParams = params.sessionId as string;
 
   // [modificación] Estados para detección de tipo de pantalla
   const [isTablet, setIsTablet] = useState(false);
@@ -28,6 +31,8 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
 
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
+  const gameSession = useGameStore((state) => state.gameSession);
+  const loadQueueFromDB = useGameStore((state) => state.loadQueueFromDB);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
@@ -325,15 +330,22 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   };
 
   const handleGoHome = async () => {
-    const { waitingQueue, currentParticipant } = useGameStore.getState();
+    // Finalize current participant first
+    if (currentParticipant) {
+      try {
+        await fetch('/api/participants/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId: currentParticipant.id,
+            status: 'completed'
+          }),
+        });
+      } catch (error) {
+        console.error('Error marcando participante como completado:', error);
+      }
+    }
     
-    console.log('🏠 HANDLE-GO-HOME: Iniciando', {
-      waitingQueue: waitingQueue.length,
-      waitingQueueNames: waitingQueue.map(p => p.nombre),
-      currentParticipant: currentParticipant?.nombre || 'null'
-    });
-    
-    // Finalize current participant
     setCurrentQuestion(null);
     setLastSpinResultIndex(null);
     resetPrizeFeedback();
@@ -342,25 +354,85 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
       setShowConfetti(false);
     }, 3000);
     
-    // Check if there are participants in queue
-    if (waitingQueue.length > 0) {
-      console.log('🏠 HANDLE-GO-HOME: Hay cola, mostrando transición');
-      // Set the next participant for the transition screen
-      const nextParticipant = waitingQueue[0];
-      console.log('🏠 HANDLE-GO-HOME: Estableciendo nextParticipant:', nextParticipant.nombre);
-      setNextParticipant(nextParticipant);
+    // Función para obtener sessionId con múltiples intentos
+    const getSessionIdWithRetry = async (maxRetries = 3): Promise<string | null> => {
+      // Intento 1: gameSession desde store
+      let sessionId = gameSession?.session_id;
+      if (sessionId) {
+        return sessionId;
+      }
       
-      // There are participants waiting - show transition and then start next participant
-      console.log('🏠 HANDLE-GO-HOME: Estableciendo gameState a transition');
-      setGameState('transition');
-      // moveToNext will handle the actual transition to the next participant
-      setTimeout(async () => {
-        await moveToNext();
-      }, 2000); // Show transition for 2 seconds
+      // Intento 2: sessionId desde parámetros URL
+      sessionId = sessionIdFromParams;
+      if (sessionId) {
+        return sessionId;
+      }
+      
+      // Intento 3: Obtener sesión activa via API con reintentos
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch('/api/sessions/active', {
+            method: 'GET',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.hasActiveSession && data.session?.session_id) {
+              const activeSessionId = data.session.session_id;
+              
+              // Actualizar gameSession en el store para futuros usos
+              const { setGameSession } = useGameStore.getState();
+              setGameSession(data.session);
+              
+              return activeSessionId;
+            }
+          }
+        } catch (error) {
+          console.error(`Error obteniendo sesión activa (intento ${attempt}):`, error);
+        }
+        
+        // Esperar antes del siguiente intento (excepto en el último)
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+      
+      return null;
+    };
+    
+    // Obtener sessionId con reintentos
+    const sessionId = await getSessionIdWithRetry();
+    
+    if (sessionId) {
+      await loadQueueFromDB(sessionId);
+      
+      // Obtener cola actualizada después de la recarga
+      const { waitingQueue } = useGameStore.getState();
+      
+      // Check if there are participants in queue
+      if (waitingQueue.length > 0) {
+        // Set the next participant for the transition screen
+        const nextParticipant = waitingQueue[0];
+        setNextParticipant(nextParticipant);
+        
+        // There are participants waiting - show transition and then start next participant
+        setGameState('transition');
+        // moveToNext will handle the actual transition to the next participant
+        setTimeout(async () => {
+          await moveToNext();
+        }, 2000); // Show transition for 2 seconds
+      } else {
+        // No participants in queue - go to screensaver/waiting
+        await moveToNext(); // This will set gameState to 'screensaver' when queue is empty
+      }
     } else {
-      console.log('🏠 HANDLE-GO-HOME: No hay cola, llamando moveToNext para ir a screensaver');
-      // No participants in queue - go to screensaver/waiting
-      await moveToNext(); // This will set gameState to 'screensaver' when queue is empty
+      console.error('No se pudo obtener sessionId - usando fallback');
+      // Fallback: simplemente usar moveToNext para manejar la transición
+      await moveToNext();
     }
   };
 

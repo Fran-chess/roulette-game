@@ -40,9 +40,17 @@ const QueueManager: React.FC<QueueManagerProps> = ({ sessionId, onClose }) => {
     setIsLoading(true);
     try {
       await removeFromQueue(participantId);
+      console.log(`🗑️ QUEUE-MANAGER: Participante ${participantId} removido exitosamente`);
       tvLogger.info('Participante removido de la cola:', participantId);
+      
+      // IMPORTANTE: Recargar la cola desde BD para sincronizar el estado
+      await loadQueueFromDB(sessionId);
+      console.log(`✅ QUEUE-MANAGER: Cola recargada después de remover participante`);
     } catch (error) {
+      console.error('❌ QUEUE-MANAGER: Error al remover participante:', error);
       tvLogger.error('Error al remover participante de la cola:', error);
+      // TODO: Aquí se podría mostrar una notificación de error al usuario
+      alert(`Error al remover participante: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsLoading(false);
     }

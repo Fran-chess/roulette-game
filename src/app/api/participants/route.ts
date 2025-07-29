@@ -135,24 +135,56 @@ export async function POST(request: Request) {
     // Verificar si el participante ya existe en esta sesión
     const { data: existingParticipant } = await supabaseAdmin
       .from('participants')
-      .select('id, email')
-      .eq('email', email)
+      .select('*')
+      .eq('email', email.trim().toLowerCase())
       .eq('session_id', session_id)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
     
+    // Si existe un participante con este email, reactivarlo en lugar de crear uno nuevo
     if (existingParticipant) {
-      return NextResponse.json(
-        { message: 'Este email ya está registrado en esta sesión' },
-        { status: 409 }
-      );
+      const participant = existingParticipant as { id: string; nombre: string; [key: string]: unknown };
+      console.log(`🔄 REACTIVATE: Participante existente encontrado (${participant.id}), reactivando para nueva partida`);
+      
+      const { data: reactivatedParticipant, error: reactivateError } = await supabaseAdmin
+        .from('participants')
+        .update({
+          nombre: nombre.trim(), // Actualizar nombre por si cambió
+          apellido: apellido?.trim() || '',
+          especialidad: especialidad?.trim() || '',
+          status: 'registered', // Reactivar como registrado
+          completed_at: null, // IMPORTANTE: Limpiar completed_at para permitir nueva partida
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', participant.id)
+        .select()
+        .single();
+
+      if (reactivateError) {
+        console.error('❌ Error al reactivar participante:', reactivateError);
+        return NextResponse.json(
+          { message: 'Error al reactivar participante', details: reactivateError.message },
+          { status: 500 }
+        );
+      }
+
+      console.log(`✅ Participante reactivado exitosamente: ${reactivatedParticipant.id}`);
+      
+      return NextResponse.json({
+        message: `¡Bienvenido de vuelta, ${reactivatedParticipant.nombre}! Listo para una nueva partida`,
+        participant: reactivatedParticipant,
+        isReturningPlayer: true,
+        action: 'reactivated'
+      }, { status: 200 });
     }
     
     // Crear nuevo participante
     const participantData = {
-      nombre,
-      apellido: apellido || '',
-      email,
-      especialidad: especialidad || '',
+      nombre: nombre.trim(),
+      apellido: apellido?.trim() || '',
+      email: email.trim().toLowerCase(),
+      especialidad: especialidad?.trim() || '',
       session_id: session_id, // Use the session string ID if FK references session_id field
       status: 'registered',
       created_at: new Date().toISOString(),
@@ -177,7 +209,9 @@ export async function POST(request: Request) {
     
     return NextResponse.json({
       message: 'Participante registrado exitosamente',
-      participant: newParticipant
+      participant: newParticipant,
+      isReturningPlayer: false,
+      action: 'created'
     }, { status: 201 });
     
   } catch (err: Error | unknown) {

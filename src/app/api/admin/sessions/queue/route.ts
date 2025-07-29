@@ -48,11 +48,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener solo los participantes que están en la cola actual
+    // y que no han sido completados, descalificados o removidos de la cola
     const { data: participants, error: participantsError } = await supabaseAdmin
       .from('participants')
       .select('*')
       .in('id', queueIds)
-      .not('status', 'in', '(completed,disqualified)');
+      .neq('status', 'completed')
+      .neq('status', 'disqualified');
 
     if (participantsError) {
       tvProdLogger.error('Error al obtener participantes de cola:', participantsError);
@@ -61,6 +63,13 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Debug: Log what we got from database
+    console.log(`🔍 QUEUE-API: IDs solicitados desde waiting_queue: ${queueIds.join(', ')}`);
+    console.log(`🔍 QUEUE-API: Participantes encontrados después del filtro: ${participants?.length || 0}`);
+    participants?.forEach((p) => {
+      console.log(`   - ${p.nombre} (${String(p.id).slice(0,8)}...) status: ${p.status}`);
+    });
 
     // Reconstruir cola en el orden correcto según los IDs
     const orderedParticipants = queueIds
@@ -90,6 +99,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const { sessionId, waitingQueue } = await request.json();
+
+    // Debug: Log what we're saving
+    console.log(`💾 QUEUE-API-POST: Guardando cola para sesión ${sessionId}`);
+    console.log(`💾 QUEUE-API-POST: IDs a guardar:`, waitingQueue);
 
     if (!sessionId) {
       return NextResponse.json(
