@@ -12,19 +12,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run test` - Run tests (compiles TypeScript first, then runs Node.js tests)
 
 ### Test Commands
-- `npm run test:build` - Compile TypeScript test files
+- `npm run test:build` - Compile TypeScript test files to `dist_test/` directory
 - `npm run test` - Full test suite (build + run tests)
 - Run single test: `node --test dist_test/tests/[filename].test.js` (after test:build)
+- Test configuration: `tsconfig.test.json` compiles to CommonJS for Node.js testing
 
 ## Project Architecture
 
 ### Technology Stack
 - **Framework**: Next.js 15 with App Router
-- **Language**: TypeScript
+- **Language**: TypeScript (strict mode)
 - **Database**: Supabase (PostgreSQL with realtime subscriptions)
 - **State Management**: Zustand
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS v4 with PostCSS
 - **Animations**: Framer Motion
+- **Data Fetching**: TanStack Query (React Query v5)
+- **Icons**: Heroicons, React Icons
+- **Excel Export**: xlsx library
 
 ### Core Application Structure
 
@@ -42,9 +46,11 @@ This is a **multi-screen roulette game system** with three main interfaces:
 - `src/store/navigationStore.ts` - Navigation and UI state
 
 #### Database Schema (Supabase)
-- `participants` - Player registration and status
-- `game_sessions` (PlaySession) - Individual game sessions
+- `participants` - Player registration and status (indexed on session_id, status, created_at)
+- `game_sessions` (PlaySession) - Individual game sessions (indexed on status, admin_id)
 - `plays` - Game plays and results
+- **Setup Scripts**: `scripts/setup-production-db.sql` (indexes & RLS policies)
+- **Test Data**: `scripts/generate-test-participants.sql`
 
 #### Realtime System
 - TV screen uses **dual realtime subscriptions** to prevent race conditions:
@@ -54,9 +60,13 @@ This is a **multi-screen roulette game system** with three main interfaces:
 
 #### API Routes Structure
 - `src/app/api/admin/` - Admin management endpoints
+  - `sessions/` - Session CRUD operations (create, list, active, close, finish)
+  - `sessions/queue/` - Queue management for participants
+  - `sessions/register-player/` - Admin-initiated player registration
 - `src/app/api/participants/` - Player registration and stats
 - `src/app/api/plays/` - Game play submission
 - `src/app/api/questions/` - Question management
+- `src/app/api/export-participants/` - Excel export functionality
 
 ### Critical Implementation Details
 
@@ -118,6 +128,8 @@ This is a **multi-screen roulette game system** with three main interfaces:
 - Implements Row Level Security (RLS) on Supabase tables
 - TV display optimized for large screens and audience viewing
 - Game supports both individual and session-based play modes
+- Questions loaded from `src/data/questions.json` with medical specialties
+- Queue system manages participant flow with "waiting", "playing", "completed" states
 
 ## Environment Variables Required
 

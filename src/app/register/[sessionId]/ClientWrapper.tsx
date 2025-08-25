@@ -173,13 +173,13 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
       {/* Botón de regreso fijo en esquina superior izquierda */}
       <button
         onClick={() => router.push('/admin')}
-        className="fixed top-4 left-4 z-50 p-3 rounded-lg bg-black/30 hover:bg-black/50 
-                   border border-white/20 hover:border-white/40 transition-all duration-200
+        className="fixed top-4 left-4 z-50 p-3 rounded-lg bg-black/30 
+                   border border-white/20 transition-all duration-200
                    flex items-center justify-center group backdrop-blur-sm shadow-lg"
         title="Volver al panel de administración"
         type="button"
       >
-        <ArrowLeftIcon className="w-6 h-6 text-gray-300 group-hover:text-white transition-colors duration-200" />
+        <ArrowLeftIcon className="w-6 h-6 text-gray-300 transition-colors duration-200" />
       </button>
 
       {/* Header - Logo */}
@@ -242,7 +242,7 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
               <div className="flex flex-col items-center gap-3 w-full">
                 <button
                   onClick={handlePrepareNextRegistration}
-                  className="w-full max-w-none py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg border border-blue-400/50 transition-all duration-300"
+                  className="w-full max-w-none py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 text-white font-marineBold rounded-xl shadow-lg border border-blue-400/50 transition-all duration-300"
                 >
                   Registrar Otro Participante
                 </button>

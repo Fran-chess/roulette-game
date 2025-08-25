@@ -57,13 +57,8 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
     },
   };
 
-  // [modificación] Variantes para efectos de hover en botones
+  // [modificación] Variantes para efectos de tap en botones
   const buttonVariants = {
-    hover: { 
-      scale: 1.02,
-      boxShadow: "0 10px 30px -10px rgba(14, 165, 233, 0.4)",
-      transition: { duration: 0.2 }
-    },
     tap: { scale: 0.98 }
   };
 
@@ -174,7 +169,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   aria-required="true"
                   containerClassName="w-full"
                   labelClassName="text-slate-200 text-sm font-marineBold mb-2 block admin-login-label"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans admin-login-input"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 font-sans admin-login-input"
                   autoComplete="email"
                   required
                   disabled={isLoading}
@@ -192,7 +187,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
                   aria-required="true"
                   containerClassName="w-full"
                   labelClassName="text-slate-200 text-sm font-marineBold mb-2 block admin-login-label"
-                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10 font-sans admin-login-input"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 font-sans admin-login-input"
                   autoComplete="current-password"
                   required
                   disabled={isLoading}
@@ -217,14 +212,13 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess }) => {
               <motion.div variants={fieldItemVariants} className="pt-2 w-full flex justify-center">
                 <motion.div
                   variants={buttonVariants}
-                  whileHover="hover"
                   whileTap="tap"
                   className='w-full flex justify-center'
                 >
                   <Button
                     type="submit"
                     disabled={isLoading || !email || !password}
-                    className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-transparent admin-login-button"
+                    className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-teal-600 text-white font-marineBold rounded-xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-transparent admin-login-button"
                   >
                     {isLoading ? (
                       <div className="flex items-center justify-center space-x-2">

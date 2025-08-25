@@ -84,6 +84,10 @@ class TVLogger {
     this.debug(`GAME: ${message}`, ...args);
   }
 
+  transition(message: string, ...args: unknown[]): void {
+    this.debug(`TRANSITION: ${message}`, ...args);
+  }
+
   performance(message: string, ...args: unknown[]): void {
     this.info(`PERFORMANCE: ${message}`, ...args);
   }

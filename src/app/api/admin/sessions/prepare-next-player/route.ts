@@ -74,7 +74,7 @@ export async function POST(request: Request) {
       .select('*')
       .eq('session_id', sessionId)
       .in('status', ['registered', 'playing'])
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle();
 

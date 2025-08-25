@@ -552,7 +552,7 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
         // Para otros dispositivos, mantenemos la lógica original
         if (answerState === 'idle') {
           stateClasses =
-            "bg-gradient-to-r from-slate-700/85 to-slate-600/85 border-2 border-slate-400/50 text-white shadow-md hover:shadow-lg hover:from-slate-600/90 hover:to-slate-500/90 hover:border-slate-300/70 hover:ring-2 hover:ring-slate-300/30 focus:outline-none focus:ring-4 focus:ring-slate-300/40";
+            "bg-gradient-to-r from-slate-700/85 to-slate-600/85 border-2 border-slate-400/50 text-white shadow-md focus:outline-none focus:ring-4 focus:ring-slate-300/40";
           cursorClass = "cursor-pointer";
         } else if (answerState === 'selected' && selectedAnswer === option) {
           stateClasses =

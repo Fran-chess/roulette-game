@@ -287,7 +287,7 @@ export default function RegistrationForm({
             onChange={handleChange}
             placeholder="Tu nombre"
             required
-            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 hover:bg-black/40 hover:border-gray-400 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
+            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
             errorMessage={errors.nombre}
             maxLength={100}
             aria-describedby="nombre-error"
@@ -309,7 +309,7 @@ export default function RegistrationForm({
             value={formData.apellido}
             onChange={handleChange}
             placeholder="Tu apellido"
-            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 hover:bg-black/40 hover:border-gray-400 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
+            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
             errorMessage={errors.apellido}
             maxLength={100}
             aria-describedby="apellido-error"
@@ -330,7 +330,7 @@ export default function RegistrationForm({
               name="especialidad"
               value={formData.especialidad}
               onChange={handleChange}
-              className={`text-gray-100 bg-black/30 border-gray-500 hover:bg-black/40 hover:border-gray-400 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border appearance-none cursor-pointer focus:outline-none`}
+              className={`text-gray-100 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border appearance-none cursor-pointer focus:outline-none`}
               aria-describedby="especialidad-error"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -386,7 +386,7 @@ export default function RegistrationForm({
             onChange={handleChange}
             placeholder="tu.email@ejemplo.com"
             required
-            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 hover:bg-black/40 hover:border-gray-400 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
+            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
             errorMessage={errors.email}
             maxLength={254}
             aria-describedby="email-error"

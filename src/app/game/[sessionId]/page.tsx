@@ -266,12 +266,11 @@ export default function GamePage() {
     const gameButtons = (
       <>
         <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
           className={`
             relative overflow-hidden font-black text-white focus:outline-none focus:ring-4
-            bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 hover:from-blue-400 hover:via-blue-500 hover:to-blue-600
-            border-2 border-blue-300/60 focus:ring-blue-300/50 hover:shadow-blue-500/25 shadow-2xl
+            bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700
+            border-2 border-blue-300/60 focus:ring-blue-300/50 shadow-2xl
             transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm transform-gpu
             ${device.type === 'mobile' ? 'px-6 py-4 text-base rounded-xl' : 
               device.type === 'tablet' ? 'px-12 py-5 text-xl rounded-2xl' : 
@@ -300,12 +299,11 @@ export default function GamePage() {
         </motion.button>
 
         <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
           whileTap={{ scale: 0.95 }}
           className={`
             relative overflow-hidden font-black text-white focus:outline-none focus:ring-4
-            bg-gradient-to-b from-green-500 via-green-600 to-green-700 hover:from-green-400 hover:via-green-500 hover:to-green-600
-            border-2 border-green-300/60 focus:ring-green-300/50 hover:shadow-green-500/25 shadow-2xl
+            bg-gradient-to-b from-green-500 via-green-600 to-green-700
+            border-2 border-green-300/60 focus:ring-green-300/50 shadow-2xl
             transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed backdrop-blur-sm transform-gpu
             ${device.type === 'mobile' ? 'px-6 py-4 text-base rounded-xl' : 
               device.type === 'tablet' ? 'px-8 py-5 text-lg rounded-2xl' : 

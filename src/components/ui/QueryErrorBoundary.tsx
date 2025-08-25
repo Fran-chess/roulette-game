@@ -39,7 +39,7 @@ function QueryErrorFallback({ error, resetErrorBoundary }: QueryErrorFallbackPro
       <Button
         onClick={resetErrorBoundary}
         variant="custom"
-        className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-600 dark:text-red-400 dark:hover:bg-red-900/30 text-sm px-4 py-2"
+        className="border-red-300 text-red-600 dark:border-red-600 dark:text-red-400 text-sm px-4 py-2"
       >
         Intentar nuevamente
       </Button>

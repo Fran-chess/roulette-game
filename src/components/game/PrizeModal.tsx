@@ -32,7 +32,6 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   const setGameState = useGameStore((state) => state.setGameState);
   const currentParticipant = useGameStore((state) => state.currentParticipant);
   const gameSession = useGameStore((state) => state.gameSession);
-  const loadQueueFromDB = useGameStore((state) => state.loadQueueFromDB);
   const prizeFeedback = useGameStore((state) => state.prizeFeedback);
   const resetPrizeFeedback = useGameStore((state) => state.resetPrizeFeedback);
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
@@ -42,8 +41,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
   const setShowConfetti = useGameStore((state) => state.setShowConfetti);
   const gameState = useGameStore((state) => state.gameState);
   const showConfetti = useGameStore((state) => state.showConfetti);
-  const moveToNext = useGameStore((state) => state.moveToNext);
-  const setNextParticipant = useGameStore((state) => state.setNextParticipant);
+  const prepareAndActivateNext = useGameStore((state) => state.prepareAndActivateNext);
 
   const { answeredCorrectly, explanation, correctOption } =
     prizeFeedback;
@@ -278,7 +276,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
 
   const buttonClasses = useMemo(() => {
     const baseClasses =
-      "w-full font-marineBold rounded-xl shadow-2xl border-2 border-celeste-medio bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud transition-all duration-200 hover:scale-105 hover:shadow-[0_0_25px_8px_rgba(20,220,180,0.35)] active:scale-95 focus:outline-none focus:ring-4 focus:ring-celeste-medio/40";
+      "w-full font-marineBold rounded-xl shadow-2xl border-2 border-celeste-medio bg-gradient-to-r from-azul-intenso via-celeste-medio to-verde-salud transition-all duration-200 active:scale-95 focus:outline-none focus:ring-4 focus:ring-celeste-medio/40";
 
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-strong`;
@@ -296,7 +294,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
 
   const secondaryButtonClasses = useMemo(() => {
     const baseClasses =
-      "w-full bg-black/10 border border-white/30 hover:bg-black/20 hover:border-white/50 text-white font-marineBold rounded-xl shadow-lg transform active:scale-95 transition-all duration-300";
+      "w-full bg-black/10 border border-white/30 text-white font-marineBold rounded-xl shadow-lg transform active:scale-95 transition-all duration-300";
 
     if (isTV65) {
       return `${baseClasses} text-[4.8rem] py-12 px-16 rounded-2xl border-4 text-shadow-soft`;
@@ -408,31 +406,12 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     const sessionId = await getSessionIdWithRetry();
     
     if (sessionId) {
-      await loadQueueFromDB(sessionId);
-      
-      // Obtener cola actualizada después de la recarga
-      const { waitingQueue } = useGameStore.getState();
-      
-      // Check if there are participants in queue
-      if (waitingQueue.length > 0) {
-        // Set the next participant for the transition screen
-        const nextParticipant = waitingQueue[0];
-        setNextParticipant(nextParticipant);
-        
-        // There are participants waiting - show transition and then start next participant
-        setGameState('transition');
-        // moveToNext will handle the actual transition to the next participant
-        setTimeout(async () => {
-          await moveToNext();
-        }, 2000); // Show transition for 2 seconds
-      } else {
-        // No participants in queue - go to screensaver/waiting
-        await moveToNext(); // This will set gameState to 'screensaver' when queue is empty
-      }
+      // Usar la nueva función centralizada para manejar transiciones
+      await prepareAndActivateNext(3000); // Transición de 3 segundos
     } else {
       console.error('No se pudo obtener sessionId - usando fallback');
-      // Fallback: simplemente usar moveToNext para manejar la transición
-      await moveToNext();
+      // Fallback: usar la función centralizada con delay por defecto
+      await prepareAndActivateNext();
     }
   };
 

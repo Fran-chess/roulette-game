@@ -127,6 +127,9 @@ export interface GameStore {
   // NUEVA: Cola de participantes
   waitingQueue: Participant[];
   nextParticipant: Participant | null;
+  
+  // Control de timeout para transiciones
+  transitionTimeout: NodeJS.Timeout | null;
   setGameState: (state: GameState) => void;
   addParticipant: (participantData: Omit<Participant, 'id' | 'created_at'>) => void;
   startPlaySession: (
@@ -167,6 +170,7 @@ export interface GameStore {
   addToQueue: (participant: Participant) => Promise<void>;
   removeFromQueue: (participantId: string) => Promise<void>;
   moveToNext: () => Promise<void>;
+  prepareAndActivateNext: (delayMs?: number) => Promise<void>;
   reorderQueue: (newOrder: Participant[]) => Promise<void>;
   
   // NUEVOS: Sincronización BD

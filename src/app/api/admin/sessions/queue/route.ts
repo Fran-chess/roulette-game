@@ -30,6 +30,13 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (error) {
+      // Si no encuentra la sesión, devolver cola vacía en lugar de error 500
+      if (error.code === 'PGRST116') {
+        return NextResponse.json({
+          waitingQueue: [],
+          participants: []
+        });
+      }
       tvProdLogger.error('Error al obtener cola:', error);
       return NextResponse.json(
         { error: 'Error al obtener cola' },

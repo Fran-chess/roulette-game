@@ -28,6 +28,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   // NUEVA: Cola de participantes
   waitingQueue: [],
   nextParticipant: null,
+  
+  // Control de timeout para transiciones
+  transitionTimeout: null as NodeJS.Timeout | null,
 
   // [modificación] Estado para feedback del premio
   prizeFeedback: {
@@ -733,21 +736,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  moveToNext: async () => {
-    // PASO 1: Recargar cola desde BD para tener datos actualizados
-    const currentSession = get().gameSession;
-    if (currentSession) {
-      tvLogger.session('MOVE-TO-NEXT: Recargando cola desde BD');
-      await get().loadQueueFromDB(currentSession.session_id);
+  // NUEVA FUNCIÓN: Centralizada para manejar transiciones con timeout controlado
+  prepareAndActivateNext: async (delayMs: number = 3000) => {
+    const { currentParticipant, transitionTimeout, gameSession } = get();
+    
+    tvLogger.transition(`Iniciando transición con delay: ${delayMs}ms`);
+    
+    // Cancelar timeout anterior si existe para evitar condiciones de carrera
+    if (transitionTimeout) {
+      clearTimeout(transitionTimeout);
+      set({ transitionTimeout: null });
+      tvLogger.transition('Timeout anterior cancelado');
     }
     
-    const { waitingQueue, currentParticipant, gameState } = get();
-    
-    // [PROD] Logs de transición removidos para producción
-    
-    // 1. Mover participante actual a completed si existe
+    // PASO 1: Marcar participante actual como completado si existe
     if (currentParticipant) {
-      // [PROD] Log de marcado removido
+      tvLogger.transition(`Marcando como completado: ${currentParticipant.nombre}`);
       
       try {
         await fetch('/api/participants/update-status', {
@@ -758,43 +762,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
             status: 'completed'
           }),
         });
-        // [PROD] Log de éxito removido
+        tvLogger.transition(`Participante ${currentParticipant.nombre} marcado como completado`);
       } catch (error) {
-        console.error('❌ MOVE-TO-NEXT: Error al actualizar estado de participante:', error);
-        tvProdLogger.error('Error al actualizar estado de participante:', error);
+        tvProdLogger.error('Error al marcar participante como completado:', error);
       }
     }
     
-    // 2. Tomar siguiente de la cola (filtrando participantes removidos)
+    // PASO 2: Recargar cola desde BD para obtener datos actualizados
+    if (gameSession) {
+      tvLogger.transition('Recargando cola desde BD');
+      await get().loadQueueFromDB(gameSession.session_id);
+    }
+    
+    // PASO 3: Obtener siguiente participante válido
+    const { waitingQueue } = get();
     const validQueue = waitingQueue.filter(p => 
       p.status !== 'completed' && 
       p.status !== 'disqualified'
     );
-    tvLogger.session(`MOVE-TO-NEXT: ${validQueue.length} participantes válidos en cola`);
     
     if (validQueue.length > 0) {
       const nextParticipant = validQueue[0];
-      tvLogger.session(`MOVE-TO-NEXT: Activando siguiente participante: ${nextParticipant.nombre}`);
+      tvLogger.transition(`Preparando transición para: ${nextParticipant.nombre}`);
       
-      // If we're in transition state, activate the nextParticipant
-      if (gameState === 'transition') {
-        // Crear una copia del participante con status actualizado
-        const updatedNextParticipant = {
+      // PASO 4: Establecer estado de transición
+      set({
+        nextParticipant: nextParticipant,
+        gameState: 'transition' as GameState
+      });
+      
+      // PASO 5: Programar activación del participante después del delay
+      const newTimeout = setTimeout(async () => {
+        tvLogger.transition(`Activando participante: ${nextParticipant.nombre}`);
+        
+        // Activar participante
+        const updatedParticipant = {
           ...nextParticipant,
           status: 'playing' as const
         };
         
-        // Remover el participante específico de la cola y activar participante
+        // Actualizar estado: remover de cola, establecer como actual, limpiar transición
         set((state) => ({
           waitingQueue: state.waitingQueue.filter(p => p.id !== nextParticipant.id),
-          currentParticipant: updatedNextParticipant,
+          currentParticipant: updatedParticipant,
           nextParticipant: null,
-          gameState: 'inGame' as GameState
+          gameState: 'inGame' as GameState,
+          transitionTimeout: null
         }));
         
-        tvLogger.session(`MOVE-TO-NEXT: Participante ${nextParticipant.nombre} activado y removido de cola`);
-        
-        // Actualizar estado del participante a playing en la base de datos
+        // Actualizar estado en BD
         try {
           await fetch('/api/participants/update-status', {
             method: 'POST',
@@ -804,34 +820,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
               status: 'playing'
             }),
           });
-          tvLogger.session(`MOVE-TO-NEXT: Estado actualizado a 'playing' en BD para: ${nextParticipant.nombre}`);
+          tvLogger.transition(`Participante ${nextParticipant.nombre} activado exitosamente`);
         } catch (error) {
           tvProdLogger.error('Error al activar participante:', error);
         }
-      } else {
-        // Normal transition - set nextParticipant for transition screen
-        set({
-          nextParticipant: nextParticipant,
-          gameState: 'transition' as GameState
-        });
-      }
+      }, delayMs);
+      
+      // Guardar referencia del timeout
+      set({ transitionTimeout: newTimeout });
+      
     } else {
-      // Cola vacía, volver a waiting
-      tvLogger.session('MOVE-TO-NEXT: Cola vacía, estableciendo screensaver state');
+      // No hay más participantes - ir a screensaver
+      tvLogger.transition('Cola vacía, estableciendo modo screensaver');
       set({
         currentParticipant: null,
         nextParticipant: null,
         gameState: 'screensaver' as GameState
       });
     }
+  },
+
+  // FUNCIÓN LEGACY: Mantener para compatibilidad pero simplificada
+  moveToNext: async () => {
+    const { gameState } = get();
     
-    // [PROD] Logs de estado final removidos
-    
-    // PASO FINAL: Sync a BD y limpiar cola en memoria
-    if (currentSession) {
-      await get().saveQueueToDB(currentSession.session_id);
-      // Recargar una vez más para asegurar sincronización
-      await get().loadQueueFromDB(currentSession.session_id);
+    // Si estamos en transición, solo activar el nextParticipant (para TransitionScreen legacy)
+    if (gameState === 'transition') {
+      const { nextParticipant } = get();
+      
+      if (nextParticipant) {
+        tvLogger.session(`LEGACY-MOVE-TO-NEXT: Activando ${nextParticipant.nombre}`);
+        
+        const updatedParticipant = {
+          ...nextParticipant,
+          status: 'playing' as const
+        };
+        
+        set((state) => ({
+          waitingQueue: state.waitingQueue.filter(p => p.id !== nextParticipant.id),
+          currentParticipant: updatedParticipant,
+          nextParticipant: null,
+          gameState: 'inGame' as GameState
+        }));
+        
+        try {
+          await fetch('/api/participants/update-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              participantId: nextParticipant.id,
+              status: 'playing'
+            }),
+          });
+        } catch (error) {
+          tvProdLogger.error('Error al activar participante:', error);
+        }
+      }
+    } else {
+      // Para otros casos, usar la nueva función con delay por defecto
+      await get().prepareAndActivateNext(3000);
     }
   },
 

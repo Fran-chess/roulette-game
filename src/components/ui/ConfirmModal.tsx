@@ -74,7 +74,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 </div>
                 <button
                   onClick={onClose}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 transition-colors"
                 >
                   <FiX size={20} />
                 </button>
@@ -114,7 +114,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                 <Button
                   onClick={onClose}
                   variant="custom"
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-marineBold py-2 px-4 rounded-lg transition-colors"
+                  className="bg-gray-100 text-gray-700 font-marineBold py-2 px-4 rounded-lg transition-colors"
                 >
                   {type === 'info' ? 'Cerrar' : cancelText}
                 </Button>
@@ -123,7 +123,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                   <Button
                     onClick={handleConfirm}
                     variant="custom"
-                    className="bg-red-600 hover:bg-red-700 text-white font-marineBold py-2 px-4 rounded-lg transition-colors"
+                    className="bg-red-600 text-white font-marineBold py-2 px-4 rounded-lg transition-colors"
                   >
                     {confirmText}
                   </Button>

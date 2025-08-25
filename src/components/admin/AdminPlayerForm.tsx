@@ -92,7 +92,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
               name="nombre"
               value={formData.nombre}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
+              className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans transition-all duration-300"
               required
             />
           </div>
@@ -106,7 +106,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
               name="apellido"
               value={formData.apellido}
               onChange={handleChange}
-              className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
+              className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans transition-all duration-300"
             />
           </div>
         </div>
@@ -121,7 +121,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
+            className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans transition-all duration-300"
             required
           />
         </div>
@@ -136,7 +136,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
             name="especialidad"
             value={formData.especialidad}
             onChange={handleChange}
-            className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans hover:bg-white/10 transition-all duration-300"
+            className="w-full px-3 py-2 bg-white/5 border border-white/20 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 placeholder-slate-400 font-sans transition-all duration-300"
           />
         </div>
 
@@ -144,7 +144,7 @@ const AdminPlayerForm: React.FC<AdminPlayerFormProps> = ({ sessionId, onPlayerRe
           <Button
             type="submit"
             variant="custom"
-            className="w-full bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-blue-400/50 transition-colors duration-300"
+            className="w-full bg-gradient-to-r from-blue-600 to-teal-600 text-white font-marineBold py-2.5 px-5 rounded-lg shadow-md border border-blue-400/50 transition-colors duration-300"
             disabled={isLoading}
           >
             {isLoading ? 'Registrando...' : 'Registrar Jugador'}

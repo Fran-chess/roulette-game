@@ -40,7 +40,7 @@ export default function Modal({ isOpen, onClose, children, title, onOptionsClick
                 {showOptionsButton && onOptionsClick && (
                   <button
                     onClick={onOptionsClick}
-                    className="text-white/70 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors duration-200"
+                    className="text-white/70 p-1 rounded-md transition-colors duration-200"
                     aria-label="Opciones de la partida"
                     title="Más opciones"
                   >
@@ -49,7 +49,7 @@ export default function Modal({ isOpen, onClose, children, title, onOptionsClick
                 )}
                 <button
                   onClick={onClose}
-                  className="text-white/70 hover:text-white p-1 rounded-md hover:bg-white/10 transition-colors duration-200"
+                  className="text-white/70 p-1 rounded-md transition-colors duration-200"
                   aria-label="Cerrar modal"
                   title="Cerrar"
                 >

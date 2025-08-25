@@ -182,7 +182,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = memo(({
             <Button
               onClick={onClose}
               variant="custom"
-              className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-xl transition-all duration-200 hover:scale-105"
+              className="bg-white/10 text-white p-3 rounded-xl transition-all duration-200"
             >
               <FiX size={24} />
             </Button>
@@ -245,7 +245,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = memo(({
                     {/* Header de la fecha - Clickeable para colapsar/expandir */}
                     <button
                       onClick={() => toggleDateCollapse(date)}
-                      className="w-full flex items-center justify-between p-6 hover:bg-white/5 transition-all duration-200"
+                      className="w-full flex items-center justify-between p-6 transition-all duration-200"
                     >
                       <div className="flex items-center gap-3">
                         <FiCalendar className="text-orange-400" size={24} />
@@ -291,7 +291,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = memo(({
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="bg-white/8 backdrop-blur-sm rounded-xl p-5 border border-white/20 hover:bg-white/12 transition-all duration-200 hover:border-white/30 hover:scale-[1.02]"
+                                    className="bg-white/8 backdrop-blur-sm rounded-xl p-5 border border-white/20 transition-all duration-200"
                                   >
                                     <div className="space-y-4">
                                       {/* Nombre y apellido */}
@@ -349,7 +349,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = memo(({
                                 <Button
                                   onClick={() => loadMoreParticipants(date)}
                                   variant="custom"
-                                  className="bg-white/10 hover:bg-white/20 text-white font-marineBold py-3 px-6 rounded-xl transition-all duration-200 hover:scale-105"
+                                  className="bg-white/10 text-white font-marineBold py-3 px-6 rounded-xl transition-all duration-200"
                                 >
                                   Ver más participantes ({dateParticipants.length - currentLimit} restantes)
                                 </Button>
@@ -375,7 +375,7 @@ const ParticipantsModal: React.FC<ParticipantsModalProps> = memo(({
             <Button
               onClick={onClose}
               variant="custom"
-              className="bg-gradient-to-r from-blue-500/80 to-blue-600/90 hover:from-blue-600/90 hover:to-blue-700 text-white font-marineBold py-3 px-6 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+              className="bg-gradient-to-r from-blue-500/80 to-blue-600/90 text-white font-marineBold py-3 px-6 rounded-xl transition-all duration-200 shadow-lg"
             >
               Cerrar
             </Button>

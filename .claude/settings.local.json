@@ -1,11 +1,5 @@
 {
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
+  "disabledMcpjsonServers": [
     "supabase"
-  ],
-  "permissions": {
-    "allow": [
-      "mcp__supabase__execute_sql"
-    ]
-  }
+  ]
 }

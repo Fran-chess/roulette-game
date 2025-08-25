@@ -39,7 +39,7 @@ export default function SnackbarNotification({ type, message, onClose }: Snackba
           <span className="text-white font-semibold flex-1 text-sm">{message}</span>
           <button
             onClick={onClose}
-            className="ml-4 rounded-full bg-white/10 p-1 hover:bg-white/20 transition"
+            className="ml-4 rounded-full bg-white/10 p-1 transition"
             aria-label="Cerrar notificación"
           >
             <FiX className="text-white w-4 h-4" />

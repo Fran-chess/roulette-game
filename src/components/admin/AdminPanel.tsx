@@ -132,10 +132,10 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ adminData, onLogout }) => 
           if (payload.new && payload.new.session_id) {
             setAdminNotification(
               "success",
-              `Nuevo juego ${String(payload.new.session_id).substring(
+              `Nueva jugada registrada para sesión ${String(payload.new.session_id).substring(
                 0,
                 8
-              )} creado (detectado en tiempo real).`
+              )} (detectado en tiempo real).`
             );
           }
         }
@@ -317,7 +317,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ adminData, onLogout }) => 
                     onClick={async () => {
                       await fetchActiveSessions();
                     }}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-1 rounded text-xs"
+                    className="bg-yellow-600 text-white px-2 py-1 rounded text-xs"
                   >
                     🔄 Refrescar Sesiones
                   </button>
@@ -329,7 +329,7 @@ const AdminPanel: React.FC<AdminPanelProps> = memo(({ adminData, onLogout }) => 
                         setTimeout(() => {
                         }, 1000);
                       }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs"
+                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs"
                     >
                       🧪 Test TV Sync
                     </button>

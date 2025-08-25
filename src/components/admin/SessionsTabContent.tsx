@@ -383,14 +383,14 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
     switch (session.status) {
       case 'pending_player_registration':
         return hasParticipants 
-          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 border-blue-400/50'
-          : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-green-400/50';
+          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 border-blue-400/50'
+          : 'bg-gradient-to-r from-green-600 to-emerald-600 border-green-400/50';
       case 'player_registered':
-        return 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 border-purple-400/50';
+        return 'bg-gradient-to-r from-purple-600 to-indigo-600 border-purple-400/50';
       case 'playing':
-        return 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 border-orange-400/50';
+        return 'bg-gradient-to-r from-orange-600 to-red-600 border-orange-400/50';
       default:
-        return 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 border-green-400/50';
+        return 'bg-gradient-to-r from-green-600 to-emerald-600 border-green-400/50';
     }
   };
 
@@ -430,7 +430,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
               <Button
                 onClick={handleCreateNewSession}
                 variant="custom"
-                className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
+                className="bg-gradient-to-r from-blue-600 to-teal-600 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 admin-dashboard-button"
                 disabled={createSessionMutation.isPending}
               >
                 <FiPlusCircle className="mr-2" size={16} />
@@ -461,7 +461,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
               <Button
                 onClick={handleCreateNewSession}
                 variant="custom"
-                className="bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 mx-auto admin-dashboard-button"
+                className="bg-gradient-to-r from-blue-600 to-teal-600 text-white font-marineBold py-2 px-4 rounded-lg shadow-lg text-sm flex items-center justify-center border border-blue-400/50 transition-colors duration-300 mx-auto admin-dashboard-button"
                 disabled={createSessionMutation.isPending}
               >
                 <FiPlusCircle className="mr-2" size={16} />
@@ -475,12 +475,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
               <motion.div
                 key={session.id || session.session_id}
                 variants={fadeInUp}
-                whileHover={{ 
-                  scale: 1.01, 
-                  backgroundColor: "rgba(255, 255, 255, 0.15)",
-                  boxShadow: "0 10px 25px rgba(0, 0, 0, 0.3)"
-                }}
-                className={`bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg p-4 transition-all shadow-md admin-session-item ${
+                className={`bg-white/10 border border-white/20 rounded-lg p-4 transition-all shadow-md admin-session-item ${
                   finalizingSessionId === session.session_id ? 'opacity-75' : ''
                 }`}
               >
@@ -511,7 +506,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
                           onClick={(e) => handleActivateGame(session, e)}
                           variant="custom"
                           disabled={activatingSession === session.session_id || finalizingSessionId === session.session_id}
-                          className={`text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button ${getButtonStyles(session)}`}
+                          className={`text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 transform admin-session-button ${getButtonStyles(session)}`}
                         >
                           {getButtonText(session)}
                         </Button>
@@ -522,7 +517,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
                             onClick={(e) => handleCloseSession(session, e)}
                             variant="custom"
                             disabled={closingSessionId === session.session_id || finalizingSessionId === session.session_id}
-                            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
+                            className="bg-gradient-to-r from-red-600 to-red-700 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 transform admin-session-button"
                           >
                             {closingSessionId === session.session_id ? 'Cancelando...' : 'Cancelar'}
                           </Button>
@@ -536,7 +531,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
                               onSelectSession(session);
                             }}
                             variant="custom"
-                            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
+                            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 transform admin-session-button"
                           >
                             Ver Detalles
                           </Button>
@@ -548,7 +543,7 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
                             onClick={(e) => handleFinishSession(session, e)}
                             variant="custom"
                             disabled={finalizingSessionId === session.session_id}
-                            className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 hover:shadow-xl transform hover:scale-105 admin-session-button"
+                            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 transform admin-session-button"
                           >
                             {finalizingSessionId === session.session_id ? (
                               <div className="flex items-center">

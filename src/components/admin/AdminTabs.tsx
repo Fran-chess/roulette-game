@@ -37,7 +37,6 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, ease: "easeOut" as const }}
-            whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.05)" }}
             className={`
               flex flex-1 items-center justify-center      // Ocupa espacio equitativamente y centra contenido
               py-3 sm:py-4                               // Padding vertical para altura
@@ -49,7 +48,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({ activeTab, setActiveTab }) => {
                   ? // Pestaña Activa con colores oscuros:
                     "text-blue-400 border-b-2 border-blue-400 -mb-px"
                   : // Pestaña Inactiva con colores oscuros:
-                    "text-slate-300 hover:text-blue-300 border-b border-transparent"
+                    "text-slate-300 border-b border-transparent"
               }
             `}
           >

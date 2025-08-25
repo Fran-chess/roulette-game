@@ -110,7 +110,7 @@ const LiveQueueDisplay: React.FC<LiveQueueDisplayProps> = ({ sessionId }) => {
             {waitingQueue.map((participant, index) => (
               <div
                 key={`${participant.id}-${index}`}
-                className="flex items-center justify-between bg-white/10 hover:bg-white/15 border border-white/20 rounded-lg p-3 transition-all duration-300"
+                className="flex items-center justify-between bg-white/10 border border-white/20 rounded-lg p-3 transition-all duration-300"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-full flex items-center justify-center text-sm font-marineBold">
@@ -126,7 +126,7 @@ const LiveQueueDisplay: React.FC<LiveQueueDisplayProps> = ({ sessionId }) => {
                 <button
                   onClick={() => handleRemoveFromQueue(participant.id)}
                   disabled={isLoading}
-                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-3 py-1 rounded-lg text-sm font-marineBold disabled:opacity-50 transition-all duration-300 shadow-md hover:shadow-lg"
+                  className="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-1 rounded-lg text-sm font-marineBold disabled:opacity-50 transition-all duration-300 shadow-md"
                 >
                   Quitar
                 </button>

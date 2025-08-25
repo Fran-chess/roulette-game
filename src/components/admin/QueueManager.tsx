@@ -119,7 +119,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({ sessionId, onClose }) => {
         <div className="flex gap-2">
           <Button
             onClick={() => setShowAddForm(true)}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600"
             disabled={isLoading}
           >
             + Agregar Participante
@@ -128,7 +128,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({ sessionId, onClose }) => {
             <Button
               onClick={onClose}
               variant="secondary"
-              className="bg-gray-500 hover:bg-gray-600"
+              className="bg-gray-500"
             >
               Cerrar
             </Button>
@@ -162,7 +162,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({ sessionId, onClose }) => {
         <Button
           onClick={handleMoveToNext}
           disabled={isLoading || (!currentParticipant && waitingQueue.length === 0)}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600"
         >
           {currentParticipant ? 'Finalizar Actual y Siguiente' : 'Activar Siguiente'}
         </Button>
@@ -197,7 +197,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({ sessionId, onClose }) => {
                 onDrop={(e) => handleDrop(e, index)}
                 className={`
                   bg-white border border-gray-200 rounded-lg p-4 shadow-sm
-                  hover:shadow-md transition-shadow cursor-move
+                  transition-shadow cursor-move
                   ${draggedItem === index ? 'opacity-50' : ''}
                 `}
               >
@@ -223,7 +223,7 @@ const QueueManager: React.FC<QueueManagerProps> = ({ sessionId, onClose }) => {
                     <Button
                       onClick={() => handleRemoveFromQueue(participant.id)}
                       variant="secondary"
-                      className="bg-red-100 hover:bg-red-200 text-red-700 text-sm px-3 py-1"
+                      className="bg-red-100 text-red-700 text-sm px-3 py-1"
                       disabled={isLoading}
                     >
                       Quitar

@@ -92,7 +92,7 @@ export default function TVPage() {
           const { data: allParticipants, error: allError } = await supabaseClient
             .from('participants')
             .select('*')
-            .order('updated_at', { ascending: false })
+            .order('created_at', { ascending: true })
             .limit(10);
             
           if (allError) {
@@ -304,31 +304,8 @@ export default function TVPage() {
     }
   }, [currentParticipant, gameState, screen, waitingQueue.length, goToScreen]);
 
-  // Auto-activar primer participante si hay cola pero no hay participante activo
-  useEffect(() => {
-    // Solo activar en estado waiting y si hay participantes en cola sin participante actual
-    if (gameState === 'waiting' && waitingQueue.length > 0 && !currentParticipant) {
-      const firstParticipant = waitingQueue[0];
-      if (firstParticipant) {
-        // Activar directamente el primer participante
-        const playingParticipant = { ...firstParticipant, status: 'playing' as const };
-        setCurrentParticipant(playingParticipant);
-        setGameState('inGame');
-        
-        // Actualizar estado en BD
-        fetch('/api/participants/update-status', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            participantId: playingParticipant.id,
-            status: 'playing'
-          }),
-        }).catch(error => {
-          tvProdLogger.error('TV-AUTO-ACTIVATE: Error al actualizar estado:', error);
-        });
-      }
-    }
-  }, [gameState, waitingQueue, currentParticipant, setCurrentParticipant, setGameState]);
+  // REMOVIDO: Auto-activación directa que causaba pantallasos
+  // Ahora se usa prepareAndActivateNext() para transiciones controladas
 
   // Gestionar transiciones entre pantallas basadas en el lastSpinResultIndex
   useEffect(() => {
@@ -469,14 +446,13 @@ export default function TVPage() {
                 ${isTabletPortrait ? 'neomorphic-button-tablet' : 'neomorphic-button-mobile'}
                 font-bold text-white
                 bg-gradient-to-r from-blue-600 to-purple-600
-                hover:from-blue-700 hover:to-purple-700
                 transition-all duration-300
                 ${isSpinning ? 'opacity-50 cursor-not-allowed spinning-state' : 'ready-to-spin'}
                 ${isTabletPortrait 
                   ? 'text-xl px-8 py-4 min-h-[70px] min-w-[320px] rounded-2xl' 
                   : 'text-lg px-6 py-3 min-h-[60px] min-w-[240px] rounded-xl'
                 }
-                shadow-2xl hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300
+                shadow-2xl focus:outline-none focus:ring-4 focus:ring-blue-300
               `}
               onClick={handleSpin}
               disabled={isSpinning}

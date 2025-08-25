@@ -31,7 +31,7 @@ const SessionDetailView: React.FC<SessionDetailViewProps> = ({
       <Button
         onClick={onBackToSessions}
         variant="custom"
-        className="flex items-center text-xs text-slate-300 hover:text-white font-sans mb-5 transition-colors duration-300"
+        className="flex items-center text-xs text-slate-300 font-sans mb-5 transition-colors duration-300"
         aria-label="Volver a la lista de juegos"
       >
         <FiArrowLeft className="mr-1" size={16} />

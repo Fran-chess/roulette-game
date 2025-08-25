@@ -13,7 +13,6 @@ import { useIsMounted } from '@/hooks/useIsMounted';
 export default function TransitionScreen() {
   const isMounted = useIsMounted();
   const nextParticipant = useGameStore((state) => state.nextParticipant);
-  const moveToNext = useGameStore((state) => state.moveToNext);
   
   // Device detection states
   const [isTabletPortrait, setIsTabletPortrait] = useState(false);
@@ -52,14 +51,7 @@ export default function TransitionScreen() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Auto-transition after 3 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      moveToNext();
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }, [moveToNext]);
+  // REMOVIDO: Auto-transition - ahora manejado centralizadamente por prepareAndActivateNext
 
   console.log('🎬 TRANSITION-SCREEN: Renderizando', {
     isMounted,
