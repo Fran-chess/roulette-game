@@ -840,46 +840,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  // FUNCIÓN LEGACY: Mantener para compatibilidad pero simplificada
+  // FUNCIÓN: Mover al siguiente participante con transición consistente
   moveToNext: async () => {
-    const { gameState } = get();
+    const { gameState, currentParticipant, waitingQueue } = get();
     
-    // Si estamos en transición, solo activar el nextParticipant (para TransitionScreen legacy)
-    if (gameState === 'transition') {
-      const { nextParticipant } = get();
-      
-      if (nextParticipant) {
-        tvLogger.session(`LEGACY-MOVE-TO-NEXT: Activando ${nextParticipant.nombre}`);
-        
-        const updatedParticipant = {
-          ...nextParticipant,
-          status: 'playing' as const
-        };
-        
-        set((state) => ({
-          waitingQueue: state.waitingQueue.filter(p => p.id !== nextParticipant.id),
-          currentParticipant: updatedParticipant,
-          nextParticipant: null,
-          gameState: 'inGame' as GameState
-        }));
-        
-        try {
-          await fetch('/api/participants/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              participantId: nextParticipant.id,
-              status: 'playing'
-            }),
-          });
-        } catch (error) {
-          tvProdLogger.error('Error al activar participante:', error);
-        }
-      }
-    } else {
-      // Para otros casos, usar la nueva función con delay por defecto
-      await get().prepareAndActivateNext(3000);
-    }
+    tvLogger.session(`MOVE-TO-NEXT: Estado actual: ${gameState}, Participante actual: ${currentParticipant?.nombre || 'ninguno'}, Cola: ${waitingQueue.length} participantes`);
+    
+    // SIEMPRE usar prepareAndActivateNext para asegurar transición consistente
+    // Esto garantiza que siempre se muestre la pantalla de transición
+    await get().prepareAndActivateNext(3000);
   },
 
   reorderQueue: async (newOrder: Participant[]) => {

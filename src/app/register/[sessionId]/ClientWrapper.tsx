@@ -182,28 +182,9 @@ export default function ClientWrapper({ sessionId }: ClientWrapperProps) {
         <ArrowLeftIcon className="w-6 h-6 text-gray-300 transition-colors duration-200" />
       </button>
 
-      {/* Header - Logo */}
-      <header className="w-full flex justify-center items-center min-h-[65px] border-b border-white/10 bg-azul-intenso/90 backdrop-blur-sm">
-        {/* [modificación] Contenedor con tamaño máximo consistente con GameLayout */}
-        <div className="max-w-[150px] sm:max-w-[165px] md:max-w-[200px] w-full flex justify-center items-center">
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="z-30 w-full"
-          >
-            <Logo 
-              size="auto" 
-              animated={false}
-              withShadow={true}
-              className="w-full h-auto"
-            />
-          </motion.div>
-        </div>
-      </header>
       
       {/* Main Content - Formulario o mensaje de éxito */}
-      <main className="flex-1 flex items-center justify-center w-full px-4 py-6 overflow-y-auto">
+      <main className="flex-1 flex items-center justify-center w-full">
         <motion.div 
           className="w-full max-w-md sm:max-w-lg lg:max-w-4xl z-10"
           initial={{ opacity: 0, y: 20 }}

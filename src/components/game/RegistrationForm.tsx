@@ -39,76 +39,6 @@ export default function RegistrationForm({
     general?: string;
   }>({});
 
-  // Detectar dispositivos
-  const isMobile = typeof window !== "undefined" && window.innerWidth <= 500;
-  const isTablet =
-    typeof window !== "undefined" &&
-    window.innerWidth > 500 &&
-    window.innerWidth <= 768;
-  const isTabletLarge =
-    typeof window !== "undefined" &&
-    window.innerWidth > 768 &&
-    window.innerWidth <= 1400;
-  const isTabletVertical800x1340 =
-    typeof window !== "undefined" &&
-    window.innerWidth >= 769 &&
-    window.innerWidth <= 850 &&
-    window.innerHeight >= 1300 &&
-    window.innerHeight <= 1400;
-
-  // Configuración responsiva
-  const getDeviceConfig = () => {
-    if (isTabletVertical800x1340) {
-      return {
-        maxWidth: "max-w-4xl",
-        maxHeight: "none",
-        padding: "p-8",
-        spacing: "space-y-6",
-        textSize: "text-4xl",
-        formSpacing: "space-y-6",
-        containerClass: "registration-form-tablet-vertical",
-        fieldSpacing: "form-field-spacing",
-      };
-    } else if (isMobile) {
-      return {
-        maxWidth: "max-w-full",
-        maxHeight: "85vh",
-        padding: "p-4",
-        spacing: "space-y-3",
-        textSize: "text-2xl",
-        formSpacing: "space-y-3",
-      };
-    } else if (isTablet) {
-      return {
-        maxWidth: "max-w-[95%]",
-        maxHeight: "80vh",
-        padding: "p-5",
-        spacing: "space-y-4",
-        textSize: "text-2xl",
-        formSpacing: "space-y-4",
-      };
-    } else if (isTabletLarge) {
-      return {
-        maxWidth: "max-w-4xl",
-        maxHeight: "none",
-        padding: "p-6",
-        spacing: "space-y-4",
-        textSize: "text-2xl",
-        formSpacing: "space-y-4",
-      };
-    } else {
-      return {
-        maxWidth: "max-w-lg",
-        maxHeight: "70vh",
-        padding: "p-6",
-        spacing: "space-y-4",
-        textSize: "text-3xl",
-        formSpacing: "space-y-4",
-      };
-    }
-  };
-
-  const deviceConfig = getDeviceConfig();
 
   // Handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -245,39 +175,18 @@ export default function RegistrationForm({
 
   // --- UI ---
   return (
-    <div
-      className={`flex flex-col ${isTabletLarge || isTabletVertical800x1340 ? 'justify-center' : 'justify-between'} w-full mx-auto 
-        ${deviceConfig.padding} rounded-2xl bg-slate-900/20 text-white shadow-2xl
-        ${deviceConfig.maxWidth} relative ${isTabletLarge || isTabletVertical800x1340 ? 'min-h-fit' : ''} 
-        ${deviceConfig.containerClass || ''}`}
-      style={{
-        minHeight: isTabletLarge || isTabletVertical800x1340 ? "auto" : "auto",
-        maxHeight: deviceConfig.maxHeight,
-      }}
-    >
-
-
-      {/* Título */}
-      <div className="w-full flex flex-col items-center shrink-0">
-        <h2
-          className={`${deviceConfig.textSize} font-marineBold text-center ${isTabletVertical800x1340 || isTabletLarge ? 'mb-4' : 'mb-3 sm:mb-4 md:mb-5'}`}
-        >
-          Registro para Jugar
-        </h2>
-      </div>
-
+    <div className="flex flex-col justify-center w-full h-full p-6 rounded-2xl bg-slate-900/20 text-white shadow-2xl">
       <form
         onSubmit={handleSubmit}
-        className={`flex flex-col ${deviceConfig.formSpacing} w-full ${isTabletVertical800x1340 || isTabletLarge ? 'overflow-visible' : 'overflow-y-auto'} ${isTabletVertical800x1340 || isTabletLarge ? 'px-2' : 'px-1 sm:px-2'} ${isTabletVertical800x1340 || isTabletLarge ? '' : 'custom-scrollbar'} ${deviceConfig.fieldSpacing || ''}`}
-        style={{ flexGrow: isTabletVertical800x1340 || isTabletLarge ? 0 : 1 }}
+        className="flex flex-col space-y-4 w-full max-w-md mx-auto"
       >
         {/* Nombre */}
         <div>
           <label
             htmlFor="nombre"
-            className={`block ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'text-lg' : 'text-base sm:text-lg'} font-medium ${isTabletVertical800x1340 || isTabletLarge ? 'mb-1' : 'mb-1'} text-gray-300`}
+            className="block text-base font-medium mb-1 text-gray-300"
           >
-            Nombre
+            Nombre *
           </label>
           <Input
             id="nombre"
@@ -287,7 +196,7 @@ export default function RegistrationForm({
             onChange={handleChange}
             placeholder="Tu nombre"
             required
-            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
+            className="text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full py-2.5 px-3 text-base rounded-md border"
             errorMessage={errors.nombre}
             maxLength={100}
             aria-describedby="nombre-error"
@@ -298,7 +207,7 @@ export default function RegistrationForm({
         <div>
           <label
             htmlFor="apellido"
-            className={`block ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'text-lg' : 'text-base sm:text-lg'} font-medium ${isTabletVertical800x1340 || isTabletLarge ? 'mb-1' : 'mb-1'} text-gray-300`}
+            className="block text-base font-medium mb-1 text-gray-300"
           >
             Apellido
           </label>
@@ -309,7 +218,7 @@ export default function RegistrationForm({
             value={formData.apellido}
             onChange={handleChange}
             placeholder="Tu apellido"
-            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
+            className="text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full py-2.5 px-3 text-base rounded-md border"
             errorMessage={errors.apellido}
             maxLength={100}
             aria-describedby="apellido-error"
@@ -320,7 +229,7 @@ export default function RegistrationForm({
         <div>
           <label
             htmlFor="especialidad"
-            className={`block ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'text-lg' : 'text-base sm:text-lg'} font-medium ${isTabletVertical800x1340 || isTabletLarge ? 'mb-1' : 'mb-1'} text-gray-300`}
+            className="block text-base font-medium mb-1 text-gray-300"
           >
             Especialidad
           </label>
@@ -330,7 +239,7 @@ export default function RegistrationForm({
               name="especialidad"
               value={formData.especialidad}
               onChange={handleChange}
-              className={`text-gray-100 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border appearance-none cursor-pointer focus:outline-none`}
+              className="text-gray-100 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full py-2.5 px-3 text-base rounded-md border appearance-none cursor-pointer focus:outline-none"
               aria-describedby="especialidad-error"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -364,7 +273,7 @@ export default function RegistrationForm({
           </div>
           {/* Error especialidad */}
           {errors.especialidad && (
-            <div className={`error-message mt-1 text-red-400 ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'text-sm' : 'text-sm'}`}>
+            <div className="error-message mt-2 text-red-400 text-sm">
               {errors.especialidad}
             </div>
           )}
@@ -374,9 +283,9 @@ export default function RegistrationForm({
         <div>
           <label
             htmlFor="email"
-            className={`block ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'text-lg' : 'text-base sm:text-lg'} font-medium ${isTabletVertical800x1340 || isTabletLarge ? 'mb-1' : 'mb-1'} text-gray-300`}
+            className="block text-base font-medium mb-1 text-gray-300"
           >
-            Email
+            Email *
           </label>
           <Input
             id="email"
@@ -386,7 +295,9 @@ export default function RegistrationForm({
             onChange={handleChange}
             placeholder="tu.email@ejemplo.com"
             required
-            className={`text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-3 px-4 text-lg' : 'py-2 px-3 text-base sm:text-lg'} rounded-md border`}
+            autoComplete="email"
+            inputMode="email"
+            className="text-gray-100 placeholder-gray-400 bg-black/30 border-gray-500 focus:border-teal-400 focus:ring-1 focus:ring-teal-400 w-full py-2.5 px-3 text-base rounded-md border"
             errorMessage={errors.email}
             maxLength={254}
             aria-describedby="email-error"
@@ -395,23 +306,22 @@ export default function RegistrationForm({
 
         {/* Error general */}
         {errors.general && (
-          <div
-            className={`error-message mt-2 text-red-400 ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'text-sm' : 'text-sm sm:text-base'} font-medium p-2 rounded-md bg-red-900/30 border border-red-400/30`}
-          >
+          <div className="error-message text-red-400 text-sm font-medium p-2 rounded-md bg-red-900/30 border border-red-400/30">
             {errors.general}
           </div>
         )}
 
         {/* Botón */}
-        <div className={`flex justify-center ${isTabletVertical800x1340 || isTabletLarge ? "mt-4" : "mt-2 sm:mt-4"}`}>
+        <div className="w-full mt-4">
           <Button
             type="submit"
             variant="gradient"
-            className={`w-full max-w-none ${isTabletVertical800x1340 ? '' : isTabletLarge ? 'py-4 px-6 text-xl' : 'py-3.5 px-6 text-xl'} font-bold rounded-2xl flex items-center justify-center gap-2`}
+            className="w-full py-3.5 px-6 text-lg font-bold rounded-xl flex items-center justify-center gap-2 min-h-[48px]"
             loading={registerParticipantMutation.isPending}
             loadingText="Registrando..."
+            touchOptimized={true}
           >
-            <UserPlusIcon className={isTabletVertical800x1340 ? "w-8 h-8" : isTabletLarge ? "w-7 h-7" : "w-6 h-6"} />
+            <UserPlusIcon className="w-6 h-6" />
             Registrar Participante
           </Button>
         </div>
