@@ -37,6 +37,7 @@ export default function TVPage() {
   const waitingQueue = useGameStore((state) => state.waitingQueue);
   const gameSession = useGameStore((state) => state.gameSession);
   const transitionConfirmed = useGameStore((state) => state.transitionConfirmed);
+  const nextParticipant = useGameStore((state) => state.nextParticipant);
   
   // Acciones del store
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
@@ -87,7 +88,7 @@ export default function TVPage() {
     const checkForParticipants = async () => {
       try {
         // [FIX] También detectar participantes cuando currentParticipant es null (no solo en waiting)
-        const { currentParticipant, gameState, waitingQueue: currentQueue, gameSession } = useGameStore.getState();
+        const { currentParticipant, gameState, waitingQueue: currentQueue, gameSession, fetchActiveSessionPublic } = useGameStore.getState();
         
         // [FIX] Limpiar procesados si cambió la sesión
         if (gameSession?.session_id !== lastSessionId) {
@@ -101,11 +102,27 @@ export default function TVPage() {
         // Buscar participantes solo cuando sea necesario - no durante transiciones, juego activo o premios
         // IMPORTANTE: Incluir 'waiting' y 'screensaver' para detectar reactivaciones
         if (gameState === 'waiting' || gameState === 'screensaver' || (!currentParticipant && gameState !== 'transition' && gameState !== 'question' && gameState !== 'prize')) {
+          // IMPORTANTE: Filtrar por sesión activa
+          if (!gameSession?.session_id) {
+            // Si no hay sesión activa, intentar obtener una
+            const activeSession = await fetchActiveSessionPublic();
+            if (!activeSession) {
+              tvLogger.participant('TV-POLLING: No hay sesión activa, saltando polling');
+              return;
+            }
+          }
+          
+          const sessionId = gameSession?.session_id || useGameStore.getState().gameSession?.session_id;
+          if (!sessionId) {
+            return;
+          }
+          
           const { data: allParticipants, error: allError } = await supabaseClient
             .from('participants')
             .select('*')
+            .eq('session_id', sessionId)  // CRÍTICO: Filtrar por sesión
             .order('created_at', { ascending: true })
-            .limit(10);
+            .limit(20);
             
           if (allError) {
             tvProdLogger.error('ADMIN-CONNECTION: Error al consultar participantes:', allError);
@@ -180,6 +197,12 @@ export default function TVPage() {
                 tvLogger.participant(`TV-PARTICIPANT-DETECTED: Status: ${currentStatus}, Updated: ${currentUpdatedAt}`);
                 
                 await addToQueue(typedParticipant);
+                
+                // Si el juego estaba en screensaver y detectamos un nuevo participante, cambiar pantalla
+                if ((gameState === 'screensaver' || gameState === 'waiting') && !currentParticipant) {
+                  tvLogger.participant(`TV-REACTIVACIÓN: Cambiando de ${gameState} a roulette para ${typedParticipant.nombre}`);
+                  goToScreen('roulette');
+                }
               }
             }
           } else {
@@ -195,9 +218,9 @@ export default function TVPage() {
       }
     };
 
-    // Ejecutar inmediatamente y luego cada 5 segundos (más eficiente)
+    // Ejecutar inmediatamente y luego cada 2 segundos para detección más rápida
     checkForParticipants();
-    const pollingIntervalRef = setInterval(checkForParticipants, 5000);
+    const pollingIntervalRef = setInterval(checkForParticipants, 2000);
 
     return () => {
       if (pollingIntervalRef) {
@@ -322,12 +345,14 @@ export default function TVPage() {
   
   // Sync screen state with gameState for better consistency
   useEffect(() => {
+    tvLogger.session(`🔄 TV-SYNC: gameState=${gameState}, screen=${screen}, participant=${currentParticipant?.nombre || 'null'}`);
+    
     // Sync TV screen with gameState when necessary
     if (gameState === 'screensaver' && screen !== 'waiting') {
       tvLogger.session('TV-TRANSITION: Showing waiting screen (screensaver mode)');
       goToScreen('waiting');
     } else if (gameState === 'transition' && screen !== 'transition') {
-      tvLogger.session('TV-TRANSITION: Showing transition screen');
+      tvLogger.session('🎬 TV-TRANSITION: gameState es transition, cambiando pantalla a transition');
       setScreen('transition');
     } else if ((gameState === 'inGame' || gameState === 'roulette') && currentParticipant && screen !== 'roulette' && screen !== 'question' && screen !== 'prize') {
       tvLogger.session(`TV-TRANSITION: Showing roulette for participant: ${currentParticipant.nombre} (from screen: ${screen})`);
@@ -346,11 +371,20 @@ export default function TVPage() {
   
   // Handshake: Confirmar cuando la transición es visible
   useEffect(() => {
+    tvLogger.session(`🤝 TV-HANDSHAKE CHECK: gameState=${gameState}, screen=${screen}, confirmed=${transitionConfirmed}`);
     if (gameState === 'transition' && screen === 'transition' && !transitionConfirmed) {
-      tvLogger.session('TV-HANDSHAKE: Pantalla de transición visible - confirmando al store');
+      tvLogger.session('✅ TV-HANDSHAKE: Pantalla de transición visible - confirmando al store');
       confirmTransitionVisible();
     }
   }, [gameState, screen, transitionConfirmed, confirmTransitionVisible]);
+  
+  // PWA Fix: Detectar cambios en nextParticipant como respaldo
+  useEffect(() => {
+    if (nextParticipant && gameState === 'transition' && screen !== 'transition') {
+      tvLogger.session(`🔧 PWA-FIX: Detectado nextParticipant pero pantalla no es transition - forzando cambio`);
+      setScreen('transition');
+    }
+  }, [nextParticipant, gameState, screen]);
 
   // REMOVIDO: Auto-activación directa que causaba pantallasos
   // Ahora se usa prepareAndActivateNext() para transiciones controladas
@@ -526,8 +560,8 @@ export default function TVPage() {
     );
   }
 
-  // Pantalla de transición
-  if (screen === 'transition') {
+  // Pantalla de transición - también verificar nextParticipant como respaldo
+  if (screen === 'transition' || (gameState === 'transition' && useGameStore.getState().nextParticipant)) {
     return <TransitionScreen />;
   }
 

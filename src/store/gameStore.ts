@@ -731,8 +731,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
     
     const activeCurrentParticipant = shouldClearCurrentParticipant ? null : currentParticipant;
+    const { gameState } = get();
     
-    if (!activeCurrentParticipant) {
+    // Activar directamente si no hay participante activo O si el juego está en screensaver/waiting
+    if (!activeCurrentParticipant || gameState === 'screensaver' || gameState === 'waiting') {
       // [FIX] Verificar que no estamos ya procesando este participante
       const currentState = get();
       if (currentState.currentParticipant?.id === participant.id) {
@@ -740,8 +742,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         return;
       }
       
-      // Si no hay participante activo, activar directamente
-      tvLogger.participant(`QUEUE: Activando directamente: ${participant.nombre}`);
+      // Si no hay participante activo o el juego está inactivo, activar directamente
+      tvLogger.participant(`QUEUE: Activando directamente: ${participant.nombre} (gameState: ${gameState})`);
       tvLogger.participant(`QUEUE: Estableciendo gameState: 'inGame' y currentParticipant: ${participant.nombre}`);
       
       // Asegurar que el participante tenga status correcto para jugar
@@ -882,9 +884,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // NUEVA FUNCIÓN: Centralizada para manejar transiciones con handshake
   prepareAndActivateNext: async () => {
-    const { currentParticipant, transitionTimeout, transitionSafetyTimeout, gameSession } = get();
+    const { currentParticipant, transitionTimeout, transitionSafetyTimeout, gameSession, gameState } = get();
     
-    tvLogger.transition(`Iniciando transición con handshake`);
+    tvLogger.transition(`🔄 PREPARE-NEXT: Iniciando transición con handshake`);
+    tvLogger.transition(`📊 Estado actual - gameState: ${gameState}, currentParticipant: ${currentParticipant?.nombre || 'null'}`);
     
     // Cancelar timeouts anteriores si existen para evitar condiciones de carrera
     if (transitionTimeout) {
@@ -901,6 +904,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     // Reset del estado de confirmación para nueva transición
     set({ transitionConfirmed: false })
+    tvLogger.transition('✅ Estado de confirmación reseteado')
     
     // PASO 1: Marcar participante actual como completado si existe
     if (currentParticipant) {
@@ -938,11 +942,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const nextParticipant = validQueue[0];
       tvLogger.transition(`Preparando transición para: ${nextParticipant.nombre}`);
       
-      // PASO 4: Establecer estado de transición
-      set({
-        nextParticipant: nextParticipant,
-        gameState: 'transition' as GameState
-      });
+      // PASO 4: Establecer estado de transición con pequeño delay para PWA
+      tvLogger.transition(`🎯 Estableciendo nextParticipant: ${nextParticipant.nombre}`);
+      
+      // Primero establecer el nextParticipant
+      set({ nextParticipant: nextParticipant });
+      
+      // Luego establecer el gameState con un micro-delay para que PWA pueda procesar
+      setTimeout(() => {
+        set({ gameState: 'transition' as GameState });
+        tvLogger.transition(`✅ Estado cambiado a 'transition' (con micro-delay para PWA)`);
+      }, 50); // 50ms micro-delay para PWA
       
       // PASO 5: NO iniciar timer inmediatamente - esperar confirmación de que la transición es visible
       tvLogger.transition('⏳ Esperando confirmación de transición visible...');
@@ -950,15 +960,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
       // Establecer un safety timeout por si la confirmación nunca llega
       // (puede pasar en PWA o dispositivos lentos)
       const safetyTimeout = setTimeout(() => {
-        const { transitionConfirmed } = get();
+        const { transitionConfirmed, gameState: currentGameState } = get();
+        tvLogger.transition(`🚨 SAFETY CHECK - transitionConfirmed: ${transitionConfirmed}, gameState: ${currentGameState}`);
         if (!transitionConfirmed) {
           tvLogger.transition('⚠️ Safety timeout activado - no se recibió confirmación de transición');
           tvLogger.transition('Forzando activación del siguiente participante');
           
           // Forzar la confirmación para activar al participante
           get().confirmTransitionVisible();
+        } else {
+          tvLogger.transition('✅ Transición ya fue confirmada, safety timeout no necesario');
         }
-      }, 500); // 500ms de espera máxima para la confirmación
+      }, 800); // Aumentado a 800ms para dar más tiempo en PWA
       
       // Guardar referencia del safety timeout
       set({ transitionSafetyTimeout: safetyTimeout });
