@@ -31,6 +31,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   // Control de timeout para transiciones
   transitionTimeout: null as NodeJS.Timeout | null,
+  
+  // Handshake para confirmar que la transición es visible
+  transitionConfirmed: false,
+  transitionSafetyTimeout: null as NodeJS.Timeout | null,
 
   // [modificación] Estado para feedback del premio
   prizeFeedback: {
@@ -106,6 +110,77 @@ export const useGameStore = create<GameStore>((set, get) => ({
   
   setNextParticipant: (participant) => set({ nextParticipant: participant }),
   
+  // Handshake: Confirmar que la transición es visible y comenzar el timer
+  confirmTransitionVisible: () => {
+    const { transitionConfirmed, nextParticipant, transitionTimeout } = get();
+    
+    // Evitar confirmaciones duplicadas
+    if (transitionConfirmed) {
+      tvLogger.transition('Confirmación duplicada ignorada - transición ya confirmada');
+      return;
+    }
+    
+    tvLogger.transition('✅ Transición confirmada como visible');
+    set({ transitionConfirmed: true });
+    
+    // Limpiar safety timeout si existe
+    const { transitionSafetyTimeout } = get();
+    if (transitionSafetyTimeout) {
+      clearTimeout(transitionSafetyTimeout);
+      set({ transitionSafetyTimeout: null });
+    }
+    
+    // Si no hay siguiente participante, no hacer nada más
+    if (!nextParticipant) {
+      tvLogger.transition('No hay siguiente participante para activar');
+      return;
+    }
+    
+    // Limpiar timeout anterior si existe (por seguridad)
+    if (transitionTimeout) {
+      clearTimeout(transitionTimeout);
+    }
+    
+    // Ahora sí, iniciar el timer de 3 segundos para activar al siguiente participante
+    const newTimeout = setTimeout(async () => {
+      tvLogger.transition(`Activando participante tras confirmación: ${nextParticipant.nombre}`);
+      
+      // Activar participante
+      const updatedParticipant = {
+        ...nextParticipant,
+        status: 'playing' as const
+      };
+      
+      // Actualizar estado: remover de cola, establecer como actual, limpiar transición
+      set((state) => ({
+        waitingQueue: state.waitingQueue.filter(p => p.id !== nextParticipant.id),
+        currentParticipant: updatedParticipant,
+        nextParticipant: null,
+        gameState: 'inGame' as GameState,
+        transitionTimeout: null,
+        transitionConfirmed: false // Reset para próxima transición
+      }));
+      
+      // Actualizar estado en BD
+      try {
+        await fetch('/api/participants/update-status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            participantId: nextParticipant.id,
+            status: 'playing'
+          }),
+        });
+        tvLogger.transition(`Participante ${nextParticipant.nombre} activado exitosamente`);
+      } catch (error) {
+        tvProdLogger.error('Error al activar participante:', error);
+      }
+    }, 3000); // 3 segundos de espera después de confirmar la transición
+    
+    // Guardar referencia del timeout
+    set({ transitionTimeout: newTimeout });
+  },
+  
   // [modificación] Añadir función para establecer preguntas
   setQuestions: (questionsArray: Question[]) => set({ questions: questionsArray }),
 
@@ -173,23 +248,37 @@ export const useGameStore = create<GameStore>((set, get) => ({
   }),
 
   // [modificación] Actualizar clearCurrentGame para resetear completamente el juego
-  resetCurrentGame: () => set({
-    gameState: 'inGame' as GameState,
-    currentParticipant: null,
-    nextParticipant: null,
-    currentQuestion: null,
-    lastSpinResultIndex: null,
-    recentSpinSegments: [],
-    gameSession: null,
-    showConfetti: false,
-    prizeFeedback: {
-      answeredCorrectly: null,
-      explanation: "",
-      correctOption: "",
-      prizeName: ""
-    },
-    // No se limpian las 'questions' si son genéricas
-  }),
+  resetCurrentGame: () => {
+    // Limpiar timeouts antes de resetear
+    const { transitionTimeout, transitionSafetyTimeout } = get();
+    if (transitionTimeout) {
+      clearTimeout(transitionTimeout);
+    }
+    if (transitionSafetyTimeout) {
+      clearTimeout(transitionSafetyTimeout);
+    }
+    
+    set({
+      gameState: 'waiting' as GameState, // [FIX] Cambiar a 'waiting' en lugar de 'inGame'
+      currentParticipant: null,
+      nextParticipant: null,
+      currentQuestion: null,
+      lastSpinResultIndex: null,
+      recentSpinSegments: [],
+      gameSession: null,
+      showConfetti: false,
+      transitionTimeout: null,
+      transitionSafetyTimeout: null,
+      transitionConfirmed: false,
+      prizeFeedback: {
+        answeredCorrectly: null,
+        explanation: "",
+        correctOption: "",
+        prizeName: ""
+      },
+      // No se limpian las 'questions' si son genéricas
+    });
+  },
 
   // Función de reseteo completo (incluido para compatibilidad)
   resetAllData: () => set({
@@ -443,6 +532,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       get().setAdminNotification('error', 'No se puede crear sesión: ID de Admin no disponible.');
       return null;
     }
+    
+    // [FIX] Resetear estados del juego antes de crear nueva sesión
+    get().resetCurrentGame();
+    set({ 
+      waitingQueue: [],
+      nextParticipant: null,
+      gameSession: null
+    });
+    
     get().setAdminLoading('sessionAction', true);
     get().clearAdminNotifications();
     try {
@@ -461,6 +559,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           // Actualizar la sesión actual con la sesión activa encontrada
           if (errorData.activeSession) {
             get().setAdminCurrentSession(errorData.activeSession);
+            // También actualizar la lista de sesiones para reflejar el cambio
+            await get().fetchGameSessions();
           }
           return null;
         }
@@ -482,7 +582,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
       } catch {
         get().setAdminNotification('success', 'Error: Sesión de juego no creada.');
       }
+      // Actualizar la sesión actual si se proporciona en la respuesta
+      if (data.session) {
+        get().setAdminCurrentSession(data.session);
+      }
       await get().fetchGameSessions();
+      // Si no teníamos la sesión completa, obtenerla ahora
+      if (!data.session) {
+        await get().fetchActiveSession();
+      }
       return gameSessionUUID;
     } catch (error: Error | unknown) {
       tvProdLogger.error("Store: createNewSession error:", error);
@@ -513,11 +621,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
       await response.json();
       get().setAdminNotification('success', 'Partida cerrada exitosamente.');
       
-      // Limpiar la sesión actual
+      // [FIX] Resetear TODOS los estados del juego al cerrar sesión
+      get().resetCurrentGame(); // Limpia currentParticipant, gameState, etc.
       get().setAdminCurrentSession(null);
+      set({ 
+        waitingQueue: [], // Limpiar cola de espera
+        nextParticipant: null, // Limpiar siguiente participante
+        gameSession: null, // Limpiar sesión del juego
+      });
       
       // Actualizar la lista de sesiones
       await get().fetchGameSessions();
+      
+      // Verificar si hay otra sesión activa después de cerrar
+      await get().fetchActiveSession();
       
       return true;
     } catch (error: Error | unknown) {
@@ -616,13 +733,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const activeCurrentParticipant = shouldClearCurrentParticipant ? null : currentParticipant;
     
     if (!activeCurrentParticipant) {
+      // [FIX] Verificar que no estamos ya procesando este participante
+      const currentState = get();
+      if (currentState.currentParticipant?.id === participant.id) {
+        tvLogger.participant(`QUEUE: Participante ${participant.nombre} ya es el actual, ignorando`);
+        return;
+      }
+      
       // Si no hay participante activo, activar directamente
       tvLogger.participant(`QUEUE: Activando directamente: ${participant.nombre}`);
       tvLogger.participant(`QUEUE: Estableciendo gameState: 'inGame' y currentParticipant: ${participant.nombre}`);
       
       // Asegurar que el participante tenga status correcto para jugar
       const playingParticipant = { ...participant, status: 'playing' as const };
-      set({ currentParticipant: playingParticipant, gameState: 'inGame' });
+      
+      // [FIX] Establecer ambos estados atómicamente para evitar estados inconsistentes
+      set({ 
+        currentParticipant: playingParticipant, 
+        gameState: 'inGame',
+        // Limpiar cualquier estado de transición previo
+        transitionConfirmed: false,
+        nextParticipant: null
+      });
       
       // Actualizar estado del participante a playing
       try {
@@ -646,11 +778,23 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const existingIndex = state.waitingQueue.findIndex(p => p.id === participant.id);
         
         if (existingIndex >= 0) {
-          // Actualizar participante existente en la cola
-          const newQueue = [...state.waitingQueue];
-          newQueue[existingIndex] = participant;
-          console.log(`🔄 QUEUE: Participante actualizado en cola: ${participant.nombre}`);
-          return { waitingQueue: newQueue };
+          // [FIX] Solo actualizar si realmente cambió algo
+          const existing = state.waitingQueue[existingIndex];
+          const hasChanges = 
+            existing.status !== participant.status || 
+            existing.updated_at !== participant.updated_at ||
+            existing.completed_at !== participant.completed_at;
+          
+          if (hasChanges) {
+            // Actualizar participante existente en la cola
+            const newQueue = [...state.waitingQueue];
+            newQueue[existingIndex] = participant;
+            console.log(`🔄 QUEUE: Participante actualizado en cola: ${participant.nombre} (cambios detectados)`);
+            return { waitingQueue: newQueue };
+          } else {
+            // No hay cambios reales, no actualizar
+            return state;
+          }
         } else {
           // Agregar nuevo participante a la cola
           const newQueue = [...state.waitingQueue, participant];
@@ -736,18 +880,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  // NUEVA FUNCIÓN: Centralizada para manejar transiciones con timeout controlado
-  prepareAndActivateNext: async (delayMs: number = 3000) => {
-    const { currentParticipant, transitionTimeout, gameSession } = get();
+  // NUEVA FUNCIÓN: Centralizada para manejar transiciones con handshake
+  prepareAndActivateNext: async () => {
+    const { currentParticipant, transitionTimeout, transitionSafetyTimeout, gameSession } = get();
     
-    tvLogger.transition(`Iniciando transición con delay: ${delayMs}ms`);
+    tvLogger.transition(`Iniciando transición con handshake`);
     
-    // Cancelar timeout anterior si existe para evitar condiciones de carrera
+    // Cancelar timeouts anteriores si existen para evitar condiciones de carrera
     if (transitionTimeout) {
       clearTimeout(transitionTimeout);
       set({ transitionTimeout: null });
       tvLogger.transition('Timeout anterior cancelado');
     }
+    
+    if (transitionSafetyTimeout) {
+      clearTimeout(transitionSafetyTimeout);
+      set({ transitionSafetyTimeout: null });
+      tvLogger.transition('Safety timeout anterior cancelado');
+    }
+    
+    // Reset del estado de confirmación para nueva transición
+    set({ transitionConfirmed: false })
     
     // PASO 1: Marcar participante actual como completado si existe
     if (currentParticipant) {
@@ -791,43 +944,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
         gameState: 'transition' as GameState
       });
       
-      // PASO 5: Programar activación del participante después del delay
-      const newTimeout = setTimeout(async () => {
-        tvLogger.transition(`Activando participante: ${nextParticipant.nombre}`);
-        
-        // Activar participante
-        const updatedParticipant = {
-          ...nextParticipant,
-          status: 'playing' as const
-        };
-        
-        // Actualizar estado: remover de cola, establecer como actual, limpiar transición
-        set((state) => ({
-          waitingQueue: state.waitingQueue.filter(p => p.id !== nextParticipant.id),
-          currentParticipant: updatedParticipant,
-          nextParticipant: null,
-          gameState: 'inGame' as GameState,
-          transitionTimeout: null
-        }));
-        
-        // Actualizar estado en BD
-        try {
-          await fetch('/api/participants/update-status', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              participantId: nextParticipant.id,
-              status: 'playing'
-            }),
-          });
-          tvLogger.transition(`Participante ${nextParticipant.nombre} activado exitosamente`);
-        } catch (error) {
-          tvProdLogger.error('Error al activar participante:', error);
-        }
-      }, delayMs);
+      // PASO 5: NO iniciar timer inmediatamente - esperar confirmación de que la transición es visible
+      tvLogger.transition('⏳ Esperando confirmación de transición visible...');
       
-      // Guardar referencia del timeout
-      set({ transitionTimeout: newTimeout });
+      // Establecer un safety timeout por si la confirmación nunca llega
+      // (puede pasar en PWA o dispositivos lentos)
+      const safetyTimeout = setTimeout(() => {
+        const { transitionConfirmed } = get();
+        if (!transitionConfirmed) {
+          tvLogger.transition('⚠️ Safety timeout activado - no se recibió confirmación de transición');
+          tvLogger.transition('Forzando activación del siguiente participante');
+          
+          // Forzar la confirmación para activar al participante
+          get().confirmTransitionVisible();
+        }
+      }, 500); // 500ms de espera máxima para la confirmación
+      
+      // Guardar referencia del safety timeout
+      set({ transitionSafetyTimeout: safetyTimeout });
+      
+      // La activación real del participante ahora ocurrirá cuando se llame a confirmTransitionVisible()
       
     } else {
       // No hay más participantes - ir a screensaver
@@ -848,7 +984,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     
     // SIEMPRE usar prepareAndActivateNext para asegurar transición consistente
     // Esto garantiza que siempre se muestre la pantalla de transición
-    await get().prepareAndActivateNext(3000);
+    await get().prepareAndActivateNext();
   },
 
   reorderQueue: async (newOrder: Participant[]) => {

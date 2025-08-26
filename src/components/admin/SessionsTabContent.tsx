@@ -18,7 +18,7 @@ import SnackbarNotification from '@/components/ui/SnackbarNotification';
 // [OPTIMIZADO] Importar logger optimizado para producción
 import { tvProdLogger } from '@/utils/tvLogger';
 // [React Query] Importar hooks optimizados
-import { useGameSessions, useActiveGameSession, useCloseGameSession, useCreateGameSession } from '@/hooks/api';
+import { useGameSessions, useActiveGameSession, useCreateGameSession } from '@/hooks/api';
 // [React Query] Componentes de carga y error
 import { SessionListSkeleton } from '@/components/ui/LoadingSkeleton';
 import QueryErrorBoundary from '@/components/ui/QueryErrorBoundary';
@@ -34,7 +34,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
   // [React Query] Hooks para manejo de datos
   const { data: sessionsData, isLoading: isLoadingList, refetch: refetchSessions } = useGameSessions();
   const { data: activeSessionData } = useActiveGameSession();
-  const closeSessionMutation = useCloseGameSession();
   const createSessionMutation = useCreateGameSession();
   
   // [OPTIMIZADO] Memoizar activeSessions para evitar re-renders
@@ -82,13 +81,8 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
   const navigationInProgress = useRef(false);
   // [modificación] Estado para seguimiento de cuál sesión está siendo activada
   const [activatingSession, setActivatingSession] = useState<string | null>(null);
-  // Estado para seguimiento de la sesión que se está cerrando
-  const [closingSessionId, setClosingSessionId] = useState<string | null>(null);
   // Estado para seguimiento de la sesión que se está finalizando
   const [finalizingSessionId, setFinalizingSessionId] = useState<string | null>(null);
-  // [modificación] Estados para el modal de cancelación
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [sessionToCancel, setSessionToCancel] = useState<string | null>(null);
   // Estados para el modal de finalización
   const [showFinishModal, setShowFinishModal] = useState(false);
   const [sessionToFinish, setSessionToFinish] = useState<string | null>(null);
@@ -108,12 +102,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
     return session?.participants || [];
   }, [activeSessions]);
 
-  // [modificación] Función para mostrar el modal de confirmación antes de cerrar la sesión
-  const handleCloseSession = (session: PlaySession, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSessionToCancel(session.session_id);
-    setShowCancelModal(true);
-  };
 
 
 
@@ -131,56 +119,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }, []);
 
-  // [React Query] Función optimizada para confirmar cancelación de sesión
-  const confirmCancelSession = async () => {
-    if (!sessionToCancel) return;
-
-    setClosingSessionId(sessionToCancel);
-    
-    // [React Query] Mostrar notificación de progreso
-    setNotification({
-      type: 'success',
-      message: 'Cancelando sesión...'
-    });
-
-    try {
-      // [React Query] Usar la mutación optimizada con invalidación automática
-      await closeSessionMutation.mutateAsync(sessionToCancel);
-      
-      // [React Query] Mostrar notificación de éxito
-      setNotification({
-        type: 'success',
-        message: 'Sesión cancelada exitosamente'
-      });
-      
-      // [React Query] La invalidación de queries se maneja automáticamente en el hook
-      // No necesitamos llamar manualmente a onRefreshSessions
-      
-      // [modificación] Limpiar la notificación después de 3 segundos
-      setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-      
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      tvProdLogger.error('Error al cancelar sesión:', errorMessage);
-      
-      // [React Query] Mostrar notificación de error específico
-      setNotification({
-        type: 'error',
-        message: errorMessage
-      });
-      
-      // [modificación] Limpiar la notificación de error después de 5 segundos
-      setTimeout(() => {
-        setNotification(null);
-      }, 5000);
-    } finally {
-      setClosingSessionId(null);
-      setShowCancelModal(false);
-      setSessionToCancel(null);
-    }
-  };
 
   // Función para mostrar el modal de finalización
   const handleFinishSession = (session: PlaySession, e: React.MouseEvent) => {
@@ -299,10 +237,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
       return 'bg-orange-100 text-orange-800 border-orange-300 animate-pulse';
     }
     
-    // [modificación] Agregar estado visual especial para sesiones siendo canceladas
-    if (closingSessionId === sessionId) {
-      return 'bg-red-100 text-red-800 border-red-300 animate-pulse';
-    }
     
     switch (status) {
       case 'pending_player_registration':
@@ -330,10 +264,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
       return 'Finalizando...';
     }
     
-    // [modificación] Mostrar estado especial para sesiones siendo canceladas
-    if (sessionId && closingSessionId === sessionId) {
-      return 'Cancelando...';
-    }
     
     switch (status) {
       case 'pending_player_registration':
@@ -511,18 +441,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
                           {getButtonText(session)}
                         </Button>
                         
-                        {/* Botón Cancelar para sesiones pendientes */}
-                        {session.status === 'pending_player_registration' && (
-                          <Button
-                            onClick={(e) => handleCloseSession(session, e)}
-                            variant="custom"
-                            disabled={closingSessionId === session.session_id || finalizingSessionId === session.session_id}
-                            className="bg-gradient-to-r from-red-600 to-red-700 text-white font-marineBold py-3 px-6 rounded-lg shadow-lg text-sm transition-all duration-300 transform admin-session-button"
-                          >
-                            {closingSessionId === session.session_id ? 'Cancelando...' : 'Cancelar'}
-                          </Button>
-                        )}
-                        
                         {/* Botón Ver Detalles */}
                         {onSelectSession && (
                           <Button
@@ -564,18 +482,6 @@ const SessionsTabContent: React.FC<SessionsTabContentProps> = memo(({
           </motion.div>
         )}
         </div>
-        
-        {/* [modificación] Modal de confirmación para cancelar sesión */}
-      <ConfirmModal
-        isOpen={showCancelModal}
-        onClose={() => setShowCancelModal(false)}
-        onConfirm={confirmCancelSession}
-        title="Cancelar Juego"
-        message="¿Estás seguro de que deseas cancelar este juego? Esta acción no se puede deshacer."
-        confirmText="Sí, Cancelar"
-        cancelText="No, Mantener"
-        type="confirm"
-      />
       
       {/* Modal de confirmación para finalizar sesión */}
       <ConfirmModal

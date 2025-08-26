@@ -1,6 +1,6 @@
 // src/components/admin/DashboardTabContent.tsx
 import { motion } from 'framer-motion';
-import { FiUsers, FiPlusCircle, FiLogOut, FiPlay, FiX } from 'react-icons/fi';
+import { FiUsers, FiPlusCircle, FiLogOut, FiPlay } from 'react-icons/fi';
 import Button from '@/components/ui/Button';
 import { fadeInUp, staggerContainer } from '@/utils/animations';
 import { useState } from 'react';
@@ -29,8 +29,7 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
 
   const { 
     adminState, 
-    fetchParticipantsList,
-    closeActiveSession
+    fetchParticipantsList
   } = useGameStore();
 
   const activeSession: PlaySession | null = adminState.currentSession;
@@ -39,12 +38,6 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
     setShowParticipantsModal(true);
     if (adminState.participantsStats.participants?.length === 0) {
       await fetchParticipantsList();
-    }
-  };
-
-  const handleCloseActiveSession = async () => {
-    if (activeSession) {
-      await closeActiveSession(activeSession.session_id);
     }
   };
 
@@ -107,16 +100,6 @@ const DashboardTabContent: React.FC<DashboardTabContentProps> = ({
                 >
                   <FiPlay className="mr-3" size={16} />
                   Continuar Partida
-                </Button>
-                
-                <Button
-                  onClick={handleCloseActiveSession}
-                  variant="custom"
-                  className="w-full bg-red-500/80 text-white font-marineBold py-2 px-4 rounded-lg shadow-md text-sm flex items-center justify-start border-0 transition-all duration-200 admin-dashboard-button"
-                  disabled={isLoading}
-                >
-                  <FiX className="mr-3" size={14} />
-                  {isLoading ? 'Cerrando...' : 'Cerrar Partida'}
                 </Button>
                 
                 <Button

@@ -2949,3 +2949,13 @@ textarea::placeholder {
 .animate-correct-glow {
   animation: correctGlow 1.5s ease-out;
 }
+
+/* Shimmer animation for participant name footer */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}

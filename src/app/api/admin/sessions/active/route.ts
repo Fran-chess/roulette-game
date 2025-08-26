@@ -45,7 +45,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      session: activeSession,
+      activeSession: activeSession,
       hasActiveSession: !!activeSession
     });
   } catch (err: unknown) {

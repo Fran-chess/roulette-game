@@ -130,6 +130,10 @@ export interface GameStore {
   
   // Control de timeout para transiciones
   transitionTimeout: NodeJS.Timeout | null;
+  
+  // Handshake para confirmar que la transición es visible
+  transitionConfirmed: boolean;
+  transitionSafetyTimeout: NodeJS.Timeout | null;
   setGameState: (state: GameState) => void;
   addParticipant: (participantData: Omit<Participant, 'id' | 'created_at'>) => void;
   startPlaySession: (
@@ -139,6 +143,7 @@ export interface GameStore {
   ) => Promise<void>;
   setCurrentParticipant: (participant: Participant | null) => void;
   setNextParticipant: (participant: Participant | null) => void;
+  confirmTransitionVisible: () => void;
   setCurrentQuestion: (question: Question | null) => void;
   setLastSpinResultIndex: (index: number | null) => void;
   // [NUEVO] Función para actualizar historial de segmentos
@@ -170,7 +175,7 @@ export interface GameStore {
   addToQueue: (participant: Participant) => Promise<void>;
   removeFromQueue: (participantId: string) => Promise<void>;
   moveToNext: () => Promise<void>;
-  prepareAndActivateNext: (delayMs?: number) => Promise<void>;
+  prepareAndActivateNext: () => Promise<void>;
   reorderQueue: (newOrder: Participant[]) => Promise<void>;
   
   // NUEVOS: Sincronización BD

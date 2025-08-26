@@ -407,7 +407,7 @@ export default function PrizeModal({ onGoToScreen }: PrizeModalProps) {
     
     if (sessionId) {
       // Usar la nueva función centralizada para manejar transiciones
-      await prepareAndActivateNext(3000); // Transición de 3 segundos
+      await prepareAndActivateNext(); // Transición con handshake
     } else {
       console.error('No se pudo obtener sessionId - usando fallback');
       // Fallback: usar la función centralizada con delay por defecto

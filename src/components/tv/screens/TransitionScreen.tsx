@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { MotionDiv } from '../shared/MotionComponents';
 import { useIsMounted } from '@/hooks/useIsMounted';
+import { tvLogger } from '@/utils/tvLogger';
 
 /**
  * TransitionScreen Component
@@ -13,6 +14,8 @@ import { useIsMounted } from '@/hooks/useIsMounted';
 export default function TransitionScreen() {
   const isMounted = useIsMounted();
   const nextParticipant = useGameStore((state) => state.nextParticipant);
+  const confirmTransitionVisible = useGameStore((state) => state.confirmTransitionVisible);
+  const transitionConfirmed = useGameStore((state) => state.transitionConfirmed);
   
   // Device detection states
   const [isTabletPortrait, setIsTabletPortrait] = useState(false);
@@ -52,10 +55,19 @@ export default function TransitionScreen() {
   }, []);
 
   // REMOVIDO: Auto-transition - ahora manejado centralizadamente por prepareAndActivateNext
+  
+  // Handshake: Confirmar que esta pantalla está visible cuando se monta
+  useEffect(() => {
+    if (isMounted && nextParticipant && !transitionConfirmed) {
+      tvLogger.transition('🎬 TRANSITION-SCREEN: Montado y visible - confirmando al store');
+      confirmTransitionVisible();
+    }
+  }, [isMounted, nextParticipant, transitionConfirmed, confirmTransitionVisible]);
 
   console.log('🎬 TRANSITION-SCREEN: Renderizando', {
     isMounted,
-    nextParticipant: nextParticipant?.nombre || 'null'
+    nextParticipant: nextParticipant?.nombre || 'null',
+    transitionConfirmed
   });
 
   if (!isMounted) {

@@ -36,6 +36,7 @@ export default function TVPage() {
   const gameState = useGameStore((state) => state.gameState);
   const waitingQueue = useGameStore((state) => state.waitingQueue);
   const gameSession = useGameStore((state) => state.gameSession);
+  const transitionConfirmed = useGameStore((state) => state.transitionConfirmed);
   
   // Acciones del store
   const setCurrentQuestion = useGameStore((state) => state.setCurrentQuestion);
@@ -48,6 +49,7 @@ export default function TVPage() {
   const loadQueueFromDB = useGameStore((state) => state.loadQueueFromDB);
   const fetchActiveSessionPublic = useGameStore((state) => state.fetchActiveSessionPublic);
   const setGameSession = useGameStore((state) => state.setGameSession);
+  const confirmTransitionVisible = useGameStore((state) => state.confirmTransitionVisible);
 
   // --- FUNCIÓN CENTRALIZADA PARA CAMBIO DE PANTALLA ---
   const goToScreen = useCallback((next: TVScreen) => {
@@ -78,13 +80,23 @@ export default function TVPage() {
     if (!supabaseClient) return;
 
 
-    // Polling para detectar participantes (usando Map para últimos updated_at procesados)
-    const processedParticipants: Map<string, string> = new Map();
+    // Polling para detectar participantes (usando Map para trackear estado completo)
+    const processedParticipants: Map<string, { updatedAt: string, status: string }> = new Map();
+    let lastSessionId: string | null = null;
 
     const checkForParticipants = async () => {
       try {
         // [FIX] También detectar participantes cuando currentParticipant es null (no solo en waiting)
-        const { currentParticipant, gameState } = useGameStore.getState();
+        const { currentParticipant, gameState, waitingQueue: currentQueue, gameSession } = useGameStore.getState();
+        
+        // [FIX] Limpiar procesados si cambió la sesión
+        if (gameSession?.session_id !== lastSessionId) {
+          if (lastSessionId !== null) {
+            tvLogger.participant('TV-POLLING: Nueva sesión detectada, limpiando participantes procesados');
+            processedParticipants.clear();
+          }
+          lastSessionId = gameSession?.session_id || null;
+        }
         
         // Buscar participantes solo cuando sea necesario - no durante transiciones, juego activo o premios
         // IMPORTANTE: Incluir 'waiting' y 'screensaver' para detectar reactivaciones
@@ -121,36 +133,54 @@ export default function TVPage() {
                 continue; // Skip, ya es el participante activo
               }
               
-              // Verificar si ya está en la cola CON EL MISMO ESTADO
-              // Si está en la cola pero fue reactivado (updated_at cambió), permitir reprocessing
-              const existingInQueue = waitingQueue.find(p => p.id === typedParticipant.id);
+              // [FIX] Verificar si ya está en la cola con exactamente el mismo estado
+              const existingInQueue = currentQueue.find(p => p.id === typedParticipant.id);
               if (existingInQueue) {
                 const existingUpdatedAt = existingInQueue.updated_at || existingInQueue.created_at || '';
                 const newUpdatedAt = typedParticipant.updated_at || typedParticipant.created_at || '';
+                const existingStatus = existingInQueue.status || '';
+                const newStatus = typedParticipant.status || '';
                 
-                if (existingUpdatedAt === newUpdatedAt) {
-                  continue; // Skip, ya está en la cola con el mismo estado
+                // Si no cambió ni el timestamp ni el status, skip completamente
+                if (existingUpdatedAt === newUpdatedAt && existingStatus === newStatus) {
+                  continue; // Skip, ya está en la cola con el mismo estado exacto
                 }
                 
-                tvLogger.participant(`TV-POLLING: Participante reactivado: ${typedParticipant.nombre}`);
-                // Continuar para reprocessar aunque esté en cola
+                // Solo si realmente cambió algo, permitir actualización
+                if (existingUpdatedAt !== newUpdatedAt || existingStatus !== newStatus) {
+                  tvLogger.participant(`TV-POLLING: Participante actualizado: ${typedParticipant.nombre} (status: ${existingStatus} → ${newStatus})`);
+                  // Continuar para actualizar en la cola
+                }
               }
               
-              // Verificar si ya fue procesado con el mismo updated_at
-              // Si el updated_at cambió, significa que es una reactivación
-              const lastProcessedUpdatedAt = processedParticipants.get(typedParticipant.id);
+              // [FIX] Verificar contra el registro procesado completo
+              const lastProcessed = processedParticipants.get(typedParticipant.id);
               const currentUpdatedAt = typedParticipant.updated_at || typedParticipant.created_at || new Date().toISOString();
+              const currentStatus = typedParticipant.status || '';
               
-              if (lastProcessedUpdatedAt === currentUpdatedAt) {
-                continue; // Skip, ya fue procesado con este mismo timestamp
+              // Si ya fue procesado con el mismo timestamp Y status, skip
+              if (lastProcessed && 
+                  lastProcessed.updatedAt === currentUpdatedAt && 
+                  lastProcessed.status === currentStatus) {
+                continue; // Skip, ya fue procesado exactamente igual
               }
               
-              // Marcar como procesado con el nuevo timestamp
-              processedParticipants.set(typedParticipant.id, currentUpdatedAt);
-              tvLogger.participant(`TV-PARTICIPANT-DETECTED: ${lastProcessedUpdatedAt ? 'Reactivado' : 'Nuevo'} participante: ${typedParticipant.nombre}`);
-              tvLogger.participant(`TV-PARTICIPANT-DETECTED: Status: ${typedParticipant.status}, Updated: ${currentUpdatedAt}`);
+              // Solo procesar si realmente hay un cambio
+              const isNew = !lastProcessed;
+              const isReactivated = lastProcessed && (lastProcessed.updatedAt !== currentUpdatedAt || lastProcessed.status !== currentStatus);
               
-              await addToQueue(typedParticipant);
+              if (isNew || isReactivated) {
+                // Marcar como procesado con el estado completo
+                processedParticipants.set(typedParticipant.id, {
+                  updatedAt: currentUpdatedAt,
+                  status: currentStatus
+                });
+                
+                tvLogger.participant(`TV-PARTICIPANT-DETECTED: ${isNew ? 'Nuevo' : 'Actualizado'} participante: ${typedParticipant.nombre}`);
+                tvLogger.participant(`TV-PARTICIPANT-DETECTED: Status: ${currentStatus}, Updated: ${currentUpdatedAt}`);
+                
+                await addToQueue(typedParticipant);
+              }
             }
           } else {
             // [FIX] Si no hay participantes y no hay currentParticipant, limpiar procesados
@@ -287,6 +317,9 @@ export default function TVPage() {
     setLastSpinResultIndex(null);
   }, [resetPrizeFeedback, setCurrentQuestion, setLastSpinResultIndex]);
 
+  // [FIX] Usar useRef para prevenir reseteos múltiples
+  const lastResetTime = useRef<number>(0);
+  
   // Sync screen state with gameState for better consistency
   useEffect(() => {
     // Sync TV screen with gameState when necessary
@@ -300,9 +333,24 @@ export default function TVPage() {
       tvLogger.session(`TV-TRANSITION: Showing roulette for participant: ${currentParticipant.nombre} (from screen: ${screen})`);
       goToScreen('roulette');
     } else if ((gameState === 'inGame' || gameState === 'roulette') && !currentParticipant) {
-      tvProdLogger.error('TV-SYNC: GameState indicates active game but no currentParticipant found');
+      // [FIX] Prevenir reseteos múltiples con throttling
+      const now = Date.now();
+      if (now - lastResetTime.current > 1000) { // Solo resetear máximo una vez por segundo
+        tvProdLogger.error('TV-SYNC: GameState indicates active game but no currentParticipant found - resetting to waiting');
+        lastResetTime.current = now;
+        setGameState('waiting');
+        goToScreen('waiting');
+      }
     }
-  }, [currentParticipant, gameState, screen, waitingQueue.length, goToScreen]);
+  }, [currentParticipant, gameState, screen, waitingQueue.length, goToScreen, setGameState]);
+  
+  // Handshake: Confirmar cuando la transición es visible
+  useEffect(() => {
+    if (gameState === 'transition' && screen === 'transition' && !transitionConfirmed) {
+      tvLogger.session('TV-HANDSHAKE: Pantalla de transición visible - confirmando al store');
+      confirmTransitionVisible();
+    }
+  }, [gameState, screen, transitionConfirmed, confirmTransitionVisible]);
 
   // REMOVIDO: Auto-activación directa que causaba pantallasos
   // Ahora se usa prepareAndActivateNext() para transiciones controladas

@@ -1035,17 +1035,83 @@ export default function QuestionDisplay({ question, onAnswered }: QuestionDispla
           </div>
         </main>
 
-        {/* Footer micro */}
-        <footer className={`text-center ${isTabletPortrait ? 'py-0' : 'py-4'}`}>
-          <div
-            className="text-white/60"
-            style={{
-              fontSize: isTV65 ? "24px" : isTabletPortrait ? "8px" : "16px",
-            }}
-          >
-            {currentParticipant?.nombre &&
-              `Participante: ${currentParticipant.nombre}`}
-          </div>
+        {/* Footer con nombre del participante mejorado */}
+        <footer className={`text-center ${isTabletPortrait ? 'py-1' : 'py-6'}`}>
+          {currentParticipant?.nombre && (
+            <motion.div
+              variants={itemVariants}
+              className="inline-block"
+            >
+              <div
+                className="relative bg-gradient-to-r from-white/15 to-white/10 backdrop-blur-lg rounded-full border border-white/30 shadow-2xl"
+                style={{
+                  padding: isTV65 ? "20px 60px" : isTabletPortrait ? "8px 20px" : isTablet ? "12px 32px" : "16px 40px",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)",
+                }}
+              >
+                <div className="flex items-center justify-center gap-3">
+                  {/* Icono de usuario */}
+                  <div
+                    className="flex-shrink-0 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center shadow-lg"
+                    style={{
+                      width: isTV65 ? "48px" : isTabletPortrait ? "24px" : isTablet ? "32px" : "36px",
+                      height: isTV65 ? "48px" : isTabletPortrait ? "24px" : isTablet ? "32px" : "36px",
+                    }}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2.5}
+                      stroke="white"
+                      style={{
+                        width: isTV65 ? "28px" : isTabletPortrait ? "14px" : isTablet ? "18px" : "20px",
+                        height: isTV65 ? "28px" : isTabletPortrait ? "14px" : isTablet ? "18px" : "20px",
+                      }}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+                      />
+                    </svg>
+                  </div>
+                  
+                  {/* Texto del participante */}
+                  <div className="flex flex-col items-start">
+                    <span
+                      className="text-white/70 font-medium uppercase tracking-wider"
+                      style={{
+                        fontSize: isTV65 ? "18px" : isTabletPortrait ? "10px" : isTablet ? "12px" : "14px",
+                        letterSpacing: "0.1em",
+                      }}
+                    >
+                      Jugador Actual
+                    </span>
+                    <span
+                      className="text-white font-bold"
+                      style={{
+                        fontSize: isTV65 ? "36px" : isTabletPortrait ? "18px" : isTablet ? "24px" : "28px",
+                        textShadow: "0 2px 8px rgba(0, 0, 0, 0.5), 0 4px 16px rgba(0, 0, 0, 0.3)",
+                        lineHeight: "1.1",
+                      }}
+                    >
+                      {currentParticipant.nombre}
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Efecto de brillo animado */}
+                <div
+                  className="absolute inset-0 rounded-full opacity-0 animate-pulse"
+                  style={{
+                    background: "linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)",
+                    animation: "shimmer 3s infinite",
+                  }}
+                />
+              </div>
+            </motion.div>
+          )}
         </footer>
       </motion.div>
     </div>
