@@ -3,8 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * Endpoint para procesar y guardar jugadas de participantes
- * Implementa la lógica para que un participante solo pueda ganar un premio por sesión
+ * Endpoint simplificado para guardar jugadas
+ * Sin gestión de sesiones ni participantes
  */
 export async function POST(request: Request) {
   try {
@@ -16,93 +16,35 @@ export async function POST(request: Request) {
     }
 
     const {
-      participant_id,
-      session_id,
       question_id,
       answered_correctly,
-      prize_name,
-      admin_id
+      prize_name
     } = await request.json();
 
-    // [PROD] Logs de debug removidos para producción
-
     // Validar campos obligatorios
-    if (!participant_id || !session_id || !question_id || typeof answered_correctly !== 'boolean') {
+    if (!question_id || typeof answered_correctly !== 'boolean') {
       return NextResponse.json(
         { message: 'Faltan campos obligatorios' },
         { status: 400 }
       );
     }
 
-    // Verificar que el participante existe
-    const { data: participant, error: participantError } = await supabaseAdmin
-      .from('participants')
-      .select('id, nombre, session_id')
-      .eq('id', participant_id)
-      .single();
-
-    if (participantError || !participant) {
-      console.error('❌ SUBMIT-PLAY: Participante no encontrado:', participantError);
-      return NextResponse.json(
-        { message: 'Participante no encontrado' },
-        { status: 404 }
-      );
-    }
-
-    // Verificar que el participante pertenece a la sesión
-    if (participant.session_id !== session_id) {
-      console.error('❌ SUBMIT-PLAY: Participante no pertenece a la sesión');
-      return NextResponse.json(
-        { message: 'Participante no pertenece a la sesión especificada' },
-        { status: 400 }
-      );
-    }
-
-    // 🏆 LÓGICA PRINCIPAL: Verificar si el participante ya ganó un premio en esta sesión
-    let yaGano = false;
-    if (answered_correctly && prize_name) {
-      const { data: previousWins, error: winCheckError } = await supabaseAdmin
-        .from('plays')
-        .select('id, premio_ganado, created_at')
-        .eq('participant_id', participant_id)
-        .not('premio_ganado', 'is', null)
-        .neq('premio_ganado', '')
-        .limit(1);
-
-      if (winCheckError) {
-        console.error('SUBMIT-PLAY: Error verificando premios anteriores:', winCheckError);
-        return NextResponse.json(
-          { message: 'Error verificando premios anteriores' },
-          { status: 500 }
-        );
-      }
-
-      yaGano = previousWins && previousWins.length > 0;
-    }
-
-    // No asignamos premios específicos - se entregan presencialmente
-    const premioFinal = null;
-
-    // [PROD] Logs de resultado removidos
-
     // Crear la jugada en la base de datos
     const playData = {
       id: uuidv4(),
-      participant_id,
-      session_id,
-      // [modificación] Asignar admin_id solo si es UUID válido (36 caracteres), sino null
-      admin_id: (admin_id && admin_id.length === 36) ? admin_id : null,
+      participant_id: null, // Sin gestión de participantes
+      session_id: null, // Sin gestión de sesiones
+      admin_id: null, // Sin admin
       lastquestionid: question_id,
       answeredcorrectly: answered_correctly,
-      premio_ganado: premioFinal,
+      premio_ganado: answered_correctly ? prize_name : null,
       status: 'completed',
       score: answered_correctly ? 1 : 0,
       detalles_juego: {
         question_id,
         answered_correctly,
         prize_offered: prize_name,
-        prize_awarded: premioFinal,
-        already_won_prize: yaGano,
+        prize_awarded: answered_correctly ? prize_name : null,
         timestamp: new Date().toISOString()
       },
       created_at: new Date().toISOString(),
@@ -116,28 +58,23 @@ export async function POST(request: Request) {
       .single();
 
     if (saveError) {
-      console.error('❌ SUBMIT-PLAY: Error guardando jugada:', saveError);
+      console.error('Error guardando jugada:', saveError);
       return NextResponse.json(
         { message: 'Error guardando la jugada', error: saveError.message },
         { status: 500 }
       );
     }
 
-    // [PROD] Log de confirmación removido
-
-    // Respuesta con información completa para el frontend
+    // Respuesta simplificada
     return NextResponse.json({
       success: true,
       message: 'Jugada procesada exitosamente',
       play: savedPlay,
       result: {
         answered_correctly,
-        prize_awarded: premioFinal,
-        already_won_prize: yaGano,
-        message: yaGano && answered_correctly && prize_name
-          ? `¡Respuesta correcta! Sin embargo, ya ganaste un premio anteriormente. ¡Gracias por seguir participando!`
-          : answered_correctly && premioFinal
-          ? `¡Felicitaciones! Respuesta correcta y ganaste: ${premioFinal}`
+        prize_awarded: answered_correctly ? prize_name : null,
+        message: answered_correctly && prize_name
+          ? `¡Felicitaciones! Respuesta correcta y ganaste: ${prize_name}`
           : answered_correctly
           ? '¡Respuesta correcta! Sigue participando.'
           : 'Respuesta incorrecta. ¡Sigue intentando!'
@@ -145,7 +82,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('❌ SUBMIT-PLAY: Error interno:', error);
+    console.error('Error interno:', error);
     return NextResponse.json(
       { 
         message: 'Error interno del servidor',
@@ -154,4 +91,4 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

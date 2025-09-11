@@ -3,7 +3,6 @@
 // NUNCA importar este archivo en rutas /tv
 
 import { createClient } from '@supabase/supabase-js';
-import { tvProdLogger } from '@/utils/tvLogger';
 
 // Verificación de variables de entorno para la conexión con Supabase
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -12,11 +11,11 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Verificación más robusta de las variables requeridas para el cliente
 if (!supabaseUrl || supabaseUrl.length < 10) {
-  tvProdLogger.error('Error: NEXT_PUBLIC_SUPABASE_URL no está definida correctamente en las variables de entorno');
+  console.error('Error: NEXT_PUBLIC_SUPABASE_URL no está definida correctamente en las variables de entorno');
 }
 
 if (!supabaseAnonKey || supabaseAnonKey.length < 10) {
-  tvProdLogger.error('Error: NEXT_PUBLIC_SUPABASE_ANON_KEY no está definida correctamente en las variables de entorno');
+  console.error('Error: NEXT_PUBLIC_SUPABASE_ANON_KEY no está definida correctamente en las variables de entorno');
 }
 
 // Configuración optimizada para evitar múltiples instancias de GoTrueClient
@@ -101,7 +100,7 @@ export interface SupabaseError {
  */
 export function handleSupabaseError(error: Error | SupabaseError | unknown, context: string) {
   if (process.env.NODE_ENV !== 'production') {
-    tvProdLogger.error(`Error de Supabase en ${context}:`, error);
+    console.error(`Error de Supabase en ${context}:`, error);
   }
   return error;
 }
@@ -118,7 +117,7 @@ export function verifyAdminClientSingleton() {
     windowWithInstances.__supabaseAdminClientInstances = clientInstances + 1;
     
     if (clientInstances > 0) {
-      tvProdLogger.warn('⚠️ Detectada posible múltiple instanciación de Supabase admin client');
+      console.warn('⚠️ Detectada posible múltiple instanciación de Supabase admin client');
     }
   }
 }

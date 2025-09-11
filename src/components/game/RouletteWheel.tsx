@@ -15,7 +15,6 @@ import type { RouletteWheelProps, Question } from "@/types";
 import { motion } from "framer-motion";
 import React from "react";
 import { useDOMSafe } from "@/lib/hooks/useSSRSafe";
-import { tvLogger } from "@/utils/tvLogger";
 import { useDeviceDetection } from "@/hooks/useDeviceDetection";
 
 // Interfaz para segmentos de la ruleta
@@ -252,7 +251,7 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
       let audio: HTMLAudioElement | null = null;
       const handleAudioError = () => {
         const mediaError = audio?.error;
-        tvLogger.warn(
+        console.warn(
           "AUDIO: No se pudo cargar el audio de giro:",
           mediaError
             ? `${mediaError.code} - ${mediaError.message}`
@@ -266,7 +265,7 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
         audio.addEventListener("error", handleAudioError);
         audioRef.current = audio;
       } catch (error) {
-        tvLogger.warn("AUDIO: Error al inicializar el objeto Audio:", error);
+        console.warn("AUDIO: Error al inicializar el objeto Audio:", error);
       }
       
       return () => {
@@ -1005,9 +1004,9 @@ const RouletteWheel = memo(forwardRef<{ spin: () => void }, RouletteWheelProps>(
               // Encontrar el índice de esta pregunta en el array original de preguntas
               const questionIndex = questions?.findIndex(q => q.id === selectedQuestion.id) ?? -1;
               
-              tvLogger.game("[RouletteWheel] Segmento ganador:", winningSegment.text);
-              tvLogger.game("[RouletteWheel] Pregunta seleccionada:", selectedQuestion.category, "ID:", selectedQuestion.id);
-              tvLogger.game("[RouletteWheel] Índice de pregunta en array original:", questionIndex);
+              console.log("[RouletteWheel] Segmento ganador:", winningSegment.text);
+              console.log("[RouletteWheel] Pregunta seleccionada:", selectedQuestion.category, "ID:", selectedQuestion.id);
+              console.log("[RouletteWheel] Índice de pregunta en array original:", questionIndex);
               
               setLastSpinResultIndex(questionIndex);
               
