@@ -31,6 +31,16 @@ const config: Config = {
         'tv-full': { 'raw': '(min-width: 2160px) and (min-height: 3840px)' },
       },
       colors: {
+        // Colores oficiales de marca DarSalud
+        "brand": {
+          "blue": "#0435A3",      // Azul intenso principal
+          "green": "#04EBCF",     // Verde salud vibrante
+          "cyan": "#08C3FC",      // Celeste medio brillante
+          "purple": "#F1AAFA",    // Lila acento suave
+          "blue-dark": "#032B7A", // Azul más oscuro para gradientes
+          "blue-light": "#0652D4", // Azul más claro para gradientes
+        },
+        // Colores legacy (mantener por compatibilidad)
         "azul-intenso": "#192A6E",
         "verde-salud": "#5ACCC1",
         "celeste-medio": "#40C0EF",
@@ -40,6 +50,12 @@ const config: Config = {
       },
       backgroundImage: {
         'main-gradient': 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f172a 50%, #1e293b 75%, #334155 100%)',
+        // Gradiente profesional con colores de marca DarSalud - Luminoso y elegante
+        'game-gradient': 'linear-gradient(135deg, #08C3FC 0%, #0435A3 40%, #0652D4 60%, #04EBCF 100%)',
+        // Variantes de gradientes de marca
+        'brand-gradient': 'linear-gradient(180deg, #0435A3 0%, #08C3FC 50%, #04EBCF 100%)',
+        'brand-gradient-soft': 'linear-gradient(135deg, #0435A3 0%, #08C3FC 35%, #04EBCF 65%, #F1AAFA 100%)',
+        'brand-gradient-radial': 'radial-gradient(circle at center, #08C3FC 0%, #0435A3 100%)',
       },
       fontFamily: {
         sans: ["Marine-Regular", "sans-serif"],

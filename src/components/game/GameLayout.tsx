@@ -8,7 +8,7 @@ interface GameLayoutProps {
 
 export default function GameLayout({ children }: GameLayoutProps) {
   return (
-    <div className="min-h-screen bg-main-gradient flex items-center justify-center p-4">
+    <div className="min-h-screen bg-game-gradient flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         {children}
       </div>

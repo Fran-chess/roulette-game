@@ -60,66 +60,141 @@ export default function PrizeModal() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md"
+        className="flex items-center justify-center w-full h-full p-4"
       >
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
           transition={{ type: "spring", duration: 0.5 }}
-          className="w-full max-w-2xl mx-auto p-8 rounded-2xl shadow-2xl text-center bg-black/20 backdrop-blur-xl border-2 border-white/40"
+          className="
+            w-full max-w-2xl mx-auto text-center
+            bg-gray-900/90 shadow-2xl border-4 border-white/40
+            rounded-3xl p-6
+            sm:p-8
+            md:p-10
+            lg:p-12
+            xl:p-14
+          "
         >
           {/* Icon */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             {answeredCorrectly ? (
-              <CheckCircleIcon className="w-24 h-24 mx-auto text-green-400 animate-bounce" />
+              <CheckCircleIcon className="
+                mx-auto text-green-400 animate-bounce
+                w-16 h-16
+                sm:w-20 sm:h-20
+                md:w-24 md:h-24
+                lg:w-28 lg:h-28
+                xl:w-32 xl:h-32
+              " />
             ) : (
-              <XCircleIcon className="w-24 h-24 mx-auto text-red-400 animate-pulse" />
+              <XCircleIcon className="
+                mx-auto text-red-400 animate-pulse
+                w-16 h-16
+                sm:w-20 sm:h-20
+                md:w-24 md:h-24
+                lg:w-28 lg:h-28
+                xl:w-32 xl:h-32
+              " />
             )}
           </div>
 
           {/* Title */}
-          <h2 className={`text-4xl font-bold mb-4 ${answeredCorrectly ? "text-green-400" : "text-red-400"}`}>
+          <h2 className={`
+            font-bold mb-6
+            text-3xl
+            sm:text-4xl
+            md:text-5xl
+            lg:text-6xl
+            xl:text-7xl
+            ${answeredCorrectly ? "text-green-400" : "text-red-400"}
+          `}>
             {answeredCorrectly ? "¡Felicitaciones!" : "¡Sigue intentando!"}
           </h2>
 
           {/* Message */}
-          <div className="space-y-4 mb-8">
-            <p className="text-xl text-white">
+          <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+            <p className="
+              text-white font-semibold
+              text-xl
+              sm:text-2xl
+              md:text-3xl
+              lg:text-4xl
+            ">
               {answeredCorrectly
                 ? "¡Respuesta correcta!"
                 : "Respuesta incorrecta"}
             </p>
 
             {!answeredCorrectly && correctOption && (
-              <div className="p-4 bg-white/10 rounded-lg">
-                <p className="text-lg text-white/90">
-                  <span className="font-semibold">Respuesta correcta:</span>
+              <div className="p-4 sm:p-5 bg-black/50 border-2 border-green-400/50 rounded-xl">
+                <p className="
+                  text-white
+                  text-lg
+                  sm:text-xl
+                  md:text-2xl
+                  lg:text-3xl
+                ">
+                  <span className="font-bold">Respuesta correcta:</span>
                 </p>
-                <p className="text-xl text-green-400 mt-2">{correctOption}</p>
+                <p className="
+                  text-green-400 font-bold mt-2
+                  text-xl
+                  sm:text-2xl
+                  md:text-3xl
+                  lg:text-4xl
+                ">{correctOption}</p>
               </div>
             )}
 
             {!answeredCorrectly && explanation && (
-              <div className="p-4 bg-white/10 rounded-lg">
-                <p className="text-lg text-white/90">{explanation}</p>
+              <div className="p-4 sm:p-5 bg-black/50 border-2 border-yellow-400/50 rounded-xl">
+                <p className="
+                  text-white
+                  text-lg
+                  sm:text-xl
+                  md:text-2xl
+                  lg:text-3xl
+                ">{explanation}</p>
               </div>
             )}
 
             {answeredCorrectly && prizeName && (
-              <div className="p-4 bg-green-500/20 rounded-lg border-2 border-green-400">
-                <p className="text-lg text-white">¡Has ganado!</p>
-                <p className="text-2xl font-bold text-green-400 mt-2">{prizeName}</p>
+              <div className="p-5 sm:p-6 bg-green-500/30 rounded-2xl border-3 border-green-400">
+                <p className="
+                  text-white font-semibold
+                  text-xl
+                  sm:text-2xl
+                  md:text-3xl
+                  lg:text-4xl
+                ">¡Has ganado!</p>
+                <p className="
+                  font-bold text-green-400 mt-3
+                  text-2xl
+                  sm:text-3xl
+                  md:text-4xl
+                  lg:text-5xl
+                ">{prizeName}</p>
               </div>
             )}
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
             <Button
               onClick={handleReturnToRoulette}
               variant="primary"
-              className="px-8 py-4 text-lg font-semibold bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl transition-all transform hover:scale-105"
+              className="
+                font-bold bg-gradient-to-r from-blue-600 to-blue-500
+                hover:from-blue-700 hover:to-blue-600 text-white
+                transition-all transform hover:scale-105 shadow-xl
+                rounded-full px-8 py-4 text-lg
+                sm:px-10 sm:py-5 sm:text-xl
+                md:text-2xl
+                lg:px-12 lg:py-6 lg:text-3xl
+                xl:px-14 xl:py-7 xl:text-4xl
+              "
             >
               Jugar de Nuevo
             </Button>
@@ -127,7 +202,15 @@ export default function PrizeModal() {
             <Button
               onClick={handleReturnToStart}
               variant="secondary"
-              className="px-8 py-4 text-lg font-semibold bg-white/20 hover:bg-white/30 text-white rounded-xl transition-all transform hover:scale-105"
+              className="
+                font-bold bg-gray-700 hover:bg-gray-600 text-white
+                transition-all transform hover:scale-105 shadow-xl
+                rounded-full px-8 py-4 text-lg
+                sm:px-10 sm:py-5 sm:text-xl
+                md:text-2xl
+                lg:px-12 lg:py-6 lg:text-3xl
+                xl:px-14 xl:py-7 xl:text-4xl
+              "
             >
               Volver al Inicio
             </Button>

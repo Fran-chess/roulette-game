@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { useIsMounted } from '@/hooks/useIsMounted';
+import { useSSR } from '@/hooks/useSSR';
 import { MotionDiv } from '../shared/MotionComponents';
 import { useGameStore } from '@/store/gameStore';
 
@@ -8,7 +7,7 @@ import { useGameStore } from '@/store/gameStore';
  * Reproduce el video DarSaludPanallaLed.mp4 ocupando toda la pantalla sin deformar la relación de aspecto
  */
 function FullScreenVideo() {
-  const isMounted = useIsMounted();
+  const { isMounted } = useSSR();
   
   if (!isMounted) return null;
 
@@ -60,35 +59,13 @@ function FullScreenVideo() {
  * Reacciona al toque para ir a la ruleta
  */
 export default function WaitingScreen() {
-  const isMounted = useIsMounted();
-  const [isTabletPortrait, setIsTabletPortrait] = useState(false);
+  const { isMounted } = useSSR();
   const setGameState = useGameStore((state) => state.setGameState);
 
   // Manejar el toque/click para ir a la ruleta
   const handleTouch = () => {
     setGameState('roulette');
   };
-
-  useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      // Detectar tablets modernos (600px-1279px) en orientación vertical
-      const isTabletModern = 
-        width >= 600 && width <= 1279 && 
-        !((width >= 2160 && height >= 3840) || (width >= 3840 && height >= 2160));
-
-      const isTabletPortraitResolution = 
-        isTabletModern && height > width && height >= 800;
-
-      setIsTabletPortrait(isTabletPortraitResolution);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   if (!isMounted) {
     return null;
@@ -100,11 +77,9 @@ export default function WaitingScreen() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className={`relative min-h-screen w-full bg-black overflow-hidden tv-portrait:min-h-screen cursor-pointer ${
-        isTabletPortrait ? 'waiting-screen-tablet-portrait' : ''
-      }`}
+      className="relative min-h-screen w-full bg-main-gradient overflow-hidden cursor-pointer"
       style={{
-        minHeight: window.innerWidth >= 600 && window.innerWidth <= 1279 ? '100dvh' : '100vh'
+        minHeight: '100dvh'
       }}
       role="main"
       aria-label="Pantalla de espera con video en pantalla completa - Toca para jugar"
@@ -117,7 +92,7 @@ export default function WaitingScreen() {
       <MotionDiv
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2, duration: 1 }}
+        transition={{ duration: 1 }}
         className="absolute bottom-10 left-0 right-0 text-center z-30"
       >
         <MotionDiv

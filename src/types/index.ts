@@ -49,4 +49,6 @@ export interface GameStore {
 export interface RouletteWheelProps {
   questions: Question[];
   onSpinStateChange?: (spinning: boolean) => void;
+  onCenterButtonClick?: () => void;
+  isSpinning?: boolean;
 }

@@ -1,10 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-// Temporarily disabled to fix roulette size issue
-// import "./tablet-responsive.css";
-// import "./tablet-fix.css";
 import ShellRootClient from "@/components/layout/ShellRootClient";
-import ReactQueryProvider from "@/lib/providers/ReactQueryProvider";
 
 // [modificación] Configuración de viewport separada según Next.js 15
 export const viewport: Viewport = {
@@ -60,9 +56,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="bg-main-gradient h-screen font-sans text-white">
-        <ReactQueryProvider>
-          <ShellRootClient>{children}</ShellRootClient>
-        </ReactQueryProvider>
+        <ShellRootClient>{children}</ShellRootClient>
       </body>
     </html>
   );
