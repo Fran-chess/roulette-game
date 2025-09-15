@@ -11,6 +11,7 @@
     "test": "npm run test:build && node --test dist_test/tests/*.test.js"
   },
   "dependencies": {
+    "@emotion/is-prop-valid": "^1.4.0",
     "@heroicons/react": "^2.2.0",
     "framer-motion": "^12.10.0",
     "lightningcss": "^1.30.1",
